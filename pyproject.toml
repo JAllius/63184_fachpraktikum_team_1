@@ -3,6 +3,6 @@ name = "fachpraktikum-fastapi"
 dynamic = ["version"]
 
 dependencies = [
-  "fastapi>=0.120",
+  "fastapi[standard]>=0.120",
   "pydantic"
 ]
