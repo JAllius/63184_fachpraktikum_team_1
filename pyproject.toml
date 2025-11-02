@@ -1,5 +1,5 @@
 [project]
-name = "fachpraktikum-fastapi"
+name = "fachpraktikum"
 dynamic = ["version"]
 
 dependencies = [

@@ -1,6 +1,8 @@
 clean:
 	rm -rf ./build
 	rm -rf ./src/*.egg-info
+	rm -rf ./.pytest_cache
+	rm -r ./src/**/__pycache__
 
 clean_venv: clean
 	rm -rf ./venv
@@ -20,3 +22,5 @@ deploy_local: build_docker
 test: build_app
 	./venv/bin/python3 -m pip install -e '.[test]'
 	./venv/bin/python3 -m pytest
+
+all: venv test deploy_local
