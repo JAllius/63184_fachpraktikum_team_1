@@ -9,6 +9,6 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "httpx",
+  "httpx",
   "pytest"
 ]
