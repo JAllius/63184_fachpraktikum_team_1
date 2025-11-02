@@ -1,0 +1,14 @@
+[project]
+name = "fachpraktikum"
+dynamic = ["version"]
+
+dependencies = [
+  "fastapi[standard]>=0.120",
+  "pydantic"
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx",
+  "pytest"
+]

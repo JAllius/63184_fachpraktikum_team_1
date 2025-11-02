@@ -1,0 +1,12 @@
+services:
+  api:
+    # build:
+    #   context: .
+    #   target: builder
+    image: jallius/fachpraktikum-fastapi
+    container_name: fachpraktikum-fastapi
+    environment:
+      PORT: 80
+    ports:
+      - '42000:80'
+    restart: "no"
