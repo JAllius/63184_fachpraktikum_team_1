@@ -1,5 +1,6 @@
 clean:
 	rm -rf ./build
+	rm -rf ./src/*.egg-info
 
 clean_venv: clean
 	rm -rf ./venv
