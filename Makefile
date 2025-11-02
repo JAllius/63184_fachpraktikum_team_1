@@ -16,3 +16,7 @@ build_docker: build_app
 
 deploy_local: build_docker
 	docker compose up
+
+test: build_app
+	./venv/bin/python3 -m pip install -e '.[test]'
+	./venv/bin/python3 -m pytest
