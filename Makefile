@@ -2,7 +2,7 @@ clean:
 	rm -rf ./build
 	rm -rf ./src/*.egg-info
 	rm -rf ./.pytest_cache
-	rm -r ./src/**/__pycache__
+	rm -rf ./src/**/__pycache__
 
 clean_venv: clean
 	rm -rf ./venv
