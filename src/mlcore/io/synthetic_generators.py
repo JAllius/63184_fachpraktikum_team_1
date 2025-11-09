@@ -7,8 +7,8 @@ def gen_classification(n_samples, n_classes, n_informative, random_state):
     return X, y
 
 def gen_regression(n_samples, n_classes, random_state):
-    x, y = make_regression(n_samples= n_samples, n_classes= n_classes, random_state= random_state)
-    return x, y
+    X, y = make_regression(n_samples= n_samples, n_classes= n_classes, random_state= random_state)
+    return X, y
 
 def gen_csv(size: int = 20, random_seed: int = 42):
     np.random.seed(random_seed)
