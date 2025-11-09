@@ -22,7 +22,7 @@ deploy_local: docker
 	docker compose down -v
 	docker compose up -d
 
-test: build
+test:
 	./venv/bin/python3 -m pip install -e '.[test]'
 	./venv/bin/python3 -m pytest
 
