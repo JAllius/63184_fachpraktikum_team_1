@@ -7,19 +7,19 @@ clean:
 clean_venv: clean
 	rm -rf ./venv
 
-venv: clean_venv
-	python3 -m venv ./venv/
+venv: 
+	python3.13 -m venv ./venv/
 
 build: clean
 	./venv/bin/python3 -m pip install .
 
-build_docker: build_app
+docker: build
 	docker build -t jallius/fachpraktikum-fastapi .
 
-deploy_local: build_docker
+deploy_local: docker
 	docker compose up
 
-test: build_app
+test: build
 	./venv/bin/python3 -m pip install -e '.[test]'
 	./venv/bin/python3 -m pytest
 
