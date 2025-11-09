@@ -35,8 +35,8 @@ def classification(
     return classification_report(y_test, y_pred)
 
 if __name__ == "__main__":
-    X, y = gen_classification(5000, 3, 3, 42)
-    print(classification(X, y, 42))
+    x, y = gen_classification(5000, 3, 3, 42)
+    print(classification(x, y, 42))
 
 
 
