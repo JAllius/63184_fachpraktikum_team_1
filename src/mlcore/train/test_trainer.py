@@ -8,6 +8,6 @@ def test_gen_classification():
     print(classification(X, y, 42))
 
 def test_classification():
-    x, y = gen_classification(5000, 3, 3, 42)
-    out = classification(x, y, 42)
+    X, y = gen_classification(5000, 3, 3, 42)
+    out = classification(X, y, 42)
     assert isinstance(out, str)
