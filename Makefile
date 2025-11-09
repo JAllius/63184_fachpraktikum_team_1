@@ -2,7 +2,7 @@ clean:
 	rm -rf ./build
 	rm -rf ./src/*.egg-info
 	rm -rf ./.pytest_cache
-	rm -r ./src/**/__pycache__
+	rm -rf ./src/**/__pycache__
 
 clean_venv: clean
 	rm -rf ./venv
@@ -10,7 +10,7 @@ clean_venv: clean
 venv: clean_venv
 	python3 -m venv ./venv/
 
-build_app: clean
+build: clean
 	./venv/bin/python3 -m pip install .
 
 build_docker: build_app
