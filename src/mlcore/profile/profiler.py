@@ -115,15 +115,7 @@ def suggest_profile(
         if columns[column]["is_unique"]:
             profile["id_candidates"].append(column)
         if columns[column]["is_empty"] or columns[column]["is_constant"] or columns[column]["exclude_for_analysis"]:
-            profile["drop_suggestions"].append(column)
+            profile["exclude_suggestions"].append(column)
         
     profile["columns"] = columns
     return profile
-
-if __name__ == "__main__":
-    df = get_dataframe("./test_dataset.csv")
-    profile = suggest_profile(pd.DataFrame(df))
-    print(df["gender"])
-    # print(profile)
-    
-    
