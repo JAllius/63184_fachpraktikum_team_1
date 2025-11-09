@@ -3,11 +3,13 @@ clean:
 	rm -rf ./src/*.egg-info
 	rm -rf ./.pytest_cache
 	rm -rf ./src/**/__pycache__
+	rm -rf ./src/**/**/__pycache__
+	find ./src -empty -type d -delete
 
 clean_venv: clean
 	rm -rf ./venv
 
-venv: clean_venv
+venv: 
 	python3 -m venv ./venv/
 
 build_app: clean
