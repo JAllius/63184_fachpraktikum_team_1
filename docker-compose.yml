@@ -17,9 +17,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: safe123
-      MYSQL_DATABASE: pytest
-      MYSQL_USER: pytest
-      MYSQL_PASSWORd: pytest
     ports:
       - "3306:3306"
       - "33060:33060"
