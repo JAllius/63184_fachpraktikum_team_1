@@ -63,4 +63,25 @@ async def delete_dataset_version(dataset_id: int, user_id: int):
 
 # TODO: CRUD for jobs (perform a task on a given dataset (version) with (autodetected) profile)
 
+@app.post("/jobs")
+async def post_job(dataset_id: int, version: int, profile: str, user_id: int):
+    """create a new job and return job id"""
+    return {}
+
+@app.get("/jobs/{job_id}")
+async def get_job(user_id: int):
+    """return specified job if user has permission"""
+    return {}
+
+# TODO: can an existing job be updated? or only aborted (deleted)
+# @app.put("/jobs/{job_id}")
+# async def put_job(user_id: int):
+#     """update specified job if user has permission"""
+#     return {}
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(user_id: int):
+    """abort and delete specified job if user has permission"""
+    return {}
+
 
