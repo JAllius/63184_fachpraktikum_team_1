@@ -83,5 +83,66 @@ async def get_job(user_id: int):
 async def delete_job(user_id: int):
     """abort and delete specified job if user has permission"""
     return {}
+ # ========== ML_Problems ==========
+ 
+ from typing import Literal
+ # TODO: later update/delete too but not so important for now.
+ @app.post("/problems") # or ml_problems for clarity
+ async def post_problem(
+ user_id: int,
+ dataset_id: str, # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
+ target: str,
+ dataset_version_id: int | str = "latest",
+ task: Literal["classification", "regression", "auto"] = "auto",
+ feature_strategy: dict | str = "auto", # we will see later how we will impliment this exactly
+ validation_strategy: Literal["CV", "holdout"] = "CV", # for now only CV
+ ): # maybe later we will also add "anomaly_detection" and "timeseries"
+    """create a new ml_problem and return problem_id"""
+    return {}
+ 
+ @app.get("/problems/{problem_id}")
+ async def get_problem(problem_id: int):
+    """return specified problem if user has permission"""
+    return {}
 
+ # ========== ML_Train ==========
+
+ @app.post("/train")
+ async def post_train(
+ user_id: int,
+ problem_id: int,
+ algorithm: str = "auto",
+ train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+ explanation: bool = True, 
+ ): 
+    """create a request/job to train a model for a given problem_id and return model_id"""
+    return {}
+
+ # ========== ML_Predict ==========
+
+ @app.post("/predict")
+ async def post_predict(
+ user_id: int,
+ problem_id: int | None = None,
+ model_id: int | str = "production",
+ input: str | None = None,
+ input_uri: str | None = None,
+ train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+ explanation: bool = True, 
+ ): 
+    if not problem_id and model_id == "production":
+        # no problem or model given for the prediction
+        return {}
+    if not input and not input_uri:
+        # no input given for the prediction
+        return {}
+    """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
+    return {}
+
+ # ========== ML_Models ==========
+ 
+ # I am not sure how this works with the storage and if we need an endpoint.
+ # get model (probably by id) -> return joblib object.
+ # For now we will have it locally (./testdata/models/{model_id}). 
+ 
 
