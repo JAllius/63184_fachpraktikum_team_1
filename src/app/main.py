@@ -1,4 +1,8 @@
 from fastapi import FastAPI
+from typing import Literal
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -9,8 +13,9 @@ async def read_root():
 
 # ========== Dataset ==========
 
+
 @app.post("/dataset")  # /dataset?name=test&user_id=1
-async def post_dataset(name:str, user_id: int):
+async def post_dataset(name: str, user_id: int):
     """create a stub for a new dataset and return the id"""
     return {}
 
@@ -20,10 +25,12 @@ async def get_dataset(dataset_id: int, user_id: int):
     """return the specified dataset if user has permission"""
     return {}
 
+
 @app.put("/dataset/{dataset_id}")
 async def put_dataset(dataset_id: int, user_id: int):
     """update the specified dataset if user has permission"""
     return {}
+
 
 @app.delete("/dataset/{dataset_id}")
 async def delete_dataset(dataset_id: int, user_id: int):
@@ -34,7 +41,8 @@ async def delete_dataset(dataset_id: int, user_id: int):
 
 # TODO: allow .csv upload on Write-Paths
 
-@app.post("/dataset/{dataset_id}") 
+
+@app.post("/dataset/{dataset_id}")
 async def post_dataset_version(dataset_id: int, user_id: int):
     """create a stub for a new dataset version and return the version"""
     return {}
@@ -45,10 +53,12 @@ async def get_dataset_version(dataset_id: int, version: int, user_id: int):
     """return the specified dataset version if user has permission"""
     return {}
 
+
 @app.put("/dataset/{dataset_id}/{version}")
 async def put_dataset_version(dataset_id: int, user_id: int):
     """update the specified dataset version if user has permission"""
     return {}
+
 
 @app.delete("/dataset/{dataset_id}/{version}")
 async def delete_dataset_version(dataset_id: int, user_id: int):
@@ -63,10 +73,12 @@ async def delete_dataset_version(dataset_id: int, user_id: int):
 
 # TODO: CRUD for jobs (perform a task on a given dataset (version) with (autodetected) profile)
 
+
 @app.post("/jobs")
 async def post_job(dataset_id: int, version: int, profile: str, user_id: int):
     """create a new job and return job id"""
     return {}
+
 
 @app.get("/jobs/{job_id}")
 async def get_job(user_id: int):
@@ -79,57 +91,63 @@ async def get_job(user_id: int):
 #     """update specified job if user has permission"""
 #     return {}
 
+
 @app.delete("/jobs/{job_id}")
 async def delete_job(user_id: int):
     """abort and delete specified job if user has permission"""
     return {}
- # ========== ML_Problems ==========
- 
- from typing import Literal
+# ========== ML_Problems ==========
+
  # TODO: later update/delete too but not so important for now.
- @app.post("/problems") # or ml_problems for clarity
- async def post_problem(
- user_id: int,
- dataset_id: str, # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
- target: str,
- dataset_version_id: int | str = "latest",
- task: Literal["classification", "regression", "auto"] = "auto",
- feature_strategy: dict | str = "auto", # we will see later how we will impliment this exactly
- validation_strategy: Literal["CV", "holdout"] = "CV", # for now only CV
- ): # maybe later we will also add "anomaly_detection" and "timeseries"
+
+
+@app.post("/problems")  # or ml_problems for clarity
+async def post_problem(
+    user_id: int,
+    dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
+    target: str,
+    dataset_version_id: int | str = "latest",
+    task: Literal["classification", "regression", "auto"] = "auto",
+    # we will see later how we will impliment this exactly
+    feature_strategy: dict | str = "auto",
+    validation_strategy: Literal["CV", "holdout"] = "CV",  # for now only CV
+):  # maybe later we will also add "anomaly_detection" and "timeseries"
     """create a new ml_problem and return problem_id"""
     return {}
- 
- @app.get("/problems/{problem_id}")
- async def get_problem(problem_id: int):
+
+
+@app.get("/problems/{problem_id}")
+async def get_problem(problem_id: int):
     """return specified problem if user has permission"""
     return {}
 
- # ========== ML_Train ==========
+# ========== ML_Train ==========
 
- @app.post("/train")
- async def post_train(
- user_id: int,
- problem_id: int,
- algorithm: str = "auto",
- train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
- explanation: bool = True, 
- ): 
+
+@app.post("/train")
+async def post_train(
+    user_id: int,
+    problem_id: int,
+    algorithm: str = "auto",
+    train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+    explanation: bool = True,
+):
     """create a request/job to train a model for a given problem_id and return model_id"""
     return {}
 
- # ========== ML_Predict ==========
+# ========== ML_Predict ==========
 
- @app.post("/predict")
- async def post_predict(
- user_id: int,
- problem_id: int | None = None,
- model_id: int | str = "production",
- input: str | None = None,
- input_uri: str | None = None,
- train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
- explanation: bool = True, 
- ): 
+
+@app.post("/predict")
+async def post_predict(
+    user_id: int,
+    problem_id: int | None = None,
+    model_id: int | str = "production",
+    input: str | None = None,
+    input_uri: str | None = None,
+    train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+    explanation: bool = True,
+):
     if not problem_id and model_id == "production":
         # no problem or model given for the prediction
         return {}
@@ -139,10 +157,8 @@ async def delete_job(user_id: int):
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
     return {}
 
- # ========== ML_Models ==========
- 
- # I am not sure how this works with the storage and if we need an endpoint.
- # get model (probably by id) -> return joblib object.
- # For now we will have it locally (./testdata/models/{model_id}). 
- 
+# ========== ML_Models ==========
 
+# I am not sure how this works with the storage and if we need an endpoint.
+# get model (probably by id) -> return joblib object.
+# For now we will have it locally (./testdata/models/{model_id}).
