@@ -12,6 +12,7 @@ DB_NAME = "app"
 
 logger = logging.getLogger(__name__)
 
+
 def main():
     # connect to MySQL
     conn = mysql.connector.connect(

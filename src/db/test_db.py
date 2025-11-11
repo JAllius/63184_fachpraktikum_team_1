@@ -24,6 +24,7 @@ def root():
     logger.info("Closing root session to mysql")
     mydb.disconnect()
 
+
 @pytest.fixture(scope="session", autouse=True)
 def init_pytest_db(root):
     cursor = root.cursor()
@@ -31,12 +32,16 @@ def init_pytest_db(root):
     cursor.execute(f"CREATE DATABASE {DB_PYTEST_NAME}")
 
     cursor.execute(f"DROP USER IF EXISTS {DB_PYTEST_USER}@{DB_HOST}")
-    cursor.execute(f"CREATE USER IF NOT EXISTS {DB_PYTEST_USER}@{DB_HOST} IDENTIFIED BY '{DB_PYTEST_PW}';")
-    cursor.execute(f"GRANT ALL PRIVILEGES ON {DB_PYTEST_NAME}.* TO {DB_PYTEST_USER}@{DB_HOST};")
+    cursor.execute(
+        f"CREATE USER IF NOT EXISTS {DB_PYTEST_USER}@{DB_HOST} IDENTIFIED BY '{DB_PYTEST_PW}';")
+    cursor.execute(
+        f"GRANT ALL PRIVILEGES ON {DB_PYTEST_NAME}.* TO {DB_PYTEST_USER}@{DB_HOST};")
+
 
 @pytest.fixture()
 def db_session(init_pytest_db):
-    logger.info(f"Connecting to db '{DB_PYTEST_NAME}' as user '{DB_PYTEST_USER}'")
+    logger.info(
+        f"Connecting to db '{DB_PYTEST_NAME}' as user '{DB_PYTEST_USER}'")
     mydb = mysql.connector.connect(
         host=DB_HOST,
         user=DB_PYTEST_USER,
@@ -44,11 +49,14 @@ def db_session(init_pytest_db):
         database=DB_PYTEST_NAME
     )
     yield mydb
-    logger.info(f"Closing user '{DB_PYTEST_USER}' session to db '{DB_PYTEST_NAME}'")
+    logger.info(
+        f"Closing user '{DB_PYTEST_USER}' session to db '{DB_PYTEST_NAME}'")
     mydb.disconnect()
+
 
 def test_root_db_access(root):
     return
+
 
 @pytest.mark.skip("DB ACCESS AS NON-ROOT USER NOT WORKING YET")
 def test_pytest_db(db_session):
