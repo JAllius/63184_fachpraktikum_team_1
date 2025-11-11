@@ -5,22 +5,24 @@ from src.mlcore.io.synthetic_generators import gen_classification
 from src.mlcore.io.synthetic_generators import gen_csv
 from src.mlcore.io.data_reader import get_dataframe
 
+
 def suggest_schema(
     df: pd.DataFrame
-)-> dict:
+) -> dict:
     schema = {}
     for column in df.columns:
         schema[column] = str(df[column].dtype)
     return schema
 
-def _analyse_column(column: pd.Series)-> dict:
+
+def _analyse_column(column: pd.Series) -> dict:
     column_summary = {}
     unique_count = column.nunique(dropna=True)
     non_zero_count = column.count()
     missing_pct = round(float(1 - non_zero_count/len(column)), 4)
     column_summary["missing_pct"] = missing_pct
     column_summary["dtype_raw"] = str(column.dtype)
-        
+
     if non_zero_count == 0:
         column_summary["semantic_type"] = "unstructured"
         column_summary["cardinality_ratio"] = 0.0
@@ -31,10 +33,10 @@ def _analyse_column(column: pd.Series)-> dict:
         column_summary["is_unique"] = False
         # return column_summary, is_id_candidate (= False)
         return column_summary, False
-        
-    # Cardinality_ratio is calculated as (unique non-NaN values)/(total non-NaN values).    
+
+    # Cardinality_ratio is calculated as (unique non-NaN values)/(total non-NaN values).
     cardinality_ratio = round(float(unique_count/non_zero_count), 4)
-        
+
     if pdtypes.is_bool_dtype(column):
         column_summary["semantic_type"] = "boolean"
         column_summary["cardinality_ratio"] = cardinality_ratio
@@ -79,18 +81,19 @@ def _analyse_column(column: pd.Series)-> dict:
             column_summary["cardinality_ratio"] = cardinality_ratio
             column_summary["suggested_analysis"] = ""
             column_summary["exclude_for_analysis"] = True
-    
+
     column_summary["is_empty"] = False
     column_summary["is_constant"] = unique_count < 2
     column_summary["is_unique"] = cardinality_ratio == 1.0
     # if column_summary["semantic_type"] == "categorical" and cardinality_ratio == 1.0:
     #     column_summary["exclude_for_analysis"] = True
-    
+
     return column_summary
+
 
 def suggest_profile(
     df: pd.DataFrame
-)-> dict:
+) -> dict:
     profile = {}
     n_rows, n_cols = df.shape
     non_zero_count = sum(df.count(0))
@@ -104,7 +107,7 @@ def suggest_profile(
     profile["exclude_suggestions"] = []
     profile["leakage_columns"] = []
     columns = {}
-    
+
     # To add per-column:
     # 	(numeric) min, max, mean, std, more?
     # 	(categorical) top, freq	Top category, more?
@@ -116,6 +119,6 @@ def suggest_profile(
             profile["id_candidates"].append(column)
         if columns[column]["is_empty"] or columns[column]["is_constant"] or columns[column]["exclude_for_analysis"]:
             profile["exclude_suggestions"].append(column)
-        
+
     profile["columns"] = columns
     return profile

@@ -7,4 +7,3 @@ def test_suggest_profile():
     df = get_dataframe("./testdata/profiler/test_dataset.csv")
     profile = suggest_profile(pd.DataFrame(df))
     assert isinstance(profile, dict)
-    
