@@ -4,6 +4,7 @@ import pandas as pd
 
 
 def test_suggest_profile():
-    df = get_dataframe("./testdata/profiler/test_dataset.csv")
+    df = get_dataframe("./testdata/test_dataset.csv")
     profile = suggest_profile(pd.DataFrame(df))
+    print(profile)
     assert isinstance(profile, dict)
