@@ -24,6 +24,3 @@ def test_trainer():
     report = classification(X, y, semantic_types)
     print(report)
     assert isinstance(profile, dict)
-    
-if __name__ == "__main__":
-    test_trainer()
