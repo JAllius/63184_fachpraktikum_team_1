@@ -1,5 +1,5 @@
 from .profiler import suggest_profile, suggest_schema
-from src.mlcore.io.data_reader import get_dataframe_from_csv
+from ..io.data_reader import get_dataframe_from_csv
 import pandas as pd
 
 
