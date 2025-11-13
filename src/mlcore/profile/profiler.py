@@ -17,7 +17,7 @@ def suggest_schema(
 def _is_sequence_like(
     column: pd.Series,
     thresh: float = 0.9,
-    )-> bool:
+)-> bool:
     # Check the percentage of the elements that are in sequence. If it is higher than the threshold, the column is sequence-like.
     differences = np.diff(np.sort(column))
     consecutive_ratio = (differences == 1).mean()
@@ -25,7 +25,7 @@ def _is_sequence_like(
 
 def _analyse_column(
     column: pd.Series,
-    )-> dict:
+)-> dict:
     non_zero_count = column.count()
     missing_pct = round(float(1 - non_zero_count/len(column)), 4)
     column_summary = {
