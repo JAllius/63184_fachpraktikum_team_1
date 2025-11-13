@@ -6,6 +6,8 @@ from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
 
+VERSION = "1.0"
+
 PRESETS = {
     "n_estimators":{
         "fast": 200,
@@ -20,7 +22,31 @@ def build_model(
     boolean: list = [],
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     random_seed: int = 42,
-    )-> Tuple[Pipeline, dict]:
+)-> Tuple[Pipeline, dict]:
+    
+    metadata = {
+        "problem_id": "",
+        "model_id": "",
+        "model_uri": "",
+        "task": "classification",
+        "target": "",
+        "preset": "random_forest",
+        "version": VERSION,
+        "framework": "scikit-learn",
+        "algorithm": "RandomForestClassifier",
+        "semantic_types": {
+            "categorical": categorical,
+            "numeric": numeric,
+            "boolean": boolean,
+            },
+        "train_mode": train_mode,
+        "schema_snapshot": {
+            "X": {},
+            "y": {},
+            },
+        "random_seed": random_seed,
+        "metrics": {},
+        }
     
     pre_tree = ColumnTransformer(
         transformers=[
@@ -38,14 +64,17 @@ def build_model(
             ]), boolean)
         ]
     )
+    
+    params = {
+        "n_estimators": PRESETS["n_estimators"][train_mode],
+        "n_jobs": -1,
+        "random_state": random_seed,
+    }
+    metadata["params"] = params
+    
     rf = Pipeline([
         ("pre", pre_tree),
-        ("clf", RandomForestClassifier(
-            n_estimators = PRESETS["n_estimators"][train_mode],
-            n_jobs = -1,
-            random_state = random_seed,
-        )),
+        ("clf", RandomForestClassifier(**params)),
     ])
     
-    # Missing Metadata
-    return rf, {}
+    return rf, metadata

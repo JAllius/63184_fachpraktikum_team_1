@@ -17,10 +17,10 @@ def test_classification():
     assert isinstance(out, str)
     
 def test_trainer():
-    df = get_dataframe("./testdata/test_dataset.csv")
+    df = get_dataframe_from_csv("./testdata/test_dataset.csv")
     profile = suggest_profile(pd.DataFrame(df))
     X, y = preprocess_dataframe(df, "target", profile)
     semantic_types = get_semantic_types(X, profile)
-    report = classification(X, y, semantic_types)
+    report = classification("classification", X, y, semantic_types, "random_forest")
     print(report)
     assert isinstance(profile, dict)
