@@ -3,7 +3,7 @@ import pandas.api.types as pdtypes
 import numpy as np
 from src.mlcore.io.synthetic_generators import gen_classification
 from src.mlcore.io.synthetic_generators import gen_csv
-from src.mlcore.io.data_reader import get_dataframe
+from src.mlcore.io.data_reader import get_dataframe_from_csv
 
 
 def suggest_schema(
