@@ -3,6 +3,8 @@ clean:
 	rm -rf ./src/*.egg-info
 	rm -rf ./.pytest_cache
 	rm -rf ./src/**/__pycache__
+	rm -rf ./src/**/**/__pycache__
+	find ./src -empty -type d -delete
 
 clean_venv: clean
 	rm -rf ./venv
@@ -17,7 +19,8 @@ docker: build
 	docker build -t jallius/fachpraktikum-fastapi .
 
 deploy_local: docker
-	docker compose up
+	docker compose down -v
+	docker compose up -d
 
 test:
 	./venv/bin/python3 -m pip install -e '.[test]'
