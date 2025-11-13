@@ -1,11 +1,24 @@
 import traceback
 from time import sleep
-from celery_handler import states
+from celery import states
 
-from ..celery_handler import celery_app
+# ! I don't know why. But. Celery decides to stop working when there is any relative import
+# ! But ONLY if Celery itself starts the python code ¯\_(ツ)_/¯
+
+import os
+from celery import Celery
 
 
-# create celery worker for 'hello.task' task
+CELERY_BROKER_URL = os.getenv("REDISSERVER", "redis://redis_server:6379")
+CELERY_RESULT_BACKEND = os.getenv("REDISSERVER", "redis://redis_server:6379")
+
+celery_app = Celery(
+    "celery",
+    backend=CELERY_BROKER_URL,
+    broker=CELERY_RESULT_BACKEND,
+)
+
+
 @celery_app.task(name="hello.task", bind=True)
 def hello_world(self, name):
     try:
@@ -16,9 +29,9 @@ def hello_world(self, name):
             a = a / b
 
         # update task state every 1 second
-        for i in range(60):
+        for i in range(10):
             sleep(1)
-            self.update_state(state="PROGRESS", meta={"done": i, "total": 60})
+            self.update_state(state="PROGRESS", meta={"done": i, "total": 10})
 
         # return result
         return {"result": f"hello {name}"}

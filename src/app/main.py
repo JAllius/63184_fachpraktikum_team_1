@@ -2,6 +2,7 @@ from ..celery_handler import celery_app
 from fastapi import FastAPI
 from typing import Literal
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,47 @@ app = FastAPI()
 
 @app.get("/")
 async def read_root():
-    return {"msg": "Hello World"}
+    task = celery_app.send_task("hello.task", args=["world"])
+    # return task id and url
+    return dict(
+        id=task.id,
+        url=f"localhost:42000/celery/{task.id}",
+    )
+
+
+@app.get("/celery/{id}")
+def check_task(id: str):
+    # get celery task from id
+    task = celery_app.AsyncResult(id)
+
+    # if task is in success state
+    if task.state == "SUCCESS":
+        response = {
+            "status": task.state,
+            "result": task.result,
+            "task_id": id,
+        }
+
+    # if task is in failure state
+    elif task.state == "FAILURE":
+        response = json.loads(
+            task.backend.get(
+                task.backend.get_key_for_task(task.id),
+            ).decode("utf-8")
+        )
+        del response["children"]
+        del response["traceback"]
+
+    # if task is in other state
+    else:
+        response = {
+            "status": task.state,
+            "result": task.info,
+            "task_id": id,
+        }
+
+    # return response
+    return response
 
 # ========== Dataset ==========
 

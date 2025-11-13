@@ -1,9 +1,9 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: DockerfileApp
-    container_name: fachpraktikum-fastapi
+    image: jallius/fachpraktikum-app
+    # build:
+    #   context: .
+    #   dockerfile: DockerfileApp
     environment:
       REDISSERVER: redis://redis_server:6379
       # C_FORCE_ROOT: "true"
@@ -14,9 +14,10 @@ services:
       - redis_server
 
   worker:
-    build:
-      context: .
-      dockerfile: DockerfileWorker
+    image: jallius/fachpraktikum-worker
+    # build:
+    #   context: .
+    #   dockerfile: DockerfileWorker
     environment:
       REDISSERVER: redis://redis_server:6379
       # C_FORCE_ROOT: "true"
