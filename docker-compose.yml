@@ -9,4 +9,14 @@ services:
       PORT: 80
     ports:
       - '42000:80'
-    restart: "no"
+    restart: "unless-stopped"
+
+  db:
+    image: mysql
+    container_name: fachpraktikum-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: safe123
+    ports:
+      - "3306:3306"
+      - "33060:33060"

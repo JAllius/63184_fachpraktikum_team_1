@@ -4,7 +4,8 @@ dynamic = ["version"]
 
 dependencies = [
   "fastapi[standard]>=0.120",
-  "pydantic"
+  "pydantic",
+  "mysql-connector-python"
 ]
 
 [project.optional-dependencies]
