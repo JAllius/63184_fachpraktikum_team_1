@@ -1,0 +1,8 @@
+FROM python:3.13
+WORKDIR /code
+COPY ./pyproject.toml /code/pyproject.toml
+RUN pip install --no-cache-dir --upgrade -e '/code[worker]' 
+COPY ./src/worker /code/worker
+COPY ./src/mlcore /code/mlcore
+COPY ./src/celery_handler /code/celery_handler
+ENTRYPOINT ["celery", "-A tasks worker", "--loglevel=info"]

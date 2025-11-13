@@ -1,3 +1,4 @@
+from ..celery_handler import celery_app
 from fastapi import FastAPI
 from typing import Literal
 import logging

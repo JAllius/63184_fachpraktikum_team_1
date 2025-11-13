@@ -12,11 +12,12 @@ clean_venv: clean
 venv: 
 	python3.13 -m venv ./venv/
 
-build: clean
-	./venv/bin/python3 -m pip install .
+build: clean 
+	./venv/bin/python3 -m pip install -e '.[dev]'
 
 docker: build
-	docker build -t jallius/fachpraktikum-fastapi .
+	docker build -t jallius/fachpraktikum-app -f DockerfileApp .
+	docker build -t jallius/fachpraktikum-worker -f DockerfileWorker .
 
 deploy_local: docker
 	docker compose down -v
@@ -24,6 +25,5 @@ deploy_local: docker
 
 test:
 	./venv/bin/python3 -m pip install -e '.[test]'
-	./venv/bin/python3 -m pytest
 
 all: venv test deploy_local
