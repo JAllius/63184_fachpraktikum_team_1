@@ -2,11 +2,18 @@ import pandas as pd
 from typing import Tuple
 
 
-def get_dataframe(
+def get_dataframe_from_csv(
     uri: str,
 ) -> pd.DataFrame:
-    df = pd.read_csv(uri)
-    return df
+    if not uri:
+        raise ValueError("No csv_uri was provided. Provide a csv_uri.")
+    
+    try:
+        df = pd.read_csv(uri)
+        return df
+    except Exception as e:
+        print(f"Failed to load csv: {e}")
+        raise
 
 def _check_profile(profile):
     if not profile:
