@@ -2,8 +2,7 @@ clean:
 	rm -rf ./build
 	rm -rf ./src/*.egg-info
 	rm -rf ./.pytest_cache
-	rm -rf ./src/**/__pycache__
-	rm -rf ./src/**/**/__pycache__
+	find . \( -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" \) -exec rm -rf {} +
 	find ./src -empty -type d -delete
 
 clean_venv: clean
@@ -11,6 +10,7 @@ clean_venv: clean
 
 venv: 
 	python3.13 -m venv ./venv/
+	./venv/bin/python3 -m pip install --upgrade pip
 
 build: clean 
 	./venv/bin/python3 -m pip install -e '.[dev]'
@@ -25,5 +25,6 @@ deploy_local: docker
 
 test:
 	./venv/bin/python3 -m pip install -e '.[test]'
+	./venv/bin/python3 -m pytest
 
 all: venv test deploy_local
