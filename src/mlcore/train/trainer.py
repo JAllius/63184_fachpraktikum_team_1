@@ -13,6 +13,7 @@ def train(
     semantic_types: dict,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+    test_size_ratio: float = 0.2,
     random_seed: int = 42,    
 )-> str:
     
@@ -21,7 +22,7 @@ def train(
     boolean = semantic_types["boolean"]
     
     X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.20, stratify=y, random_state= random_seed
+            X, y, test_size=test_size_ratio, stratify=y, random_state= random_seed
         )
     
     build_model = loader(task, algorithm)

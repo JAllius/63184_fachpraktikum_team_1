@@ -5,10 +5,13 @@ import json
 def save_model(
     model,
     metadata: dict,
-    base_dir: str = "./testdata/models/problem_id/model_id",
+    problem_id: str,
+    model_id: str,
+    base_dir: str = "./testdata/models",
 )-> str:
-    model_path = Path(base_dir) / "model.joblib"
-    metadata_path = Path(base_dir) / "metadata.json"
+    path = Path(base_dir) / problem_id / model_id
+    model_path = Path(path) / "model.joblib"
+    metadata_path = Path(path) / "metadata.json"
     
     try:
         from joblib import dump

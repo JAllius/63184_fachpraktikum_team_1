@@ -8,8 +8,8 @@ def predict(
     input: pd.DataFrame | None = None,
     input_uri: str| None = None,
     problem_id: str | None = None,
-    model_uri: str | None = None,
-    model_id: str | None = "production",   
+    model_id: str | None = "production",
+    model_uri: str | None = None,   
 )-> str:
     
     if not input and not input_uri:
