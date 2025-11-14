@@ -1,7 +1,7 @@
 name: Pytest CI
 
 env:
-  PYTEST_CI_MODE: True
+  PYTEST_CI_MODE: "True"
 
 on:
   push:
