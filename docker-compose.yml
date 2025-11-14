@@ -21,10 +21,14 @@ services:
     environment:
       REDISSERVER: redis://redis_server:6379
       # C_FORCE_ROOT: "true"
+    deploy:
+      mode: replicated
+      replicas: 3
     depends_on:
       - redis_server
   redis_server:
     image: redis
+
 
   flower:
     image: mher/flower
