@@ -1,6 +1,7 @@
 import mysql.connector
 import pytest
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ def db_session(init_pytest_db):
     mydb.disconnect()
 
 
+@pytest.mark.skipif(os.environ.get("PYTEST_CI_MODE"), reason="does not work in CI pipeline")
 def test_root_db_access(root):
     return
 
