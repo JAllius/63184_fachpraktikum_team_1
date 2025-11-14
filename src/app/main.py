@@ -1,5 +1,5 @@
 from ..celery_handler import celery_app
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from typing import Literal
 import logging
 import json
@@ -9,13 +9,30 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 
+def get_domain(request: Request):
+    """Takes a request and returns the domain as a string"""
+    scheme = request.url.scheme  # "http" or "https"
+    hostname = request.url.hostname  # "localhost" or "example.com"
+    port = request.url.port  # e.g., 8000
+
+    # Default ports for schemes
+    default_ports = {"http": 80, "https": 443}
+    domain = f"{scheme}://{hostname}"
+
+    # Add port if non-default
+    if port != default_ports.get(scheme):
+        domain += f":{port}"
+    return domain
+
+
 @app.get("/")
-async def read_root():
+async def read_root(request: Request):
+    logger.info("Sending celery task 'hello.task'")
     task = celery_app.send_task("hello.task", args=["world"])
     # return task id and url
     return dict(
         id=task.id,
-        url=f"localhost:42000/celery/{task.id}",
+        url=f"{get_domain(request)}/celery/{task.id}",
     )
 
 
