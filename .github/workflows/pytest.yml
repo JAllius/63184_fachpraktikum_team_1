@@ -18,4 +18,4 @@ jobs:
       with:
         python-version: '3.13' 
     - name: Install test environment and run pytest
-      run: make venv ; make test
+      run: make test
