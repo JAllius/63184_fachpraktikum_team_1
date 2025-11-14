@@ -15,6 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker App image
-      run: docker build . --file DockerfileApp --tag fachpraktikum-app:$(date +%s)
+      run: docker build . --file DockerfileApp --tag jallius/fachpraktikum-app:$(date +%s)
     - name: Build the Docker Worker image
-      run: docker build . --file DockerfileWorker --tag fachpraktikum-worker:$(date +%s)
+      run: docker build . --file DockerfileWorker --tag jallius/fachpraktikum-worker:$(date +%s)
