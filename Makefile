@@ -1,3 +1,7 @@
+.PHONY: all clean clean_venv venv build docker deploy_local test
+
+all: venv test deploy_local
+
 clean:
 	rm -rf ./build
 	rm -rf ./src/*.egg-info
@@ -26,5 +30,3 @@ deploy_local: docker
 test:
 	./venv/bin/python3 -m pip install -e '.[test]'
 	./venv/bin/python3 -m pytest
-
-all: venv test deploy_local
