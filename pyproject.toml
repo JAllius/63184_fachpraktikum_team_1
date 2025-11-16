@@ -26,6 +26,7 @@ dependencies = [
   "joblib==1.4.2",
   # mysql dependencies:
   "mysql-connector-python",
+  "pymysql>=1.1",
 ]
 
 [build-system]
