@@ -1,61 +1,40 @@
-# db/init_db.py
-# Simple MySQL DB init script for our project
+# src/db/init_db.py
+import os
+import pymysql
 
-import mysql.connector
-import logging
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
+DB_NAME = os.getenv("DB_NAME", "team1_db")
+DB_USER = os.getenv("DB_USER", "team1_user")
+DB_PASS = os.getenv("DB_PASS", "team1_pass")
 
-# TODO: get from config
-DB_HOST = "localhost"
-DB_USER = "root"
-DB_PW = "safe123"
-DB_NAME = "app"
+SCHEMA_PATH = os.getenv("SCHEMA_PATH", "db/schema_mysql.sql")
+SEED_PATH = os.getenv("SEED_PATH", "db/seed.sql")  # optional
 
-logger = logging.getLogger(__name__)
+def run_sql_file(cur, path):
+    with open(path, "r", encoding="utf-8") as f:
+        sql = f.read()
+    # naive splitter: works fine for our simple DDL/seed (no DELIMITER blocks)
+    statements = [s.strip() for s in sql.split(";") if s.strip()]
+    for stmt in statements:
+        cur.execute(stmt)
 
-
-def main():
-    # connect to MySQL
-    conn = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PW
+def main(apply_seed: bool = True):
+    print(f"Connecting to MySQL {DB_HOST}:{DB_PORT} db={DB_NAME} as {DB_USER} ...")
+    conn = pymysql.connect(
+        host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS,
+        database=DB_NAME, autocommit=True, cursorclass=pymysql.cursors.DictCursor,
     )
-    cur = conn.cursor()
+    try:
+        with conn.cursor() as cur:
+            print(f"Applying schema: {SCHEMA_PATH}")
+            run_sql_file(cur, SCHEMA_PATH)
+            if apply_seed and os.path.exists(SEED_PATH):
+                print(f"Applying seed:   {SEED_PATH}")
+                run_sql_file(cur, SEED_PATH)
+        print("✅ DB initialized.")
+    finally:
+        conn.close()
 
-    cur.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}")
-
-    # connect to MySQL database
-    conn = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PW,
-        database=DB_NAME
-    )
-    cur = conn.cursor()
-
-    # table for uploads (datasets that are processed)
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS 
-    uploads (
-        id INTEGER PRIMARY KEY AUTO_INCREMENT,
-        filename TEXT NOT NULL,
-        uploaded_at TEXT NOT NULL
-    );
-    """)
-
-    # table for predictions (results of models)
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS 
-    predictions (
-        id INTEGER PRIMARY KEY AUTO_INCREMENT,
-        upload_id INTEGER NOT NULL,
-        model_name TEXT NOT NULL,
-        result_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY(upload_id) REFERENCES uploads(id)
-    );
-    """)
-
-    conn.commit()
-    conn.close()
-    logger.info(f"Database initialized")
+if __name__ == "__main__":
+    main(apply_seed=True)
