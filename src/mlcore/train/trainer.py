@@ -64,15 +64,13 @@ def train(
         preprocessor = model.named_steps.get("pre")
         X_train_shap = preprocessor.transform(X_train)
         X_test_shap = preprocessor.transform(X_test)
+        # explanation = explain_model(task, model_shap, X_train_shap, X_test_shap)
         explain_model(task, model_shap, X_train_shap, X_test_shap)
         
     # model_id = uuid.uuid4()   
-    model_id = "c5d6ecb2-4c62-4fcb-a85a-63f9e8d3e4b9"    
-    model_uri = save_model(model, metadata, problem_id, model_id, "./testdata/models")
-    
+    model_id = "c5d6ecb2-4c62-4fcb-a85a-63f9e8d3e4b9"
     metadata["problem_id"] = problem_id
     metadata["model_id"] = model_id
-    metadata["model_uri"] = model_uri
     metadata["target"] = problem.get("target")
     metadata["schema_snapshot"]["X"] = {
         column : str(X[column].dtype) for column in X.columns 
@@ -83,6 +81,8 @@ def train(
     metadata["metrics"] = metrics
     if explanation:
         metadata["explanation"] = explanation
+   
+    model_uri = save_model(model, metadata, problem_id, model_id, "./testdata/models") 
     
     return model_uri
 

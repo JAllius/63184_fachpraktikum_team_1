@@ -16,8 +16,9 @@ def save_model(
     model_path = os.path.join(path, "model.joblib")
     metadata_path = os.path.join(path, "metadata.json")
     
+    metadata["model_uri"] = model_path
+    
     try:
-        from joblib import dump
         dump(model, model_path, compress=3)
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=4)

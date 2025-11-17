@@ -14,7 +14,7 @@ def calculate_metrics(
         metrics = regression_metrics(y_true, y_pred)
     else:
         raise ValueError(f"Invalid task: '{task}'. Expected 'classification' or 'regression'.")
-            
+    return metrics
 
 def classification_metrics(
     y_true: pd.Series,
