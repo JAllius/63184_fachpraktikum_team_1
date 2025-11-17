@@ -8,3 +8,4 @@
 - create presets (min. 1 regression preset)
 - error handling
 - documentation (functions, rows)
+- numpy version <2

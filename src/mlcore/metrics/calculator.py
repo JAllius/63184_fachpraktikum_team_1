@@ -13,7 +13,7 @@ def calculate_metrics(
     elif task == "regression":
         metrics = regression_metrics(y_true, y_pred)
     else:
-        raise ValueError(f"Invalid task: '{task}'. Expected 'classification' / 'regression'.")
+        raise ValueError(f"Invalid task: '{task}'. Expected 'classification' or 'regression'.")
             
 
 def classification_metrics(

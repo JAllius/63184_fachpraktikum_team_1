@@ -1,6 +1,7 @@
 from joblib import dump
 from pathlib import Path
 import json
+import os
 
 def save_model(
     model,
@@ -9,9 +10,11 @@ def save_model(
     model_id: str,
     base_dir: str = "./testdata/models",
 )-> str:
-    path = Path(base_dir) / problem_id / model_id
-    model_path = Path(path) / "model.joblib"
-    metadata_path = Path(path) / "metadata.json"
+    path = os.path.join(base_dir, problem_id, model_id)
+    os.makedirs(path, exist_ok=True)
+
+    model_path = os.path.join(path, "model.joblib")
+    metadata_path = os.path.join(path, "metadata.json")
     
     try:
         from joblib import dump

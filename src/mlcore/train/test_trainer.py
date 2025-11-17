@@ -2,7 +2,7 @@ from .trainer import train
 from src.mlcore.io.synthetic_generators import gen_classification
 from numpy import ndarray
 from src.mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
-from src.mlcore.profile.profiler import suggest_profile
+from src.mlcore.profile.profiler import suggest_profile, suggest_schema
 import pandas as pd
 
 def test_gen_classification():
@@ -17,15 +17,9 @@ def test_classification():
     assert isinstance(out, str)
     
 def test_trainer():
-    df = get_dataframe_from_csv("./testdata/test_dataset.csv")
-    profile = suggest_profile(pd.DataFrame(df))
-    X, y = preprocess_dataframe(df, "target", profile)
-    semantic_types = get_semantic_types(X, profile)
-    print(semantic_types)
-    print(X)
-    report = train("classification", X, y, semantic_types, "random_forest")
-    print(report)
-    assert isinstance(profile, dict)
+    problem_id = "7f3c6b2a-4c1e-4f7b-bb59-3c9e5c1f0e8d"
+    model_uri = train(problem_id, "random_forest")
+    assert isinstance(model_uri, str)
     
 if __name__=="__main__":
     test_trainer()
