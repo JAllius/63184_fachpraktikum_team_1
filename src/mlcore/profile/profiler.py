@@ -1,31 +1,30 @@
 import pandas as pd
 import pandas.api.types as pdtypes
 import numpy as np
-from src.mlcore.io.synthetic_generators import gen_classification
-from src.mlcore.io.synthetic_generators import gen_csv
-from src.mlcore.io.data_reader import get_dataframe_from_csv
 
 
 def suggest_schema(
     df: pd.DataFrame,
-)-> dict:
+) -> dict:
     schema = {}
     for column in df.columns:
         schema[column] = str(df[column].dtype)
     return schema
 
+
 def _is_sequence_like(
     column: pd.Series,
     thresh: float = 0.9,
-)-> bool:
+) -> bool:
     # Check the percentage of the elements that are in sequence. If it is higher than the threshold, the column is sequence-like.
     differences = np.diff(np.sort(column))
     consecutive_ratio = (differences == 1).mean()
     return consecutive_ratio >= thresh
 
+
 def _analyse_column(
     column: pd.Series,
-)-> dict:
+) -> dict:
     non_zero_count = column.count()
     missing_pct = round(float(1 - non_zero_count/len(column)), 4)
     column_summary = {
@@ -38,8 +37,8 @@ def _analyse_column(
         "is_empty": False,
         "is_constant": False,
         "is_unique": False,
-        "exclude_for_analysis": False,        
-        }
+        "exclude_for_analysis": False,
+    }
 
     # Check if the column is empty first, so that cardinality_ratio does not raise an error when non_zero_count = 0
     if non_zero_count == 0:
@@ -47,9 +46,9 @@ def _analyse_column(
         column["is_constant"] = True,
         column["exclusion_reason"] = "empty",
         return column_summary
-        
+
     # Cardinality_ratio is calculated as (unique non-NaN values)/(total non-NaN values).
-    cardinality = column.nunique(dropna=True)    
+    cardinality = column.nunique(dropna=True)
     cardinality_ratio = round(float(cardinality/non_zero_count), 4)
     column_summary["cardinality"] = cardinality
     column_summary["cardinality_ratio"] = cardinality_ratio
@@ -57,20 +56,20 @@ def _analyse_column(
     is_constant = cardinality < 2
     column_summary["is_constant"] = is_constant
     column_summary["is_unique"] = is_unique
-        
+
     if pdtypes.is_integer_dtype(column):
         column_summary["semantic_type"] = "numeric"
         column_summary["min"] = int(column.dropna().min())
         column_summary["max"] = int(column.dropna().max())
         column_summary["mean"] = round(float(column.dropna().mean()), 4)
         column_summary["std"] = round(float(column.dropna().std()), 4)
-        
+
         # Quick check if the column is constant. If it is, suggest exclude.
         if is_constant:
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "constant"
             return column_summary
-        
+
         # For integers: check cardinality to suggest analysis type.
         # 2-rule check:
         #   1) If the cardinality ratio is low <= 20%, suggest classification.
@@ -81,11 +80,13 @@ def _analyse_column(
         if cardinality_ratio <= 0.2:
             column_summary["suggested_analysis"] = "classification"
         else:
-            coverage_top3 = column.value_counts(normalize=True, dropna=True).head(3).sum() # normalize=True to get the frequencies instead of the counts
+            coverage_top3 = column.value_counts(normalize=True, dropna=True).head(
+                # normalize=True to get the frequencies instead of the counts
+                3).sum()
             if coverage_top3 >= 0.8:
                 column_summary["suggested_analysis"] = "classification"
             else:
-            # Quick check if the column is unique or not.
+                # Quick check if the column is unique or not.
                 if is_unique:
                     if _is_sequence_like(column, 0.9):
                         # Column seems like a numeric id-column.
@@ -103,14 +104,14 @@ def _analyse_column(
         column_summary["max"] = round(float(column.dropna().max()), 4)
         column_summary["mean"] = round(float(column.dropna().mean()), 4)
         column_summary["std"] = round(float(column.dropna().std()), 4)
-        
+
         if is_constant:
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "constant"
             return column_summary
         column_summary["suggested_analysis"] = "regression"
         return column_summary
-    
+
     if column.dtype == "object":
         column_summary["semantic_type"] = "categorical"
         # Quick check if the column is unique. If it is, suggest exclude.
@@ -118,19 +119,22 @@ def _analyse_column(
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "id_like"
             return column_summary
-        
-        coverage_top3 = column.value_counts(normalize=True, dropna=True).head(3).sum() # normalize=True to get the frequencies instead of the counts
-        top = column.value_counts(dropna=True).head(1).sum() # normalize=True to get the frequencies instead of the counts
-        top_freq_ratio = column.value_counts(normalize=True, dropna=True).head(1).sum() # normalize=True to get the frequencies instead of the counts
+
+        coverage_top3 = column.value_counts(normalize=True, dropna=True).head(
+            3).sum()  # normalize=True to get the frequencies instead of the counts
+        # normalize=True to get the frequencies instead of the counts
+        top = column.value_counts(dropna=True).head(1).sum()
+        top_freq_ratio = column.value_counts(normalize=True, dropna=True).head(
+            1).sum()  # normalize=True to get the frequencies instead of the counts
         column_summary["top"] = str(top)
         column_summary["top_freq_ratio"] = round(float(top_freq_ratio), 4)
         column_summary["coverage_top3"] = round(float(coverage_top3), 4)
-        
+
         if is_constant:
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "constant"
             return column_summary
-        
+
         # For objects: check cardinality to understand if it is a categorical column or not.
         # 2-rule check:
         #   1) If the cardinality ratio is low <= 20%, suggest categorical semantic type.
@@ -146,7 +150,7 @@ def _analyse_column(
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "high_cardinality"
         return column_summary
-        
+
     if pdtypes.is_bool_dtype(column):
         column_summary["semantic_type"] = "boolean"
         ratios = column.value_counts(normalize=True, dropna=True)
@@ -154,19 +158,21 @@ def _analyse_column(
         false_pct = round(float(ratios.get(False, 0.0)), 4)
         column_summary["true_pct"] = true_pct
         column_summary["false_pct"] = false_pct
-        
+
         if is_constant:
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "constant"
             return column_summary
         column_summary["suggested_analysis"] = "classification"
         return column_summary
-            
+
     if pdtypes.is_datetime64_any_dtype(column):
         column_summary["semantic_type"] = "datetime"
-        column_summary["earliest_date"] = column.dropna().min().date().isoformat()
-        column_summary["latest_date"] = column.dropna().max().date().isoformat()
-        
+        column_summary["earliest_date"] = column.dropna(
+        ).min().date().isoformat()
+        column_summary["latest_date"] = column.dropna(
+        ).max().date().isoformat()
+
         if is_constant:
             column_summary["exclude_for_analysis"] = True
             column_summary["exclusion_reason"] = "constant"
@@ -176,9 +182,10 @@ def _analyse_column(
         column_summary["exclusion_reason"] = "datetime"
         return column_summary
 
+
 def suggest_profile(
     df: pd.DataFrame,
-)-> dict:
+) -> dict:
     profile = {}
     n_rows, n_cols = df.shape
     non_zero_count = sum(df.count(0))
@@ -192,7 +199,7 @@ def suggest_profile(
     profile["exclude_suggestions"] = []
     profile["leakage_columns"] = []
     columns = {}
-    
+
     for column in df.columns:
         columns[column] = _analyse_column(df[column])
         if columns[column]["is_unique"]:
