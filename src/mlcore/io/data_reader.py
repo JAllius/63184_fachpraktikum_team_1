@@ -60,7 +60,7 @@ def preprocess_dataframe(
     return X, y
 
 def get_semantic_types(
-    columns: list,
+    X: pd.DataFrame,
     profile: dict,
 )-> dict:
     semantic_types = {
@@ -71,7 +71,7 @@ def get_semantic_types(
     
     _check_profile(profile)
     
-    for column in columns:
+    for column in X.columns:
         semantic_type = profile["columns"].get(column, {}).get("semantic_type")
         if semantic_type in semantic_types:
             semantic_types[semantic_type].append(column)

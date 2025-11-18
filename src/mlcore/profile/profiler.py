@@ -1,9 +1,6 @@
 import pandas as pd
 import pandas.api.types as pdtypes
 import numpy as np
-from ..io.synthetic_generators import gen_classification
-from ..io.synthetic_generators import gen_csv
-from ..io.data_reader import get_dataframe_from_csv
 
 
 def suggest_schema(

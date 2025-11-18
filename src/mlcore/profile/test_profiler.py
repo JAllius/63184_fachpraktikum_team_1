@@ -8,3 +8,6 @@ def test_suggest_profile():
     profile = suggest_profile(pd.DataFrame(df))
     print(profile)
     assert isinstance(profile, dict)
+
+if __name__ == "__main__":
+    test_suggest_profile()

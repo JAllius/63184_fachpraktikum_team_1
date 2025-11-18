@@ -3,11 +3,11 @@
 all: venv test deploy_local
 
 clean:
-	rm -rf ./build
-	rm -rf ./src/*.egg-info
-	rm -rf ./.pytest_cache
-	find . \( -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" \) -exec rm -rf {} +
-	find ./src -empty -type d -delete
+	-rm -rf ./build
+	-rm -rf ./src/*.egg-info
+	-rm -rf ./.pytest_cache
+	-find . \( -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" \) -exec rm -rf {} +
+	-find ./src -empty -type d -delete
 
 clean_venv: clean
 	rm -rf ./venv
