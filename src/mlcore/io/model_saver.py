@@ -10,13 +10,15 @@ def save_model(
     model_id: str,
     base_dir: str = "./testdata/models",
 )-> str:
-    path = os.path.join(base_dir, problem_id, model_id)
-    os.makedirs(path, exist_ok=True)
+    base_path = Path(base_dir)
+    model_dir = base_path / problem_id / model_id
+    model_dir.mkdir(parents=True, exist_ok=True)
 
-    model_path = os.path.join(path, "model.joblib")
-    metadata_path = os.path.join(path, "metadata.json")
+    model_path = model_dir / "model.joblib"
+    metadata_path = model_dir / "metadata.json"
     
-    metadata["model_uri"] = model_path
+    # Store POSIX-style path in metadata for portability (works in Linux and Windows)
+    metadata["model_uri"] = model_path.as_posix()
     
     try:
         dump(model, model_path, compress=3)

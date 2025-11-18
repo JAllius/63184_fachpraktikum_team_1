@@ -16,8 +16,7 @@ def load_metadata(
     
     try:
         if metadata_uri:
-            with open(metadata_uri, "r") as f:
-                metadata = json.load(f)
+            metadata_path = Path(metadata_uri)
         else:
             if model_id == "production":
                 

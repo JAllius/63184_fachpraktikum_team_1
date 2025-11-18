@@ -16,8 +16,7 @@ def load_model(
     
     try:
         if model_uri:
-            model = load(model_uri)
-            return model
+            model_path = Path(model_uri)
         else:
             if model_id == "production":
                 
@@ -25,12 +24,10 @@ def load_model(
                 replace_this_line = 1
                 
                 model_path = replace_this_line
-                model = load(model_path)
-                return model
             else:
-                path = Path(base_dir) / problem_id / model_id / "model.joblib"
-                model = load(path)
-                return model
+                model_path = Path(base_dir) / problem_id / model_id / "model.joblib"
+        model = load(model_path)
+        return model
     except Exception as e:
         print(f"Failed to load model: {e}")
         raise
