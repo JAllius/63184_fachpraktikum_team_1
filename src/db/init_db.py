@@ -32,9 +32,9 @@ def main(apply_seed: bool = True):
             if apply_seed and os.path.exists(SEED_PATH):
                 print(f"Applying seed:   {SEED_PATH}")
                 run_sql_file(cur, SEED_PATH)
-        print("✅ DB initialized.")
+        print("DB initialized.")
     finally:
         conn.close()
 
 if __name__ == "__main__":
-    main(apply_seed=True)
+    main(apply_seed=False)
