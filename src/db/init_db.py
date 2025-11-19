@@ -8,13 +8,13 @@ DB_NAME = os.getenv("DB_NAME", "team1_db")
 DB_USER = os.getenv("DB_USER", "team1_user")
 DB_PASS = os.getenv("DB_PASS", "team1_pass")
 
-SCHEMA_PATH = os.getenv("SCHEMA_PATH", "db/schema_mysql.sql")
-SEED_PATH = os.getenv("SEED_PATH", "db/seed.sql")  # optional
+SCHEMA_PATH = os.getenv("SCHEMA_PATH", "src/db/schema_mysql.sql")
+SEED_PATH = os.getenv("SEED_PATH", "src/db/seed.sql") 
 
 def run_sql_file(cur, path):
     with open(path, "r", encoding="utf-8") as f:
         sql = f.read()
-    # naive splitter: works fine for our simple DDL/seed (no DELIMITER blocks)
+    
     statements = [s.strip() for s in sql.split(";") if s.strip()]
     for stmt in statements:
         cur.execute(stmt)
