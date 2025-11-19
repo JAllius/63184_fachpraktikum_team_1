@@ -1,15 +1,74 @@
-from fastapi import FastAPI
+from ..celery_handler import celery_app
+from fastapi import FastAPI, Request
 from typing import Literal
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
 
+def get_domain(request: Request):
+    """Takes a request and returns the domain as a string"""
+    scheme = request.url.scheme  # "http" or "https"
+    hostname = request.url.hostname  # "localhost" or "example.com"
+    port = request.url.port  # e.g., 8000
+
+    # Default ports for schemes
+    default_ports = {"http": 80, "https": 443}
+    domain = f"{scheme}://{hostname}"
+
+    # Add port if non-default
+    if port != default_ports.get(scheme):
+        domain += f":{port}"
+    return domain
+
+
 @app.get("/")
-async def read_root():
-    return {"msg": "Hello World"}
+async def read_root(request: Request):
+    logger.info("Sending celery task 'hello.task'")
+    task = celery_app.send_task("hello.task", args=["world"])
+    # return task id and url
+    return dict(
+        id=task.id,
+        url=f"{get_domain(request)}/celery/{task.id}",
+    )
+
+
+@app.get("/celery/{id}")
+def check_task(id: str):
+    # get celery task from id
+    task = celery_app.AsyncResult(id)
+
+    # if task is in success state
+    if task.state == "SUCCESS":
+        response = {
+            "status": task.state,
+            "result": task.result,
+            "task_id": id,
+        }
+
+    # if task is in failure state
+    elif task.state == "FAILURE":
+        response = json.loads(
+            task.backend.get(
+                task.backend.get_key_for_task(task.id),
+            ).decode("utf-8")
+        )
+        del response["children"]
+        del response["traceback"]
+
+    # if task is in other state
+    else:
+        response = {
+            "status": task.state,
+            "result": task.info,
+            "task_id": id,
+        }
+
+    # return response
+    return response
 
 # ========== Dataset ==========
 

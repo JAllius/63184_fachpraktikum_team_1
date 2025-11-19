@@ -11,11 +11,11 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
-dependencies = [
-  # fastapi dependencies:
-  "fastapi[standard]==0.120.4",
-  "pydantic==2.12.3",
-  # mlcore dependencies:
+dependencies = ["celery", "redis", "mysql-connector-python"]
+
+[project.optional-dependencies]
+app = ["fastapi[standard]==0.120.4", "pydantic==2.12.3"]
+worker = [
   "pandas==2.2.3",
   "numpy==2.1.2",
   "scikit-learn==1.5.2",
@@ -28,10 +28,9 @@ dependencies = [
   "mysql-connector-python",
   "pymysql>=1.1",
 ]
+dev = ["fachpraktikum[app,worker]"]
+test = ["fachpraktikum[app,worker]", "httpx", "pytest"]
 
 [build-system]
 requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
-
-[project.optional-dependencies]
-test = ["httpx", "pytest"]

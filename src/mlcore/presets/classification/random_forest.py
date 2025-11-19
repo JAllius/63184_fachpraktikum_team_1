@@ -46,9 +46,12 @@ def build_model(
             },
         "random_seed": random_seed,
         "metrics": {},
+        "explanation": {},
         }
     
-    pre_tree = ColumnTransformer(
+    
+    
+    preprocessor = ColumnTransformer(
         transformers=[
             ("cat", Pipeline([
                 ("impute", SimpleImputer(strategy = "constant", fill_value = "__missing__")),
@@ -60,7 +63,7 @@ def build_model(
                 ]), numeric),
             ("bool", Pipeline([
                 ("impute", SimpleImputer(strategy = "most_frequent")),
-                ("to_int", FunctionTransformer(lambda X: X.astype(int))), # transform boolean dtypes to int 1/0
+                ("pass", "passthrough"),
             ]), boolean)
         ]
     )
@@ -73,8 +76,11 @@ def build_model(
     metadata["params"] = params
     
     rf = Pipeline([
-        ("pre", pre_tree),
-        ("clf", RandomForestClassifier(**params)),
+        ("pre", preprocessor),
+        ("est", RandomForestClassifier(**params)),
     ])
     
     return rf, metadata
+
+def _bool_to_int(X):
+    return X.astype(int)
