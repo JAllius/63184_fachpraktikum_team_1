@@ -7,7 +7,7 @@ from celery_handler import celery_app
 from mlcore.profile.profiler import suggest_profile
 from mlcore.predict.predictor import predict
 from mlcore.train.trainer import train
-from celery import Celery, states
+from celery import states
 import traceback
 from time import sleep
 import pandas as pd
