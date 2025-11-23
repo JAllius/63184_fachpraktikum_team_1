@@ -185,14 +185,26 @@ async def get_problem(problem_id: int):
 
 @app.post("/train")
 async def post_train(
-    user_id: int,
-    problem_id: int,
+    request: Request,
+    # user_id: int,
+    problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     explanation: bool = True,
 ):
     """create a request/job to train a model for a given problem_id and return model_id"""
-    return {}
+    logger.info("Sending celery task 'train.task'")
+
+    # TODO: re-add user_id when we add checking for permissions
+
+    task = celery_app.send_task(
+        "train.task", args=[problem_id, algorithm, train_mode, explanation])
+
+    # return task id and url
+    return dict(
+        id=task.id,
+        url=f"{get_domain(request)}/celery/{task.id}",
+    )
 
 # ========== ML_Predict ==========
 
