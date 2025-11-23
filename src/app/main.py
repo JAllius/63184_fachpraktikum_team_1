@@ -1,5 +1,8 @@
 from ..celery_handler import celery_app
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
+import starlette.status as status
+
 from typing import Literal
 import logging
 import json
@@ -26,14 +29,10 @@ def get_domain(request: Request):
 
 
 @app.get("/")
-async def read_root(request: Request):
+async def read_root():
     logger.info("Sending celery task 'hello.task'")
     task = celery_app.send_task("hello.task", args=["world"])
-    # return task id and url
-    return dict(
-        id=task.id,
-        url=f"{get_domain(request)}/celery/{task.id}",
-    )
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/celery/{id}")
@@ -185,7 +184,6 @@ async def get_problem(problem_id: int):
 
 @app.post("/train")
 async def post_train(
-    request: Request,
     # user_id: int,
     problem_id: str,
     algorithm: str = "auto",
@@ -200,11 +198,7 @@ async def post_train(
     task = celery_app.send_task(
         "train.task", args=[problem_id, algorithm, train_mode, explanation])
 
-    # return task id and url
-    return dict(
-        id=task.id,
-        url=f"{get_domain(request)}/celery/{task.id}",
-    )
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Predict ==========
 
