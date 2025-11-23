@@ -25,8 +25,8 @@ def _is_sequence_like(
 def _analyse_column(
     column: pd.Series,
 ) -> dict:
-    non_zero_count = column.count()
-    missing_pct = round(float(1 - non_zero_count/len(column)), 4)
+    non_nan_count = column.count()
+    missing_pct = round(float(1 - non_nan_count/len(column)), 4)
     column_summary = {
         "dtype_raw": str(column.dtype),
         "semantic_type": "undefined",
@@ -40,8 +40,8 @@ def _analyse_column(
         "exclude_for_analysis": False,
     }
 
-    # Check if the column is empty first, so that cardinality_ratio does not raise an error when non_zero_count = 0
-    if non_zero_count == 0:
+    # Check if the column is empty first, so that cardinality_ratio does not raise an error when non_nan_count = 0
+    if non_nan_count == 0:
         column["is_empty"] = True,
         column["is_constant"] = True,
         column["exclusion_reason"] = "empty",
@@ -49,7 +49,7 @@ def _analyse_column(
 
     # Cardinality_ratio is calculated as (unique non-NaN values)/(total non-NaN values).
     cardinality = column.nunique(dropna=True)
-    cardinality_ratio = round(float(cardinality/non_zero_count), 4)
+    cardinality_ratio = round(float(cardinality/non_nan_count), 4)
     column_summary["cardinality"] = cardinality
     column_summary["cardinality_ratio"] = cardinality_ratio
     is_unique = cardinality_ratio == 1.0
@@ -188,8 +188,8 @@ def suggest_profile(
 ) -> dict:
     profile = {}
     n_rows, n_cols = df.shape
-    non_zero_count = sum(df.count(0))
-    missing_pct = round(1 - non_zero_count/(n_cols*n_rows), 4)
+    non_nan_count = sum(df.count(0))
+    missing_pct = round(1 - non_nan_count/(n_cols*n_rows), 4)
     summary = {}
     summary["n_rows"] = n_rows
     summary["n_cols"] = n_cols

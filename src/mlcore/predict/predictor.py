@@ -49,7 +49,7 @@ def predict(
             target = metadata.get("target")
 
     if target in X.columns:
-        X.drop(columns=target)
+        X.drop(columns=[target])
 
     ### MISSING ###
     # Check schema snapshot and compare with X
