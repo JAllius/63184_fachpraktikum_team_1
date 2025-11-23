@@ -1,25 +1,16 @@
+# add project root to path for celery to work inside Docker
+import sys  # nopep8
+import os  # nopep8
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # nopep8
+
+from celery_handler import celery_app
+from mlcore.profile.profiler import suggest_profile
+from mlcore.predict.predictor import predict
+from mlcore.train.trainer import train
+from celery import Celery, states
 import traceback
 from time import sleep
-from celery import states
-from src.mlcore.train.trainer import train
 import pandas as pd
-from src.mlcore.predict.predictor import predict
-from src.mlcore.profile.profiler import suggest_profile
-
-# ! I don't know why. But. Celery decides to stop working when there is any relative import
-# ! But ONLY if Celery itself starts the python code ¯\_(ツ)_/¯
-
-import os
-from celery import Celery
-
-CELERY_BROKER_URL = os.getenv("REDISSERVER", "redis://redis_server:6379")
-CELERY_RESULT_BACKEND = os.getenv("REDISSERVER", "redis://redis_server:6379")
-
-celery_app = Celery(
-    "celery",
-    backend=CELERY_BROKER_URL,
-    broker=CELERY_RESULT_BACKEND,
-)
 
 
 @celery_app.task(name="hello.task", bind=True)
@@ -52,7 +43,8 @@ def hello_world(self, name):
 
         # raise exception
         raise ex
-    
+
+
 @celery_app.task(name="train.task", bind=True)
 def train_task(
     self,
@@ -62,7 +54,7 @@ def train_task(
     explain: bool = True,
     test_size_ratio: float = 0.2,
     random_seed: int = 42,
-    ):
+):
     """
     Celery wrapper around mlcore.train.
     This is what FastAPI will call asynchronously for train.
@@ -95,72 +87,74 @@ def train_task(
         # IF DB jobs table added -> update job status here
         raise
 
-@celery_app.task(name="predict.task", bind=True)
-def predict_task(
-    self,
-    input: pd.Dataframe | dict | None = None,
-    input_uri: str | None = None,
-    problem_id: str | None = None,
-    model_uri: str | None = None,
-    model_id: str = "production",
-):
-    """
-    Celery wrapper around mlcore.predict.
-    """
-    try:
-        self.update_state(state="STARTED", meta={"problem_id": problem_id})
 
-        # Rebuild DataFrame ONLY if input is a dict
-        if input is not None:
-            if isinstance(input, dict):
-                input = pd.DataFrame(input)
+# @celery_app.task(name="predict.task", bind=True)
+# def predict_task(
+#     self,
+#     input: pd.Dataframe | dict | None = None,
+#     input_uri: str | None = None,
+#     problem_id: str | None = None,
+#     model_uri: str | None = None,
+#     model_id: str = "production",
+# ):
+#     """
+#     Celery wrapper around mlcore.predict.
+#     """
+#     try:
+#         self.update_state(state="STARTED", meta={"problem_id": problem_id})
 
-        X, y_pred, summary = predict(
-            input=input,
-            input_uri=input_uri,
-            problem_id=problem_id,
-            model_uri=model_uri,
-            model_id=model_id,
-        )
+#         # Rebuild DataFrame ONLY if input is a dict
+#         if input is not None:
+#             if isinstance(input, dict):
+#                 input = pd.DataFrame(input)
 
-        return {
-            "y_pred": summary["y_pred"].tolist(),
-            "n_predictions": summary["n_predictions"],
-            "model_metadata": summary["model_metadata"],
-        }
+#         X, y_pred, summary = predict(
+#             input=input,
+#             input_uri=input_uri,
+#             problem_id=problem_id,
+#             model_uri=model_uri,
+#             model_id=model_id,
+#         )
 
-    except Exception as ex:
-        self.update_state(
-            state=states.FAILURE,
-            meta={
-                "exc_type": type(ex).__name__,
-                "exc_message": traceback.format_exc().split("\n"),
-            },
-        )
-        raise
+#         return {
+#             "y_pred": summary["y_pred"].tolist(),
+#             "n_predictions": summary["n_predictions"],
+#             "model_metadata": summary["model_metadata"],
+#         }
 
-@celery_app.task(name="profile.task", bind=True)
-def suggest_profile_task(self, df_dict: dict | pd.DataFrame):
-    """
-    Celery wrapper for suggest_profile(df).
-    df_dict = DataFrame serialized as dict-of-lists
-    """
-    try:
-        self.update_state(state="STARTED")
+#     except Exception as ex:
+#         self.update_state(
+#             state=states.FAILURE,
+#             meta={
+#                 "exc_type": type(ex).__name__,
+#                 "exc_message": traceback.format_exc().split("\n"),
+#             },
+#         )
+#         raise
 
-        if isinstance(df, dict):
-                df = pd.DataFrame(df)
 
-        profile = suggest_profile(df)
+# @celery_app.task(name="profile.task", bind=True)
+# def suggest_profile_task(self, df_dict: dict | pd.DataFrame):
+#     """
+#     Celery wrapper for suggest_profile(df).
+#     df_dict = DataFrame serialized as dict-of-lists
+#     """
+#     try:
+#         self.update_state(state="STARTED")
 
-        return profile
+#         if isinstance(df, dict):
+#             df = pd.DataFrame(df)
 
-    except Exception as ex:
-        self.update_state(
-            state=states.FAILURE,
-            meta={
-                "exc_type": type(ex).__name__,
-                "exc_message": traceback.format_exc().split("\n"),
-            },
-        )
-        raise
+#         profile = suggest_profile(df)
+
+#         return profile
+
+#     except Exception as ex:
+#         self.update_state(
+#             state=states.FAILURE,
+#             meta={
+#                 "exc_type": type(ex).__name__,
+#                 "exc_message": traceback.format_exc().split("\n"),
+#             },
+#         )
+#         raise
