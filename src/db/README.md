@@ -3,7 +3,7 @@
 This folder contains everything to create, initialize, the database for our Predictive Analytics service.
 
 ## 1) What each script/file does
-- **`src/db/schema_mysql.sql`** – Creates all tables (`datasets`, `dataset_versions`, `ml_problems`, `models`, `jobs`, `predictions`).
+- **`src/db/schema_mysql.sql`** – Creates all tables (`users`,`datasets`, `dataset_versions`, `ml_problems`, `models`, `jobs`, `predictions`).
 - **`src/db/seed.sql`** – Inserts tiny demo rows (optional; for local testing only) --> set  main(apply_seed=True) in init_db.py to enable it.
 - **`src/db/init_db.py`** – Python runner that connects to MySQL and applies **schema** (and **seed** if enabled).
 - **`src/db/db.py`** – DB helper functions used by the API (create/read datasets, versions, problems, jobs, models, predictions).

@@ -1,56 +1,167 @@
-from .db import (
-    create_dataset, create_dataset_version, get_dataset,
-    create_ml_problem, save_model_metadata,
-    create_job, update_job_status,
-    save_prediction, get_model, get_job, get_prediction,
-)
-import pytest
 import os
-import logging
+import pytest
+import pymysql
 
-logger = logging.getLogger(__name__)
-
-
-@pytest.fixture(scope="session")
-def init_db():
-    from .init_db import main
-    main(apply_seed=False)
-
-
-@pytest.mark.skipif(os.environ.get("PYTEST_CI_MODE"), reason="does not work in CI pipeline")
-def test_initialize_app_db(init_db):
-    return
+# ---------------------------------------------------------
+# Skip in CI (no DB there)
+# ---------------------------------------------------------
+if os.getenv("PYTEST_CI_MODE") == "True":
+    pytest.skip("Skipping smoke tests in CI (no MySQL service).", allow_module_level=True)
 
 
-@pytest.mark.skipif(os.environ.get("PYTEST_CI_MODE"), reason="does not work in CI pipeline")
-def test_db_smoke(init_db):
-    ds_id = create_dataset("sales_store_1", "team1")
-    ver_id = create_dataset_version(
-        ds_id, "/data/sales_2025_01.csv",
-        schema_json={"date": "DATE", "sales": "INT"},
-        profile_json={"rows": 1000}, row_count=1000
+# ---------------------------------------------------------
+# DB reachability check
+# ---------------------------------------------------------
+def _can_connect() -> bool:
+    try:
+        conn = pymysql.connect(
+            host=os.getenv("DB_HOST", "127.0.0.1"),
+            port=int(os.getenv("DB_PORT", "3306")),
+            user=os.getenv("DB_USER", "team1_user"),
+            password=os.getenv("DB_PASS", "team1_pass"),
+            database=os.getenv("DB_NAME", "team1_db"),
+            connect_timeout=2,
+        )
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+if not _can_connect():
+    pytest.skip("Skipping smoke tests (MySQL not reachable).", allow_module_level=True)
+
+
+# ---------------------------------------------------------
+# Imports from our DB layer
+# ---------------------------------------------------------
+from src.db import init_db
+from src.db.db import (
+    create_user,
+    create_dataset,
+    create_dataset_version,
+    create_ml_problem,
+    create_model,
+    create_job,
+    save_prediction,
+    get_dataset,
+    get_model,
+    get_prediction,
+    get_job,
+    get_ml_problem,
+    get_dataset_version,
+)
+
+
+# ---------------------------------------------------------
+# Fixture: ensure schema is applied (no seed)
+# ---------------------------------------------------------
+@pytest.fixture(scope="session", autouse=True)
+def init_schema_no_seed():
+    """
+    Make sure the schema from schema_mysql.sql is applied.
+    We do NOT seed data here.
+    """
+    os.environ.setdefault("SCHEMA_PATH", "src/db/schema_mysql.sql")
+    os.environ.setdefault("SEED_PATH", "/dev/null")
+    init_db.main(apply_seed=False)
+    yield
+
+
+# ---------------------------------------------------------
+# Smoke test: full happy-path across our helpers
+# ---------------------------------------------------------
+def test_smoke_full_flow():
+    # 1) create a user
+    user_id = create_user("smoke_user", "smoke@example.com")
+    assert isinstance(user_id, str)
+
+    # 2) create dataset (owned by user)
+    ds_id = create_dataset("smoke_dataset", owner_id=user_id)
+    assert isinstance(ds_id, str)
+
+    # 3) create dataset version
+    dv_id = create_dataset_version(
+        ds_id,
+        uri="/data/smoke.csv",
+        schema_json={"columns": ["x", "y"]},
+        profile_json={"row_count": 10},
+        row_count=10,
     )
-    prob_id = create_ml_problem(ver_id, "timeseries", "sales",
-                                feature_strategy_json={"include": ["date"]},
-                                validation_strategy="train_test_split")
-    job_id = create_job("train", problem_id=prob_id)
-    update_job_status(job_id, "running")
-    model_id = save_model_metadata(prob_id, "prophet", "staging",
-                                   metrics_json={"MAE": 123.4},
-                                   model_uri="/models/prophet_store1_v1.joblib",
-                                   name="prophet_store1_v1")
-    update_job_status(job_id, "completed")
-    pjob_id = create_job("predict", problem_id=prob_id, model_id=model_id)
-    update_job_status(pjob_id, "running")
-    pred_id = save_prediction(prob_id, model_id, pjob_id,
-                              inputs_json={"date": "2025-01-31"},
-                              outputs_json={"sales_pred": 987})
-    update_job_status(pjob_id, "completed")
+    assert isinstance(dv_id, str)
 
-    logger.info("dataset:", get_dataset(ds_id))
-    logger.info("model:", get_model(model_id))
-    logger.info("prediction:", get_prediction(pred_id))
+    # 4) create ml_problem
+    prob_id = create_ml_problem(
+        dataset_version_id=dv_id,
+        dataset_version_uri="/data/smoke.csv",
+        task="timeseries",
+        target="y",
+        feature_strategy_json={"include": ["x"]},
+        validation_strategy="train_test_split",
+        schema_snapshot={"columns": ["x", "y"]},
+        semantic_types={"x": "numeric", "y": "numeric"},
+        current_model_id=None,
+    )
+    assert isinstance(prob_id, str)
 
+    # 5) create model
+    model_id = create_model(
+        problem_id=prob_id,
+        algorithm="prophet",
+        status="staging",
+        train_mode="auto",
+        metrics_json={"MAE": 1.23},
+        uri="/models/smoke_model.joblib",
+        metadata_uri=None,
+        explanation_uri=None,
+        created_by=user_id,
+        name="smoke_model",
+    )
+    assert isinstance(model_id, str)
 
-if __name__ == "__main__":
-    test_db_smoke()
+    # 6) create job for training
+    job_id = create_job(
+        job_type="train",
+        problem_id=prob_id,
+        model_id=model_id,
+        status="queued",
+        task_id="celery-task-123",
+        requested_by=user_id,
+    )
+    assert isinstance(job_id, str)
+
+    # 7) save a prediction (no problem_id here, only model_id)
+    pred_id = save_prediction(
+        model_id=model_id,
+        input_uri=None,
+        inputs_json={"x": 42},
+        outputs_json={"y_hat": 99.9},
+        outputs_uri=None,
+        requested_by=user_id,
+    )
+    assert isinstance(pred_id, str)
+
+    # 8) read a few things back to ensure they exist
+    ds = get_dataset(ds_id)
+    assert ds is not None
+    assert ds["id"] == ds_id
+
+    dv = get_dataset_version(dv_id)
+    assert dv is not None
+    assert dv["id"] == dv_id
+
+    prob = get_ml_problem(prob_id)
+    assert prob is not None
+    assert prob["id"] == prob_id
+
+    model = get_model(model_id)
+    assert model is not None
+    assert model["id"] == model_id
+
+    job = get_job(job_id)
+    assert job is not None
+    assert job["id"] == job_id
+
+    pred = get_prediction(pred_id)
+    assert pred is not None
+    assert pred["id"] == pred_id
