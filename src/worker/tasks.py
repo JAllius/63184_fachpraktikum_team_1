@@ -87,11 +87,10 @@ def train_task(
         # IF DB jobs table added -> update job status here
         raise
 
-
 # @celery_app.task(name="predict.task", bind=True)
 # def predict_task(
 #     self,
-#     input: pd.Dataframe | dict | None = None,
+#     input: pd.DataFrame | dict | None = None,
 #     input_uri: str | None = None,
 #     problem_id: str | None = None,
 #     model_uri: str | None = None,
