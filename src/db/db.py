@@ -59,6 +59,7 @@ class DbStubs():
     # USERS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_user(username: str, email: Optional[str] = None) -> str:
         user_id = str(uuid.uuid4())
         sql = "INSERT INTO users (id, username, email) VALUES (%s, %s, %s)"
@@ -66,6 +67,7 @@ class DbStubs():
             cur.execute(sql, (user_id, username, email))
         return user_id
 
+    @classmethod
     def get_user(user_id: str) -> Optional[dict]:
         sql = "SELECT * FROM users WHERE id = %s"
         with cursor() as cur:
@@ -76,6 +78,7 @@ class DbStubs():
     # DATASETS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_dataset(name: str, owner_id: Optional[str] = None) -> str:
         dataset_id = str(uuid.uuid4())
         sql = "INSERT INTO datasets (id, name, owner_id) VALUES (%s, %s, %s)"
@@ -83,6 +86,7 @@ class DbStubs():
             cur.execute(sql, (dataset_id, name, owner_id))
         return dataset_id
 
+    @classmethod
     def get_dataset(dataset_id: str) -> Optional[dict]:
         sql = "SELECT * FROM datasets WHERE id = %s"
         with cursor() as cur:
@@ -93,6 +97,7 @@ class DbStubs():
     # DATASET VERSIONS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_dataset_version(
         dataset_id: str,
         uri: str,
@@ -120,6 +125,7 @@ class DbStubs():
             )
         return version_id
 
+    @classmethod
     def get_dataset_version(version_id: str) -> Optional[dict]:
         sql = "SELECT * FROM dataset_versions WHERE id = %s"
         with cursor() as cur:
@@ -130,6 +136,7 @@ class DbStubs():
     # ML PROBLEMS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_ml_problem(
         dataset_version_id: str,
         dataset_version_uri: Optional[str],
@@ -164,6 +171,7 @@ class DbStubs():
             )
         return problem_id
 
+    @classmethod
     def get_ml_problem(problem_id: str) -> Optional[dict]:
         sql = "SELECT * FROM ml_problems WHERE id = %s"
         with cursor() as cur:
@@ -174,6 +182,7 @@ class DbStubs():
     # MODELS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_model(
         problem_id: str,
         algorithm: str,
@@ -215,6 +224,7 @@ class DbStubs():
             )
         return model_id
 
+    @classmethod
     def get_model(model_id: str) -> Optional[dict]:
         sql = "SELECT * FROM models WHERE id = %s"
         with cursor() as cur:
@@ -225,6 +235,7 @@ class DbStubs():
     # JOBS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_job(
         job_type: str,
         problem_id: Optional[str] = None,
@@ -247,6 +258,7 @@ class DbStubs():
             )
         return job_id
 
+    @classmethod
     def update_job_status(job_id: str, status: str, error: Optional[str] = None) -> None:
         """
         Simple status update:
@@ -267,6 +279,7 @@ class DbStubs():
         with cursor() as cur:
             cur.execute(sql, params)
 
+    @classmethod
     def get_job(job_id: str) -> Optional[dict]:
         sql = "SELECT * FROM jobs WHERE id = %s"
         with cursor() as cur:
@@ -277,6 +290,7 @@ class DbStubs():
     # PREDICTIONS
     # -------------------------------------------------------------------
 
+    @classmethod
     def create_prediction(
         model_id: str,
         input_uri: Optional[str] = None,
@@ -306,6 +320,7 @@ class DbStubs():
             )
         return prediction_id
 
+    @classmethod
     def get_prediction(prediction_id: str) -> Optional[dict]:
         sql = "SELECT * FROM predictions WHERE id = %s"
         with cursor() as cur:
