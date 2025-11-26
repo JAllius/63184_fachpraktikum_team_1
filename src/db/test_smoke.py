@@ -43,7 +43,7 @@ from src.db.db import (
     create_ml_problem,
     create_model,
     create_job,
-    save_prediction,
+    create_prediction,
     get_dataset,
     get_model,
     get_prediction,
@@ -90,26 +90,26 @@ def test_smoke_full_flow():
     )
     assert isinstance(dv_id, str)
 
-    # 4) create ml_problem
+    # 4) create ml_problem (validation_strategy moved off this table)
     prob_id = create_ml_problem(
         dataset_version_id=dv_id,
         dataset_version_uri="/data/smoke.csv",
         task="timeseries",
         target="y",
-        feature_strategy_json={"include": ["x"]},
-        validation_strategy="train_test_split",
+        feature_strategy_json={"method": "basic"},
         schema_snapshot={"columns": ["x", "y"]},
         semantic_types={"x": "numeric", "y": "numeric"},
         current_model_id=None,
     )
     assert isinstance(prob_id, str)
 
-    # 5) create model
+    # 5) create model (evaluation_strategy now lives here)
     model_id = create_model(
         problem_id=prob_id,
         algorithm="prophet",
         status="staging",
         train_mode="auto",
+        evaluation_strategy="train_test_split",
         metrics_json={"MAE": 1.23},
         uri="/models/smoke_model.joblib",
         metadata_uri=None,
@@ -130,8 +130,8 @@ def test_smoke_full_flow():
     )
     assert isinstance(job_id, str)
 
-    # 7) save a prediction (no problem_id here, only model_id)
-    pred_id = save_prediction(
+    # 7) create a prediction (no problem_id here, only model_id)
+    pred_id = create_prediction(
         model_id=model_id,
         input_uri=None,
         inputs_json={"x": 42},

@@ -1,30 +1,94 @@
-# Database Setup & Scripts (MySQL 8)
+Database Setup & Scripts (MySQL 8)
 
-This folder contains everything to create, initialize, the database for our Predictive Analytics service.
+This folder contains everything needed to create and verify the database for our Predictive Analytics service (FastAPI + MySQL).
 
-## 1) What each script/file does
-- **`src/db/schema_mysql.sql`** – Creates all tables (`users`,`datasets`, `dataset_versions`, `ml_problems`, `models`, `jobs`, `predictions`).
-- **`src/db/seed.sql`** – Inserts tiny demo rows (optional; for local testing only) --> set  main(apply_seed=True) in init_db.py to enable it.
-- **`src/db/init_db.py`** – Python runner that connects to MySQL and applies **schema** (and **seed** if enabled).
-- **`src/db/db.py`** – DB helper functions used by the API (create/read datasets, versions, problems, jobs, models, predictions).
-- **`src/db/test_smoke.py`** – Small local smoke test that uses `db.py` to insert/read rows (for quick verification).
+1) What each script/file does
 
-## 2) Prerequisites
-- Docker + Docker Compose running.
-- MySQL container exposed on `127.0.0.1:3306`.
-- Recommended persistence in `docker-compose.yml`:
-  ```yaml
-  services:
-    db:
-      image: mysql:8.0
-      environment:
-        MYSQL_ROOT_PASSWORD: safe123
-        MYSQL_DATABASE: team1_db
-        MYSQL_USER: team1_user
-        MYSQL_PASSWORD: team1_pass
-      ports:
-        - "3306:3306"
-      volumes:
-        - db-data:/var/lib/mysql
-  volumes:
-    db-data:
+src/db/schema_mysql.sql – Creates all tables (users, datasets, dataset_versions, ml_problems, models, jobs, predictions).
+
+IDs are UUID strings (CHAR(36)).
+
+evaluation_strategy lives on models (not ml_problems).
+
+src/db/seed.sql – Optional local-only seed script (UUID-based).
+
+It inserts a tiny demo graph and then TRUNCATES all tables at the end (so it acts like a “seed self-test” and leaves the DB empty).
+
+src/db/init_db.py – Python runner that connects to MySQL and applies the schema (and optionally seed).
+
+src/db/db.py – DB helper functions used by the API (create/read users, datasets, versions, problems, models, jobs, predictions).
+
+Prediction helper is create_prediction (legacy alias save_prediction may exist during transition).
+
+src/db/test_smoke.py – Local smoke test that runs the happy-path using db.py (quick verification).
+
+2) Prerequisites
+
+Docker + Docker Compose running.
+
+MySQL container exposed on 127.0.0.1:3306.
+
+Recommended persistence in docker-compose.yml:
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: safe123
+      MYSQL_DATABASE: team1_db
+      MYSQL_USER: team1_user
+      MYSQL_PASSWORD: team1_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+volumes:
+  db-data:
+
+3) Initialize / Recreate the schema
+
+Apply the schema (creates tables if missing):
+
+python src/db/init_db.py
+
+
+Note: the schema uses CREATE TABLE IF NOT EXISTS. If you change columns, you must either drop tables (or the database) and re-run init, or write a migration.
+
+Drop tables manually (dev reset)
+mysql -h 127.0.0.1 -P 3306 -u team1_user -pteam1_pass team1_db -e "
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS predictions;
+DROP TABLE IF EXISTS jobs;
+DROP TABLE IF EXISTS models;
+DROP TABLE IF EXISTS ml_problems;
+DROP TABLE IF EXISTS dataset_versions;
+DROP TABLE IF EXISTS datasets;
+DROP TABLE IF EXISTS users;
+SET FOREIGN_KEY_CHECKS=1;
+"
+python src/db/init_db.py
+
+4) Run the local smoke test
+
+The smoke test is meant for local verification only. It skips automatically if:
+
+PYTEST_CI_MODE=True, or
+
+MySQL is not reachable.
+
+Run:
+
+unset PYTEST_CI_MODE
+PYTHONPATH=. pytest -q src/db/test_smoke.py -s
+
+5) (Optional) Run seed.sql
+
+Seed is local-only and currently works like a self-test:
+
+inserts demo rows
+
+then truncates everything at the end (DB ends empty)
+
+Run it directly:
+
+mysql -h 127.0.0.1 -P 3306 -u team1_user -pteam1_pass team1_db < src/db/seed.sql

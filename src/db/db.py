@@ -141,7 +141,6 @@ def create_ml_problem(
     task: str,
     target: str,
     feature_strategy_json: Optional[dict] = None,
-    validation_strategy: Optional[str] = None,
     schema_snapshot: Optional[dict] = None,
     semantic_types: Optional[dict] = None,
     current_model_id: Optional[str] = None,
@@ -150,9 +149,8 @@ def create_ml_problem(
     sql = """
         INSERT INTO ml_problems
         (id, dataset_version_id, dataset_version_uri, task, target,
-         feature_strategy_json, validation_strategy,
-         schema_snapshot, semantic_types, current_model_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        feature_strategy_json, schema_snapshot, semantic_types, current_model_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -164,7 +162,6 @@ def create_ml_problem(
                 task,
                 target,
                 _json_dump(feature_strategy_json),
-                validation_strategy,
                 _json_dump(schema_snapshot),
                 _json_dump(semantic_types),
                 current_model_id,
@@ -189,6 +186,7 @@ def create_model(
     algorithm: str,
     status: str,
     train_mode: Optional[str] = None,
+    evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
     uri: Optional[str] = None,
     metadata_uri: Optional[str] = None,
@@ -199,9 +197,10 @@ def create_model(
     model_id = str(uuid.uuid4())
     sql = """
         INSERT INTO models
-        (id, problem_id, name, algorithm, train_mode, status,
-         metrics_json, uri, metadata_uri, explanation_uri, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
+        metrics_json, uri, metadata_uri, explanation_uri, created_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+
     """
     with cursor() as cur:
         cur.execute(
@@ -212,6 +211,7 @@ def create_model(
                 name,
                 algorithm,
                 train_mode,
+                evaluation_strategy, 
                 status,
                 _json_dump(metrics_json),
                 uri,
@@ -289,7 +289,7 @@ def get_job(job_id: str) -> Optional[dict]:
 # PREDICTIONS
 # -------------------------------------------------------------------
 
-def save_prediction(
+def create_prediction(
     model_id: str,
     input_uri: Optional[str] = None,
     inputs_json: Optional[dict] = None,

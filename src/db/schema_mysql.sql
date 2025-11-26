@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS ml_problems (
   task VARCHAR(64) NOT NULL,                -- 'timeseries' | 'regression' | 'classification'
   target VARCHAR(255) NOT NULL,             -- target column name
   feature_strategy_json JSON,               -- e.g. {"include": [...], "exclude": [...]}
-  validation_strategy VARCHAR(128),         -- e.g. 'train_test_split', 'cv_5fold'
   schema_snapshot JSON,                     -- schema at training time
   semantic_types JSON,                      -- semantic info per column
   current_model_id CHAR(36),                -- id of current production model (no URI duplication)
@@ -62,6 +61,7 @@ CREATE TABLE IF NOT EXISTS models (
   name VARCHAR(255),                        -- human readable name
   algorithm VARCHAR(128) NOT NULL,          -- e.g. 'sklearn_random_forest', 'prophet'
   train_mode VARCHAR(64),                   -- e.g. 'auto', 'manual'
+  evaluation_strategy VARCHAR(128),         -- e.g. 'train_test_split', 'cv_5fold'
   status VARCHAR(32) NOT NULL,              -- 'staging' | 'production' | 'archived'
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
   uri TEXT,                                 -- where the model file is stored (joblib, etc.)
