@@ -1,3 +1,5 @@
+from src.db.db import DbStubs
+from src.db import init_db
 import os
 import pytest
 import pymysql
@@ -6,7 +8,8 @@ import pymysql
 # Skip in CI (no DB there)
 # ---------------------------------------------------------
 if os.getenv("PYTEST_CI_MODE") == "True":
-    pytest.skip("Skipping smoke tests in CI (no MySQL service).", allow_module_level=True)
+    pytest.skip("Skipping smoke tests in CI (no MySQL service).",
+                allow_module_level=True)
 
 
 # ---------------------------------------------------------
@@ -29,28 +32,8 @@ def _can_connect() -> bool:
 
 
 if not _can_connect():
-    pytest.skip("Skipping smoke tests (MySQL not reachable).", allow_module_level=True)
-
-
-# ---------------------------------------------------------
-# Imports from our DB layer
-# ---------------------------------------------------------
-from src.db import init_db
-from src.db.db import (
-    create_user,
-    create_dataset,
-    create_dataset_version,
-    create_ml_problem,
-    create_model,
-    create_job,
-    create_prediction,
-    get_dataset,
-    get_model,
-    get_prediction,
-    get_job,
-    get_ml_problem,
-    get_dataset_version,
-)
+    pytest.skip("Skipping smoke tests (MySQL not reachable).",
+                allow_module_level=True)
 
 
 # ---------------------------------------------------------
@@ -73,15 +56,15 @@ def init_schema_no_seed():
 # ---------------------------------------------------------
 def test_smoke_full_flow():
     # 1) create a user
-    user_id = create_user("smoke_user", "smoke@example.com")
+    user_id = DbStubs.create_user("smoke_user", "smoke@example.com")
     assert isinstance(user_id, str)
 
     # 2) create dataset (owned by user)
-    ds_id = create_dataset("smoke_dataset", owner_id=user_id)
+    ds_id = DbStubs.create_dataset("smoke_dataset", owner_id=user_id)
     assert isinstance(ds_id, str)
 
     # 3) create dataset version
-    dv_id = create_dataset_version(
+    dv_id = DbStubs.create_dataset_version(
         ds_id,
         uri="/data/smoke.csv",
         schema_json={"columns": ["x", "y"]},
@@ -91,7 +74,7 @@ def test_smoke_full_flow():
     assert isinstance(dv_id, str)
 
     # 4) create ml_problem (validation_strategy moved off this table)
-    prob_id = create_ml_problem(
+    prob_id = DbStubs.create_ml_problem(
         dataset_version_id=dv_id,
         dataset_version_uri="/data/smoke.csv",
         task="timeseries",
@@ -104,7 +87,7 @@ def test_smoke_full_flow():
     assert isinstance(prob_id, str)
 
     # 5) create model (evaluation_strategy now lives here)
-    model_id = create_model(
+    model_id = DbStubs.create_model(
         problem_id=prob_id,
         algorithm="prophet",
         status="staging",
@@ -120,7 +103,7 @@ def test_smoke_full_flow():
     assert isinstance(model_id, str)
 
     # 6) create job for training
-    job_id = create_job(
+    job_id = DbStubs.create_job(
         job_type="train",
         problem_id=prob_id,
         model_id=model_id,
@@ -131,7 +114,7 @@ def test_smoke_full_flow():
     assert isinstance(job_id, str)
 
     # 7) create a prediction (no problem_id here, only model_id)
-    pred_id = create_prediction(
+    pred_id = DbStubs.create_prediction(
         model_id=model_id,
         input_uri=None,
         inputs_json={"x": 42},
@@ -142,26 +125,26 @@ def test_smoke_full_flow():
     assert isinstance(pred_id, str)
 
     # 8) read a few things back to ensure they exist
-    ds = get_dataset(ds_id)
+    ds = DbStubs.get_dataset(ds_id)
     assert ds is not None
     assert ds["id"] == ds_id
 
-    dv = get_dataset_version(dv_id)
+    dv = DbStubs.get_dataset_version(dv_id)
     assert dv is not None
     assert dv["id"] == dv_id
 
-    prob = get_ml_problem(prob_id)
+    prob = DbStubs.get_ml_problem(prob_id)
     assert prob is not None
     assert prob["id"] == prob_id
 
-    model = get_model(model_id)
+    model = DbStubs.get_model(model_id)
     assert model is not None
     assert model["id"] == model_id
 
-    job = get_job(job_id)
+    job = DbStubs.get_job(job_id)
     assert job is not None
     assert job["id"] == job_id
 
-    pred = get_prediction(pred_id)
+    pred = DbStubs.get_prediction(pred_id)
     assert pred is not None
     assert pred["id"] == pred_id

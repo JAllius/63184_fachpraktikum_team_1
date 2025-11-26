@@ -1,9 +1,11 @@
-from ..celery_handler import celery_app
 from fastapi import FastAPI, Request
 from typing import Literal
 import logging
 import json
-from src.db.init_db import main
+from ..celery_handler import celery_app
+from ..db.init_db import main
+from ..db.db import DbStubs
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +28,12 @@ def get_domain(request: Request):
     return domain
 
 # .on_event is deprecated and it suggests to use lifespan, but i don't know it. It should still support .on_event.
+
+
 @app.on_event("startup")
 def on_startup():
     main(apply_seed=False)
+
 
 @app.get("/")
 async def read_root(request: Request):
@@ -81,7 +86,8 @@ def check_task(id: str):
 @app.post("/dataset")  # /dataset?name=test&user_id=1
 async def post_dataset(name: str, user_id: int):
     """create a stub for a new dataset and return the id"""
-    return {}
+    dataset_id = DbStubs.create_dataset(name=name, owner_id=user_id)
+    return {"dataset_id": dataset_id}
 
 
 @app.get("/dataset/{dataset_id}")
