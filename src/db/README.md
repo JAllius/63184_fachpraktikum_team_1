@@ -78,8 +78,10 @@ MySQL is not reachable.
 
 Run:
 
+```bash
 unset PYTEST_CI_MODE
 PYTHONPATH=. pytest -q src/db/test_smoke.py -s
+```
 
 5) (Optional) Run seed.sql
 
@@ -91,4 +93,36 @@ then truncates everything at the end (DB ends empty)
 
 Run it directly:
 
+```bash
 mysql -h 127.0.0.1 -P 3306 -u team1_user -pteam1_pass team1_db < src/db/seed.sql
+```
+
+6) Create & populate a test database (team1_db_test)
+
+We use a separate database `team1_db_test` for end-to-end pipeline testing (so we don’t mess with `team1_db` demo/dev data).
+
+### One-time setup (needs MySQL root)
+If you don't have permissions to create databases with `team1_user`, create the test DB once using root (root password is from `docker-compose.yml`):
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -psafe123 -e "CREATE DATABASE IF NOT EXISTS team1_db_test;"
+mysql -h 127.0.0.1 -P 3306 -u root -psafe123 -e "GRANT ALL PRIVILEGES ON team1_db_test.* TO 'team1_user'@'%'; FLUSH PRIVILEGES;"
+```
+
+Populate test DB (1 row per table)
+
+This script applies the schema to team1_db_test, optionally resets tables, and inserts exactly 1 row per table. It also copies the first entries from src/db/test_db.txt into dataset_versions and ml_problems.
+
+Run from repo root:
+
+```bash
+python -m src.db.init_test_db --reset
+```
+
+Run helpers/tests against the test DB
+
+Because db.py reads DB_NAME from env, you can run anything against the test DB like this:
+
+```bash
+DB_NAME=team1_db_test PYTHONPATH=. pytest -q src/db/test_smoke.py -s
+
