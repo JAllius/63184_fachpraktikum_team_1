@@ -3,6 +3,7 @@ from pathlib import Path
 from ..io.data_reader import get_dataframe_from_csv
 from ..io.model_loader import load_model
 from ..io.metadata_loader import load_metadata
+from src.db.db import get_ml_problem, get_model
 
 
 def predict(
@@ -35,10 +36,11 @@ def predict(
     else:
         if model_id == "production":
 
-            # READ DB (PROBLEM_ID) -> PRODUCTION: URI & TARGET (COLUMN)
-            replace_this_line = 1
-
-            model_path = replace_this_line
+            problem = get_ml_problem(problem_id)
+            model_id = problem.get("current_model_id", False)
+            model = get_model(model_id)
+            model_path = model.get("uri", False)
+            
             model = load_model(model_uri=model_path)
             metadata_path = model_path.with_name("metadata.json")
             metadata = load_metadata(metadata_path)
@@ -50,6 +52,8 @@ def predict(
 
     if target in X.columns:
         X.drop(columns=[target])
+
+    schema_snapshot = metadata["schema_snapshot"]
 
     ### MISSING ###
     # Check schema snapshot and compare with X

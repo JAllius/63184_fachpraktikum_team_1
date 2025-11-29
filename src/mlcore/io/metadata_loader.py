@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from src.db.db import get_ml_problem, get_model
 
 def load_metadata(
     metadata_uri: str,
@@ -19,11 +20,10 @@ def load_metadata(
             metadata_path = Path(metadata_uri)
         else:
             if model_id == "production":
-                
-                # READ DB (PROBLEM_ID) -> PRODUCTION: URI
-                replace_this_line = 1
-                
-                model_path = Path(replace_this_line)
+                problem = get_ml_problem(problem_id)
+                model_id = problem.get("current_model_id", False)
+                model = get_model(model_id)
+                model_path = model.get("uri", False)
                 metadata_path = model_path.with_name("metadata.json")
             else:
                 metadata_path = Path(base_dir) / problem_id / model_id / "metadata.json"

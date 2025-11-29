@@ -1,41 +1,42 @@
 from ..io.preset_loader import loader
 from ..io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from ..io.model_saver import save_model
+from ..io.metadata_saver import save_metadata
 from ..profile.profiler import suggest_profile
 from ..explain.explanator import explain_model
-from ..metrics.calculator import calculate_metrics
+from ..metrics.metrics_calculator import calculate_metrics
+from ..metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal
 import pandas as pd
-import json
+from src.db.db import get_dataset_version, get_ml_problem, create_model
 
+BASE_DIR = "./testdata/models"
+NAME = "test_user_id"
 
 def train(
     problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+    evaluation_strategy: Literal["cv", "holdout"] = "cv",
     explain: bool = True,
     test_size_ratio: float = 0.2,
     random_seed: int = 42,
 ) -> str:
 
-    ### CHANGE WITH DB FUNCTION LATER ###
-    with open("./testdata/ml_problems.json", "r") as f:
-        problems = json.load(f)
-    problem = problems[problem_id]
-    with open("./testdata/dataset_versions.json", "r") as f:
-        dataset_versions = json.load(f)
-    dataset_version = dataset_versions[problem.get(
-        "dataset_version_id", False)]
-    ### END OF CHANGE ###
+    problem = get_ml_problem(problem_id)
+    dataset_version_id = problem.get("dataset_version_id", False)
+    target = problem.get("target", False)
+    dataset_version = get_dataset_version(dataset_version_id)
 
     df = get_dataframe_from_csv(
         dataset_version.get("dataset_version_uri", False))
     if not dataset_version.get("profile", False):
         profile = suggest_profile(pd.DataFrame(df))
     profile = dataset_version.get("profile", False)
+    multi_class = profile.get("columns", {}).get(target, {}).get("cardinality", 0) > 2
 
-    X, y = preprocess_dataframe(df, "target", profile)
+    X, y = preprocess_dataframe(df, target, profile)
     semantic_types = get_semantic_types(X, profile)
     task = problem.get("task")
 
@@ -44,18 +45,20 @@ def train(
     boolean = semantic_types["boolean"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
+        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed # stratify to keep class proportions
     )
 
-    build_model = loader(task, algorithm)
+    build_model = loader(task, algorithm.lower())
 
-    # Missing metadata handling - filling
     model, metadata = build_model(categorical, numeric, boolean, train_mode)
 
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    metrics = calculate_metrics(y_test, y_pred, task)
+    metrics = calculate_metrics(y_test, y_pred, task, multi_class)
+    if evaluation_strategy == "cv":
+        cv = calculate_cv(model, X_train, y_train, multi_class)
+        metadata["cross_validation"] = cv
 
     explanation = {}
     if explain:
@@ -67,10 +70,9 @@ def train(
         explain_model(task, model_shap, X_train_shap, X_test_shap)
 
     # model_id = uuid.uuid4()
-    model_id = "c5d6ecb2-4c62-4fcb-a85a-63f9e8d3e4b9"
+    # model_id = "c5d6ecb2-4c62-4fcb-a85a-63f9e8d3e4b9"
     metadata["problem_id"] = problem_id
-    metadata["model_id"] = model_id
-    metadata["target"] = problem.get("target")
+    metadata["target"] = target
     metadata["schema_snapshot"]["X"] = {
         column: str(X[column].dtype) for column in X.columns
     }
@@ -80,8 +82,16 @@ def train(
     metadata["metrics"] = metrics
     if explanation:
         metadata["explanation"] = explanation
+    
+    model_id, model_uri = create_model(problem_id, algorithm.lower(), "staging", metrics, NAME,)
+    metadata["model_id"] = model_id
 
-    model_uri = save_model(model, metadata, problem_id,
-                           model_id, "./testdata/models")
+    path_uri = model_uri.parent
 
-    return model_uri
+    if save_model(model, path_uri) == "Success":
+        if save_metadata(metadata, path_uri) == "Success":
+            return model_uri
+        else:
+            raise RuntimeError(f"Failed to save the model's metadata at {model_uri}")
+    else:
+        raise RuntimeError(f"Failed to save the model at {model_uri}")

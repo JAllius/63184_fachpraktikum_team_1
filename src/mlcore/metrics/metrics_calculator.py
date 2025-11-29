@@ -6,6 +6,7 @@ def calculate_metrics(
     y_true: pd.Series,
     y_pred: pd.Series,
     task: str,
+    multi_class: bool | None = True,
 )-> dict:
     
     if task == "classification":
@@ -19,12 +20,17 @@ def calculate_metrics(
 def classification_metrics(
     y_true: pd.Series,
     y_pred: pd.Series,
+    multi_class: bool | None = False,
 )-> dict:
+    if multi_class:
+        f1 = f1_score(y_true, y_pred, average="macro")
+    else:
+        f1 = f1_score(y_true, y_pred)
     metrics = {
-        "accuracy": accuracy_score(y_true, y_pred),
-        "precision": precision_score(y_true, y_pred),
-        "recall": recall_score(y_true, y_pred),
-        "f1": f1_score(y_true, y_pred),
+        "accuracy": round(accuracy_score(y_true, y_pred), 4),
+        "precision": round(precision_score(y_true, y_pred), 4),
+        "recall": round(recall_score(y_true, y_pred), 4),
+        "f1": round(f1, 4),
     }
     return metrics
 
@@ -33,10 +39,10 @@ def regression_metrics(
     y_pred: pd.Series,
 )-> dict:
     metrics = {
-        "mae": mean_absolute_error(y_true, y_pred),
-        "mse": mean_squared_error(y_true, y_pred),
-        "rmse": root_mean_squared_error(y_true, y_pred),
-        "r2": r2_score(y_true, y_pred),
-        "mape": mean_absolute_percentage_error(y_true, y_pred),
+        "mae": round(mean_absolute_error(y_true, y_pred), 4),
+        "mse": round(mean_squared_error(y_true, y_pred), 4),
+        "rmse": round(root_mean_squared_error(y_true, y_pred), 4),
+        "r2": round(r2_score(y_true, y_pred), 4),
+        "mape": round(mean_absolute_percentage_error(y_true, y_pred), 4),
     }
     return metrics

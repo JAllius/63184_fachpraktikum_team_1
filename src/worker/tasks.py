@@ -11,6 +11,7 @@ from celery import states
 import traceback
 from time import sleep
 import pandas as pd
+from typing import Literal
 
 
 @celery_app.task(name="hello.task", bind=True)
@@ -50,7 +51,8 @@ def train_task(
     self,
     problem_id: str,
     algorithm: str = "auto",
-    train_mode: str = "balanced",
+    train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
+    evaluation_strategy: Literal["cv", "holdout"] = "cv",
     explain: bool = True,
     test_size_ratio: float = 0.2,
     random_seed: int = 42,
@@ -67,6 +69,7 @@ def train_task(
             problem_id=problem_id,
             algorithm=algorithm,
             train_mode=train_mode,
+            evaluation_strategy = evaluation_strategy,
             explain=explain,
             test_size_ratio=test_size_ratio,
             random_seed=random_seed,

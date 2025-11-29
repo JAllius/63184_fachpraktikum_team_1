@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas.api.types as pdtypes
+from pandas import CategoricalDtype
 import numpy as np
 
 
@@ -17,7 +18,10 @@ def _is_sequence_like(
     thresh: float = 0.9,
 ) -> bool:
     # Check the percentage of the elements that are in sequence. If it is higher than the threshold, the column is sequence-like.
-    differences = np.diff(np.sort(column))
+    values = column.dropna().to_numpy()
+    if len(values) < 2:
+        return False
+    differences = np.diff(np.sort(values))
     consecutive_ratio = (differences == 1).mean()
     return consecutive_ratio >= thresh
 
@@ -42,9 +46,10 @@ def _analyse_column(
 
     # Check if the column is empty first, so that cardinality_ratio does not raise an error when non_nan_count = 0
     if non_nan_count == 0:
-        column["is_empty"] = True,
-        column["is_constant"] = True,
-        column["exclusion_reason"] = "empty",
+        column_summary["is_empty"] = True
+        column_summary["is_constant"] = True
+        column_summary["exclude_for_analysis"] = True
+        column_summary["exclusion_reason"] = "empty"
         return column_summary
 
     # Cardinality_ratio is calculated as (unique non-NaN values)/(total non-NaN values).
@@ -87,7 +92,7 @@ def _analyse_column(
                 column_summary["suggested_analysis"] = "classification"
             else:
                 # Quick check if the column is unique or not.
-                if is_unique:
+                if is_unique and missing_pct == 0:
                     if _is_sequence_like(column, 0.9):
                         # Column seems like a numeric id-column.
                         column_summary["exclude_for_analysis"] = True
@@ -112,7 +117,11 @@ def _analyse_column(
         column_summary["suggested_analysis"] = "regression"
         return column_summary
 
-    if column.dtype == "object":
+    if (
+        pdtypes.is_object_dtype(column)
+        or pdtypes.is_string_dtype(column)
+        or isinstance(column.dtype, CategoricalDtype)
+        ):
         column_summary["semantic_type"] = "categorical"
         # Quick check if the column is unique. If it is, suggest exclude.
         if is_unique:
@@ -122,12 +131,13 @@ def _analyse_column(
 
         coverage_top3 = column.value_counts(normalize=True, dropna=True).head(
             3).sum()  # normalize=True to get the frequencies instead of the counts
-        # normalize=True to get the frequencies instead of the counts
-        top = column.value_counts(dropna=True).head(1).sum()
-        top_freq_ratio = column.value_counts(normalize=True, dropna=True).head(
-            1).sum()  # normalize=True to get the frequencies instead of the counts
-        column_summary["top"] = str(top)
-        column_summary["top_freq_ratio"] = round(float(top_freq_ratio), 4)
+        value_counts = column.value_counts(dropna=True)
+        top_value = value_counts.index[0]
+        top_count = int(value_counts.iloc[0])
+        top_freq_ratio = float(value_counts.iloc[0] / non_nan_count)
+        column_summary["top_value"] = str(top_value)
+        column_summary["top_count"] = top_count
+        column_summary["top_freq_ratio"] = round(top_freq_ratio, 4)
         column_summary["coverage_top3"] = round(float(coverage_top3), 4)
 
         if is_constant:
@@ -181,6 +191,13 @@ def _analyse_column(
         column_summary["exclude_for_analysis"] = True
         column_summary["exclusion_reason"] = "datetime"
         return column_summary
+    
+    else:
+        # Fallback for unsupported or unusual/unexpected dtypes
+        column_summary["semantic_type"] = "unknown"
+        column_summary["exclude_for_analysis"] = True
+        column_summary["exclusion_reason"] = "unsupported_dtype"
+        return column_summary
 
 
 def suggest_profile(
@@ -188,7 +205,15 @@ def suggest_profile(
 ) -> dict:
     profile = {}
     n_rows, n_cols = df.shape
-    non_nan_count = sum(df.count(0))
+    if n_rows == 0 or n_cols == 0:
+        return {
+            "summary": {"n_rows": n_rows, "n_cols": n_cols, "missing_pct": 0.0},
+            "id_candidates": [],
+            "exclude_suggestions": [],
+            "leakage_columns": [],
+            "columns": {},
+        }
+    non_nan_count = df.count().sum()
     missing_pct = round(1 - non_nan_count/(n_cols*n_rows), 4)
     summary = {}
     summary["n_rows"] = n_rows
