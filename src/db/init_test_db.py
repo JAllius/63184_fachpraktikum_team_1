@@ -164,7 +164,7 @@ def main(input_path: str, reset: bool) -> None:
         evaluation_strategy=evaluation_strategy,
         status="staging",
         metrics_json={"note": "test model row"},
-        uri=f"/models/{problem_id}/{uuid.uuid4()}/model.joblib",
+        uri=None,
         metadata_uri=None,
         explanation_uri=None,
         created_by=user_id,

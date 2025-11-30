@@ -111,7 +111,7 @@ def test_smoke_full_flow():
         train_mode="auto",
         evaluation_strategy="train_test_split",
         metrics_json={"MAE": 1.23},
-        uri="/models/smoke_model.joblib",
+        uri=None,
         metadata_uri=None,
         explanation_uri=None,
         created_by=user_id,

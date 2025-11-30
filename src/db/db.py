@@ -181,6 +181,10 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
 # MODELS
 # -------------------------------------------------------------------
 
+def build_model_uri(problem_id: str, model_id: str) -> str:
+    # storage-agnostic default
+    return f"models/{problem_id}/{model_id}/model.joblib"
+
 def create_model(
     problem_id: str,
     algorithm: str,
@@ -188,19 +192,23 @@ def create_model(
     train_mode: Optional[str] = None,
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
-    uri: Optional[str] = None,
+    uri: Optional[str] = None,         
     metadata_uri: Optional[str] = None,
     explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
 ) -> str:
     model_id = str(uuid.uuid4())
+
+    # Default URI derived from IDs
+    if uri is None:
+        uri = build_model_uri(problem_id, model_id)
+
     sql = """
         INSERT INTO models
         (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-        metrics_json, uri, metadata_uri, explanation_uri, created_by)
+         metrics_json, uri, metadata_uri, explanation_uri, created_by)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-
     """
     with cursor() as cur:
         cur.execute(
@@ -211,7 +219,7 @@ def create_model(
                 name,
                 algorithm,
                 train_mode,
-                evaluation_strategy, 
+                evaluation_strategy,
                 status,
                 _json_dump(metrics_json),
                 uri,
@@ -221,6 +229,7 @@ def create_model(
             ),
         )
     return model_id
+
 
 
 
