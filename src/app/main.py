@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from typing import Literal
 import logging
 import json
+from src.db.init_db import main
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,10 @@ def get_domain(request: Request):
         domain += f":{port}"
     return domain
 
+# .on_event is deprecated and it suggests to use lifespan, but i don't know it. It should still support .on_event.
+@app.on_event("startup")
+def on_startup():
+    main(apply_seed=False)
 
 @app.get("/")
 async def read_root(request: Request):
