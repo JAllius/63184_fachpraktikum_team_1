@@ -39,10 +39,20 @@ services:
       - redis_server
 
   db:
-    image: mysql
+    image: mysql:8.0
+    container_name: fachpraktikum-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: safe123
+      MYSQL_DATABASE: team1_db        # auto-create DB 
+      MYSQL_USER: team1_user          # auto-create user
+      MYSQL_PASSWORD: team1_pass
     ports:
       - "3306:3306"
       - "33060:33060"
+    volumes:
+      - db-data:/var/lib/mysql
+
+
+volumes:
+  db-data: 
