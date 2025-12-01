@@ -51,7 +51,7 @@ def predict(
             target = metadata.get("target")
 
     if target in X.columns:
-        X.drop(columns=[target])
+        X = X.drop(columns=[target])
 
     schema_snapshot = metadata["schema_snapshot"]
 

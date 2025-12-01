@@ -49,7 +49,7 @@ def preprocess_dataframe(
     if target not in df_pre.columns:
         raise ValueError(f"Target column '{target}' not found in dataframe.")
     
-    df_pre_notna = df_pre[df_pre["target"].notna() & (df_pre["target"] != "")]
+    df_pre_notna = df_pre[df_pre[target].notna() & (df_pre[target] != "")]
     
     if not df_pre_notna[target].count():
         raise ValueError(f"Target column '{target}' is empty.")

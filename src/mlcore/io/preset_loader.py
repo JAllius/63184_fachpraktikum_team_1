@@ -19,7 +19,7 @@ def loader(
     try:
         # Create a specification of the module from */*.py
         spec = importlib.util.spec_from_file_location(
-            f"{task}_{algorithm}", path)
+            f"src.mlcore.presets.{task}.{algorithm}", path)
         # Create an empty container/module from this specification
         module = importlib.util.module_from_spec(spec)
         # Run all top-level code to populate the module

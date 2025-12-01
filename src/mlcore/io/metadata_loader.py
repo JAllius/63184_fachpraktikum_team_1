@@ -27,8 +27,8 @@ def load_metadata(
                 metadata_path = model_path.with_name("metadata.json")
             else:
                 metadata_path = Path(base_dir) / problem_id / model_id / "metadata.json"
-            with open(metadata_path, "r") as f:
-                metadata = json.load(f)
+        with open(metadata_path, "r") as f:
+            metadata = json.load(f)
         return metadata
     except Exception as e:
         print(f"Failed to load metadata: {e}")
