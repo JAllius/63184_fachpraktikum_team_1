@@ -1,0 +1,83 @@
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
+import pandas as pd
+
+def calculate_cv(
+    model: Pipeline,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    task: str,
+    multi_class: bool | None = False,
+    n_splits: int = 5,
+    random_seed: int = 42,
+)-> dict:
+    
+    if task == "classification":
+        metrics = classification_cv(model, X_train, y_train, multi_class)
+    elif task == "regression":
+        metrics = regression_cv(model, X_train, y_train)
+    else:
+        raise ValueError(f"Invalid task: '{task}'. Expected 'classification' or 'regression'.")
+    return metrics
+
+def classification_cv(
+    model: Pipeline,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    multi_class: bool | None = False,
+    n_splits: int = 5,
+    random_seed: int = 42,
+)-> dict:
+    cv = StratifiedKFold(
+        n_splits = n_splits,
+        shuffle = True,
+        random_state = random_seed,
+    )
+
+    score = "f1_macro" if multi_class else "f1"
+    cv_scores = cross_val_score(
+        model,
+        X_train,
+        y_train,
+        cv = cv,
+        scoring = score,
+    )
+
+    cv_summary = {
+        "score": score,
+        "cv_folds": [round(float(v), 4) for v in cv_scores],
+        "mean": round(float(cv_scores.mean()), 4),
+        "std": round(float(cv_scores.std()), 4),
+    }
+
+    return cv_summary
+
+def regression_cv(
+    model: Pipeline,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    n_splits: int = 5,
+    random_seed: int = 42,
+)-> dict:
+    cv = KFold(
+        n_splits = n_splits,
+        shuffle = True,
+        random_state = random_seed,
+    )
+
+    cv_scores = cross_val_score(
+        model,
+        X_train,
+        y_train,
+        cv = cv,
+        scoring = "r2",
+    )
+
+    cv_summary = {
+        "score": "r2",
+        "cv_folds": [round(float(v), 4) for v in cv_scores],
+        "mean": round(float(cv_scores.mean()), 4),
+        "std": round(float(cv_scores.std()), 4),
+    }
+
+    return cv_summary

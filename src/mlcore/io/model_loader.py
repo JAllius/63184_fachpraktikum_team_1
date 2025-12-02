@@ -1,5 +1,6 @@
 from joblib import load
 from pathlib import Path
+from src.db.db import get_ml_problem, get_model
 
 def load_model(
     model_uri: str | None = None,
@@ -19,11 +20,10 @@ def load_model(
             model_path = Path(model_uri)
         else:
             if model_id == "production":
-                
-                # READ DB (PROBLEM_ID) -> PRODUCTION: URI
-                replace_this_line = 1
-                
-                model_path = replace_this_line
+                problem = get_ml_problem(problem_id)
+                model_id = problem.get("current_model_id", False)
+                model = get_model(model_id)
+                model_path = model.get("uri", False)
             else:
                 model_path = Path(base_dir) / problem_id / model_id / "model.joblib"
         model = load(model_path)

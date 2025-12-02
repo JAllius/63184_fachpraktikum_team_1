@@ -3,16 +3,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from autosklearn.regression import AutoSklearnRegressor
 from ..metadata_presets import metadata_preset
 
 VERSION = "1.0"
 
 PRESETS = {
-    "n_estimators":{
-        "fast": 200,
-        "balanced": 500,
-        "accurate": 1000,
+    "time_left_for_this_task":{
+        "fast": 60,
+        "balanced": 300,
+        "accurate": 900,
+    },
+    "per_run_time_limit":{
+        "fast": 15,
+        "balanced": 60,
+        "accurate": 90,
     },
 }
 
@@ -26,19 +32,19 @@ def build_model(
     
     metadata = {
         **metadata_preset,  # merge metadata with the preset
-        "task": "classification",
-        "preset": "random_forest",
+        "task": "regression",
+        "preset": "auto",
         "version": VERSION,
-        "framework": "scikit-learn",
-        "algorithm": "RandomForestClassifier",
+        "framework": "auto-sklearn",
+        "algorithm": "AutoSklearnRegressor",
         "semantic_types": {
             "categorical": categorical,
             "numeric": numeric,
             "boolean": boolean,
-            },
+        },
         "train_mode": train_mode,
         "random_seed": random_seed,
-        }
+    }
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -48,7 +54,7 @@ def build_model(
                 ]), categorical),
             ("num", Pipeline([
                 ("impute", SimpleImputer(strategy = "median")),
-                ("pass", "passthrough"),
+                ("scale", StandardScaler()),
                 ]), numeric),
             ("bool", Pipeline([
                 ("impute", SimpleImputer(strategy = "most_frequent")),
@@ -58,15 +64,16 @@ def build_model(
     )
     
     params = {
-        "n_estimators": PRESETS["n_estimators"][train_mode],
+        "time_left_for_this_task": PRESETS["time_left_for_this_task"][train_mode],
+        "per_run_time_limit": PRESETS["per_run_time_limit"][train_mode],
         "n_jobs": -1,
-        "random_state": random_seed,
+        "seed": random_seed,
     }
     metadata["params"] = params
     
     model = Pipeline([
         ("pre", preprocessor),
-        ("est", RandomForestClassifier(**params)),
+        ("est", AutoSklearnRegressor(**params)),
     ])
     
     return model, metadata

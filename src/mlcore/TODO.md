@@ -1,10 +1,8 @@
 # TODO
 
 - predictor.py needs schema validation
-- predictor.py return values
-- trainer.py needs to be connected with the rest of the scripts - and with problem id
-- save a test json problem_id, and create a model_id folder, to test flow
-- create "auto" preset
-- create presets (min. 1 regression preset)
 - error handling
 - documentation (functions, rows)
+- if schema_snapshot exists skip calculation
+- src/mlcore/metrics/metrics_calculator.py: for multi-class classification, precision/recall are called without average=... -> check how it works for multi-class
+- change NAME in trainer.py and connect to user

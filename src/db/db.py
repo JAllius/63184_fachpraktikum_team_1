@@ -4,7 +4,7 @@ import os
 import json
 import uuid
 import contextlib
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import pymysql
 from pymysql.cursors import DictCursor
@@ -197,7 +197,7 @@ def create_model(
     explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
-) -> str:
+) -> Tuple[str, str]:
     model_id = str(uuid.uuid4())
 
     # Default URI derived from IDs
@@ -228,7 +228,7 @@ def create_model(
                 created_by,
             ),
         )
-    return model_id
+    return model_id, uri
 
 
 
