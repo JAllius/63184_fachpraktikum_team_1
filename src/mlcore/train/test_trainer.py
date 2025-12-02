@@ -11,7 +11,7 @@ from src.db import db
 def bootstrap_problem_id():
     try:
         init_test_db_main("src/db/test_db.txt", reset=True)
-    except pymysql.err.OperationalError as e:
+    except (pymysql.err.OperationalError, SystemExit) as e:
         pytest.skip(f"Skipping trainer test: MySQL not available ({e})")
     except Exception as e:
         pytest.skip(f"Skipping trainer test: DB init failed ({e})")
