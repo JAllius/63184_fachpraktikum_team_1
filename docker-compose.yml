@@ -6,7 +6,10 @@ services:
     #   dockerfile: DockerfileApp
     environment:
       REDISSERVER: redis://redis_server:6379
+      DB_HOST: db
       # C_FORCE_ROOT: "true"
+    links:
+      - "db:db"
     ports:
       - '42000:80'
     restart: "unless-stopped"
@@ -20,10 +23,14 @@ services:
     #   dockerfile: DockerfileWorker
     environment:
       REDISSERVER: redis://redis_server:6379
+      DB_HOST: db
       # C_FORCE_ROOT: "true"
+    links:
+      - "db:db"
     deploy:
       mode: replicated
       replicas: 3
+    restart: "unless-stopped"
     depends_on:
       - redis_server
   redis_server:
