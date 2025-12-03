@@ -1,6 +1,6 @@
-from ...db import db
-from ...db.init_test_db import main as init_test_db_main
-from ..predict.predictor import predict
+from db import db
+from db.init_test_db import main as init_test_db_main
+from mlcore.predict.predictor import predict
 from .trainer import train
 import os
 import pymysql

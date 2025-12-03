@@ -1,6 +1,6 @@
 from joblib import load
 from pathlib import Path
-from ...db.db import get_ml_problem, get_model
+from db.db import get_ml_problem, get_model
 
 
 def load_model(
