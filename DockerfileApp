@@ -6,4 +6,5 @@ COPY ./src/__init__.py /code/__init__.py
 COPY ./src/app /code/app
 COPY ./src/celery_handler /code/celery_handler
 COPY ./src/db /code/db
+RUN apt update -y ; apt install curl -y
 CMD ["fastapi", "run", "app/main.py", "--port", "80"]
