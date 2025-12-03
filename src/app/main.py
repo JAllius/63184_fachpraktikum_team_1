@@ -32,7 +32,8 @@ def get_domain(request: Request):
 
 @app.on_event("startup")
 def on_startup():
-    main(apply_seed=False)
+    # main(apply_seed=False)
+    ...
 
 
 @app.get("/")
@@ -192,8 +193,8 @@ async def get_problem(problem_id: int):
 
 @app.post("/train")
 async def post_train(
-    user_id: int,
-    problem_id: int,
+    # user_id: int,
+    problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     explanation: bool = True,
@@ -212,7 +213,7 @@ async def post_train(
 @app.post("/predict")
 async def post_predict(
     user_id: int,
-    problem_id: int | None = None,
+    problem_id: str | None = None,
     model_id: int | str = "production",
     input: str | None = None,
     input_uri: str | None = None,
