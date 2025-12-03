@@ -106,7 +106,7 @@ def test_smoke_full_flow():
     assert isinstance(prob_id, str)
 
     # 5) create model (evaluation_strategy now lives here)
-    model_id = create_model(
+    model_id, uri = create_model(
         problem_id=prob_id,
         algorithm="prophet",
         status="staging",
@@ -120,6 +120,7 @@ def test_smoke_full_flow():
         name="smoke_model",
     )
     assert isinstance(model_id, str)
+    assert isinstance(uri, str)
 
     # 6) create job for training
     job_id = create_job(
