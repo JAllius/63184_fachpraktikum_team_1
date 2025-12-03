@@ -1,9 +1,11 @@
 from ..celery_handler import celery_app
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
+import starlette.status as status
 from typing import Literal
 import logging
 import json
-from src.db.init_db import main
+from ..db.init_db import main
 
 logger = logging.getLogger(__name__)
 
@@ -26,19 +28,19 @@ def get_domain(request: Request):
     return domain
 
 # .on_event is deprecated and it suggests to use lifespan, but i don't know it. It should still support .on_event.
+
+
 @app.on_event("startup")
 def on_startup():
     main(apply_seed=False)
 
+
 @app.get("/")
-async def read_root(request: Request):
+async def read_root():
     logger.info("Sending celery task 'hello.task'")
     task = celery_app.send_task("hello.task", args=["world"])
     # return task id and url
-    return dict(
-        id=task.id,
-        url=f"{get_domain(request)}/celery/{task.id}",
-    )
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/celery/{id}")
@@ -197,7 +199,12 @@ async def post_train(
     explanation: bool = True,
 ):
     """create a request/job to train a model for a given problem_id and return model_id"""
-    return {}
+    logger.info("Sending celery task 'train.task'")
+
+    # TODO: re-add user_id when we add checking for permissions
+    task = celery_app.send_task(
+        "train.task", args=[problem_id, algorithm, train_mode, explanation])
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Predict ==========
 

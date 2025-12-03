@@ -9,12 +9,13 @@ from ..metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from src.db.db import get_dataset_version, get_ml_problem, create_model
+from ...db.db import get_dataset_version, get_ml_problem, create_model
 import json
 from pathlib import Path
 
 BASE_DIR = "./testdata/models"
 NAME = None
+
 
 def train(
     problem_id: str,
@@ -34,10 +35,12 @@ def train(
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))
     raw_profile = dataset_version.get("profile_json")
-    profile = json.loads(raw_profile) if isinstance(raw_profile, str) else raw_profile
+    profile = json.loads(raw_profile) if isinstance(
+        raw_profile, str) else raw_profile
     if not profile:
         profile = suggest_profile(pd.DataFrame(df))
-    multi_class = profile.get("columns", {}).get(target, {}).get("cardinality", 0) > 2
+    multi_class = profile.get("columns", {}).get(
+        target, {}).get("cardinality", 0) > 2
 
     X, y = preprocess_dataframe(df, target, profile)
     semantic_types = get_semantic_types(X, profile)
@@ -48,7 +51,8 @@ def train(
     boolean = semantic_types["boolean"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed # stratify to keep class proportions
+        # stratify to keep class proportions
+        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
     )
 
     build_model = loader(task, algorithm.lower())
@@ -83,7 +87,7 @@ def train(
     metadata["metrics"] = metrics
     if explanation:
         metadata["explanation"] = explanation
-    
+
     model_id, model_uri = create_model(
         problem_id=problem_id,
         algorithm=algorithm.lower(),
@@ -97,7 +101,7 @@ def train(
         created_by=NAME,
         name=None,
     )
-    
+
     metadata["model_id"] = model_id
 
     path_uri = Path(model_uri).parent
@@ -106,6 +110,7 @@ def train(
         if save_metadata(metadata, path_uri) == "Success":
             return model_id, model_uri
         else:
-            raise RuntimeError(f"Failed to save the model's metadata at {path_uri}")
+            raise RuntimeError(
+                f"Failed to save the model's metadata at {path_uri}")
     else:
         raise RuntimeError(f"Failed to save the model at {path_uri}")

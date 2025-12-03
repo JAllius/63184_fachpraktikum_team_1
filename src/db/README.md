@@ -116,7 +116,7 @@ This script applies the schema to team1_db_test, optionally resets tables, and i
 Run from repo root:
 
 ```bash
-python -m src.db.init_test_db --reset
+python -m ..db.init_test_db --reset
 ```
 
 Run helpers/tests against the test DB

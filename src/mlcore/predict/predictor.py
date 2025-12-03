@@ -3,7 +3,7 @@ from pathlib import Path
 from ..io.data_reader import get_dataframe_from_csv
 from ..io.model_loader import load_model
 from ..io.metadata_loader import load_metadata
-from src.db.db import get_ml_problem, get_model
+from ...db.db import get_ml_problem, get_model
 
 
 def predict(
@@ -40,7 +40,7 @@ def predict(
             model_id = problem.get("current_model_id", False)
             model = get_model(model_id)
             model_path = model.get("uri", False)
-            
+
             model = load_model(model_uri=model_path)
             metadata_path = model_path.with_name("metadata.json")
             metadata = load_metadata(metadata_path)
