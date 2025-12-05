@@ -125,4 +125,4 @@ Because db.py reads DB_NAME from env, you can run anything against the test DB l
 
 ```bash
 DB_NAME=team1_db_test PYTHONPATH=. pytest -q src/db/test_smoke.py -s
-
+```

@@ -7,6 +7,7 @@ services:
     environment:
       REDISSERVER: redis://redis_server:6379
       DB_HOST: db
+      DELAY_DB_CONN_ON_StARTUP: 30
       # C_FORCE_ROOT: "true"
     links:
       - "db:db"
