@@ -7,7 +7,6 @@ import logging
 import json
 import time
 import os
-import csv
 from io import StringIO
 from ..db.init_db import main
 from ..db import db
@@ -124,8 +123,6 @@ async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     contents = await file.read()
     decoded_contents = contents.decode('utf-8')
     buffer = StringIO(decoded_contents)
-    # csv_reader = csv.DictReader(buffer)
-    # data = [row for row in csv_reader]
 
     df: pd.DataFrame = pd.read_csv(buffer)
     db.create_dataset_version(
