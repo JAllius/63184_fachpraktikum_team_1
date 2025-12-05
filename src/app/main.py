@@ -10,6 +10,8 @@ import os
 import csv
 from io import StringIO
 from ..db.init_db import main
+from ..db import db
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -122,32 +124,33 @@ async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     contents = await file.read()
     decoded_contents = contents.decode('utf-8')
     buffer = StringIO(decoded_contents)
-    csv_reader = csv.DictReader(buffer)
-    data = [row for row in csv_reader]
+    # csv_reader = csv.DictReader(buffer)
+    # data = [row for row in csv_reader]
 
-    # TODO: store file or data in db
-
-    return JSONResponse(content=data)
+    df: pd.DataFrame = pd.read_csv(buffer)
+    db.create_dataset_version(
+        dataset_id=dataset_id,
+        uri="?",
+        schema_json={"columns": df.labels},
+        profile_json=df.to_json(),
+        row_count=len(df)
+    )
+    return JSONResponse(content=df.to_json())
 
 
 @app.get("/dataset/{dataset_id}/{version}")
 async def get_dataset_version(dataset_id: int, version: int, user_id: int):
     """return the specified dataset version if user has permission"""
+    #! what are dataset_id and user_id used for?
+    db.get_dataset_version(version_id=version)
     return {}
 
 
 @app.put("/dataset/{dataset_id}/{version}")
 async def put_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     """update the specified dataset version if user has permission"""
-    contents = await file.read()
-    decoded_contents = contents.decode('utf-8')
-    buffer = StringIO(decoded_contents)
-    csv_reader = csv.DictReader(buffer)
-    data = [row for row in csv_reader]
-
-    # TODO: store file or data in db
-
-    return JSONResponse(content=data)
+    delete_dataset_version(dataset_id, user_id)
+    return post_dataset_version(dataset_id, user_id, file)
 
 
 @app.delete("/dataset/{dataset_id}/{version}")
