@@ -1,12 +1,14 @@
 from ..celery_handler import celery_app
-from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request, File, UploadFile
+from fastapi.responses import RedirectResponse, JSONResponse
 import starlette.status as status
 from typing import Literal
 import logging
 import json
 import time
 import os
+import csv
+from io import StringIO
 from ..db.init_db import main
 
 logger = logging.getLogger(__name__)
@@ -115,9 +117,17 @@ async def delete_dataset(dataset_id: int, user_id: int):
 
 
 @app.post("/dataset/{dataset_id}")
-async def post_dataset_version(dataset_id: int, user_id: int):
+async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     """create a stub for a new dataset version and return the version"""
-    return {}
+    contents = await file.read()
+    decoded_contents = contents.decode('utf-8')
+    buffer = StringIO(decoded_contents)
+    csv_reader = csv.DictReader(buffer)
+    data = [row for row in csv_reader]
+
+    # TODO: store file or data in db
+
+    return JSONResponse(content=data)
 
 
 @app.get("/dataset/{dataset_id}/{version}")
@@ -127,9 +137,17 @@ async def get_dataset_version(dataset_id: int, version: int, user_id: int):
 
 
 @app.put("/dataset/{dataset_id}/{version}")
-async def put_dataset_version(dataset_id: int, user_id: int):
+async def put_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     """update the specified dataset version if user has permission"""
-    return {}
+    contents = await file.read()
+    decoded_contents = contents.decode('utf-8')
+    buffer = StringIO(decoded_contents)
+    csv_reader = csv.DictReader(buffer)
+    data = [row for row in csv_reader]
+
+    # TODO: store file or data in db
+
+    return JSONResponse(content=data)
 
 
 @app.delete("/dataset/{dataset_id}/{version}")
