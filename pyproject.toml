@@ -17,12 +17,12 @@ dependencies = [
   "mysql-connector-python",
   "pymysql>=1.1",
   "cryptography",
+  "pandas==2.2.3",
 ]
 
 [project.optional-dependencies]
 app = ["fastapi[standard]==0.120.4", "pydantic==2.12.3"]
 worker = [
-  "pandas==2.2.3",
   "numpy==2.1.2",
   "scikit-learn==1.5.2",
   "plotly==5.24.1",
