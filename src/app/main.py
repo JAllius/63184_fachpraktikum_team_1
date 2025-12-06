@@ -40,6 +40,15 @@ def on_startup():
         time.sleep(duration)
     main(apply_seed=False)
 
+    seed_test_data = os.getenv("SEED_TEST_DATA", False).lower() == "true"
+    if seed_test_data:
+        test_data_path = os.getenv("TEST_DATA_PATH", "db/test_db.txt")
+        try:
+            from ..db.init_test_db import seed_db
+            seed_db(test_data_path, reset=True)
+        except Exception as e:
+            print("Failed to seed the DB. Error: ", e)
+
 
 @app.get("/")
 async def read_root():
@@ -217,22 +226,24 @@ async def post_train(
 
 @app.post("/predict")
 async def post_predict(
-    user_id: int,
-    problem_id: str | None = None,
-    model_id: int | str = "production",
-    input: str | None = None,
+    input: dict | str | None = None,
     input_uri: str | None = None,
-    train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
-    explanation: bool = True,
+    problem_id: str | None = None,
+    model_uri: str | None = None,
+    model_id: str = "production",
 ):
-    if not problem_id and model_id == "production":
+    if not model_uri and not problem_id:
         # no problem or model given for the prediction
         return {}
     if not input and not input_uri:
         # no input given for the prediction
         return {}
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
-    return {}
+    logger.info("Sending celery task 'predict.task'")
+
+    task = celery_app.send_task(
+        "predict.task", args=[input, input_uri, problem_id, model_uri, model_id])
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Models ==========
 

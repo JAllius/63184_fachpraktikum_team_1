@@ -1,27 +1,35 @@
 services:
   api:
-    image: jallius/fachpraktikum-app
-    # build:
-    #   context: .
-    #   dockerfile: DockerfileApp
+    # image: jallius/fachpraktikum-app
+    build:
+      context: .
+      dockerfile: DockerfileApp
     environment:
       REDISSERVER: redis://redis_server:6379
+      # Misspelling with DELAY_DB_CONN_ON_StARTUP -> DELAY_DB_CONN_ON_STARTUP
+      DELAY_DB_CONN_ON_StARTUP: 5
       DB_HOST: db
-      DELAY_DB_CONN_ON_StARTUP: 30
+      DB_PORT: "3306"
+      DB_NAME: "team1_db"
+      DB_USER: "team1_user"
+      DB_PASS: "team1_pass"
+      SEED_TEST_DATA: "true"
+      TEST_DB_NAME: "team1_db"
+      TEST_DATA_PATH: "/code/db/test_db.txt"
       # C_FORCE_ROOT: "true"
     links:
       - "db:db"
     ports:
-      - '42000:80'
+      - "42000:80"
     restart: "unless-stopped"
     depends_on:
       - redis_server
 
   worker:
-    image: jallius/fachpraktikum-worker
-    # build:
-    #   context: .
-    #   dockerfile: DockerfileWorker
+    # image: jallius/fachpraktikum-worker
+    build:
+      context: .
+      dockerfile: DockerfileWorker
     environment:
       REDISSERVER: redis://redis_server:6379
       DB_HOST: db
@@ -37,10 +45,10 @@ services:
   redis_server:
     image: redis
 
-
   flower:
     image: mher/flower
-    command: ["celery", "--broker=redis://redis_server:6379", "flower", "--port=5555"]
+    command:
+      ["celery", "--broker=redis://redis_server:6379", "flower", "--port=5555"]
     ports:
       - "5555:5555"
     depends_on:
@@ -52,8 +60,8 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: safe123
-      MYSQL_DATABASE: team1_db        # auto-create DB 
-      MYSQL_USER: team1_user          # auto-create user
+      MYSQL_DATABASE: team1_db # auto-create DB
+      MYSQL_USER: team1_user # auto-create user
       MYSQL_PASSWORD: team1_pass
     ports:
       - "3306:3306"
@@ -61,6 +69,5 @@ services:
     volumes:
       - db-data:/var/lib/mysql
 
-
 volumes:
-  db-data: 
+  db-data:

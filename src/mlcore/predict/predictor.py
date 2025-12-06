@@ -3,7 +3,7 @@ from pathlib import Path
 from mlcore.io.data_reader import get_dataframe_from_csv
 from mlcore.io.model_loader import load_model
 from mlcore.io.metadata_loader import load_metadata
-from db.db import get_ml_problem, get_model
+from db.db import get_ml_problem, get_model, create_prediction
 
 
 def predict(
@@ -14,7 +14,7 @@ def predict(
     model_id: str | None = "production",
 ) -> str:
 
-    if not input and not input_uri:
+    if input is None and not input_uri:
         raise ValueError(
             "No input dataframe was specified. Provide an input or an input_uri.")
 
@@ -66,5 +66,7 @@ def predict(
         "y_pred": y_pred,
         "model_metadata": metadata,
     }
+
+    create_prediction(model_id, input_uri, input, prediction_summary, None, None)
 
     return X, y_pred, prediction_summary

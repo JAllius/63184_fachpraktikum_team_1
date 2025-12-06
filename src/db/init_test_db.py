@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 import pymysql
 from pymysql.cursors import DictCursor
 
-TEST_DB = "team1_db_test"
+TEST_DB = os.getenv("TEST_DB_NAME", "team1_db_test")
 
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
@@ -89,6 +89,116 @@ def main(input_path: str, reset: bool) -> None:
     from ..db.init_db import main as init_db_main
     init_db_main(apply_seed=False)
 
+    # 3) optionally wipe tables
+    if reset:
+        _reset_tables()
+
+    # 4) import helpers AFTER setting DB_NAME so they connect to test DB
+    from ..db.db import (
+        create_user,
+        create_dataset,
+        create_dataset_version,
+        create_ml_problem,
+        create_model,
+        create_job,
+        create_prediction,
+    )
+
+    raw = open(input_path, "r", encoding="utf-8").read()
+    dv = _first_entry(_read_block(raw, "DATASET_VERSIONS:"))
+    mp = _first_entry(_read_block(raw, "ML_PROBLEMS:"))
+
+    # minimal parsing from file
+    dv_uri = dv.get("dataset_version_uri") or dv.get("uri") or "/data/test.csv"
+    schema_json = dv.get("schema") or {}
+    profile_json = dv.get("profile") or {}
+    row_count = None
+    try:
+        row_count = int(profile_json.get("summary", {}).get("n_rows"))
+    except Exception:
+        pass
+
+    task = mp.get("task", "classification")
+    target = mp.get("target", "target")
+    feature_strategy = mp.get("feature_strategy") or mp.get(
+        "feature_strategy_json") or {}
+    schema_snapshot = mp.get("schema_snapshot") or schema_json or {}
+
+    semantic_types = {}
+    cols = profile_json.get("columns", {})
+    if isinstance(cols, dict):
+        for col, info in cols.items():
+            st = (info or {}).get("semantic_type")
+            if st is not None:
+                semantic_types[col] = st
+
+    evaluation_strategy = mp.get("validation_strategy") or "train_test_split"
+
+    # 5) insert 1 row per table
+    user_id = create_user("test_user", "test_user@example.com")
+    dataset_id = create_dataset("test_dataset", owner_id=user_id)
+
+    version_id = create_dataset_version(
+        dataset_id=dataset_id,
+        uri=dv_uri,
+        schema_json=schema_json,
+        profile_json=profile_json,
+        row_count=row_count,
+    )
+
+    problem_id = create_ml_problem(
+        dataset_version_id=version_id,
+        dataset_version_uri=dv_uri,
+        task=task,
+        target=target,
+        feature_strategy_json=feature_strategy,
+        schema_snapshot=schema_snapshot,
+        semantic_types=semantic_types,
+        current_model_id=None,
+    )
+
+    model_id, model_uri = create_model(
+        problem_id=problem_id,
+        name="test_model",
+        algorithm="dummy_algorithm",
+        train_mode="auto",
+        evaluation_strategy=evaluation_strategy,
+        status="staging",
+        metrics_json={"note": "test model row"},
+        uri=None,
+        metadata_uri=None,
+        explanation_uri=None,
+        created_by=user_id,
+    )
+
+    job_id = create_job(
+        job_type="train",
+        status="completed",
+        task_id="test-task-1",
+        requested_by=user_id,
+        problem_id=problem_id,
+        model_id=model_id,
+    )
+
+    pred_id = create_prediction(
+        model_id=model_id,
+        input_uri=dv_uri,
+        inputs_json={"example": "input"},
+        outputs_json={"example": "output"},
+        outputs_uri="/outputs/test_prediction.json",
+        requested_by=user_id,
+    )
+
+    print(f"Test DB ready: {TEST_DB}")
+    print(
+        f"users={user_id} datasets={dataset_id} versions={version_id} problems={problem_id}")
+    print(f"models={model_id} jobs={job_id} predictions={pred_id}")
+
+def seed_db(input_path: str, reset: bool) -> None:
+    """
+    Seed DB with test_db data. Assumes init_db_main(apply_seed=False) is already done, and DB Schema exists.
+    """ 
+    
     # 3) optionally wipe tables
     if reset:
         _reset_tables()

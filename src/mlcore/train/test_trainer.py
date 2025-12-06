@@ -5,6 +5,7 @@ from .trainer import train
 import os
 import pymysql
 import pytest
+from ..presets import presets_path
 TEST_DB = "team1_db_test"
 os.environ.update({"DB_NAME": TEST_DB, "DB_HOST": "127.0.0.1",
                   "DB_USER": "team1_user", "DB_PASS": "team1_pass"})
@@ -26,7 +27,7 @@ def bootstrap_problem_id():
 
 def test_trainer():
     problem_id = bootstrap_problem_id()
-    model_id, model_uri = train(problem_id, algorithm="random_forest")
+    model_id, model_uri = train(problem_id, algorithm="random_forest", preset_dir= presets_path)
     input_uri = "./testdata/test_predict.csv"
     prediction = predict(input_uri=input_uri, model_uri=model_uri)
     print(prediction)
