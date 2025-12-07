@@ -126,8 +126,8 @@ def predict_task(
         )
 
         return {
-            "y_pred": summary["y_pred"].tolist(),
-            "n_predictions": summary["n_predictions"],
+            "X": summary["X"],
+            "y_pred": summary["y_pred"],
             "model_metadata": summary["model_metadata"],
         }
 

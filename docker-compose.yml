@@ -7,7 +7,7 @@ services:
     environment:
       REDISSERVER: redis://redis_server:6379
       # Misspelling with DELAY_DB_CONN_ON_StARTUP -> DELAY_DB_CONN_ON_STARTUP
-      DELAY_DB_CONN_ON_StARTUP: 5
+      DELAY_DB_CONN_ON_STARTUP: 5
       DB_HOST: db
       DB_PORT: "3306"
       DB_NAME: "team1_db"
@@ -30,9 +30,12 @@ services:
     build:
       context: .
       dockerfile: DockerfileWorker
+    volumes:
+      - model-data:/models
     environment:
       REDISSERVER: redis://redis_server:6379
       DB_HOST: db
+      MODEL_BASE_PATH: /models
       # C_FORCE_ROOT: "true"
     links:
       - "db:db"
@@ -71,3 +74,4 @@ services:
 
 volumes:
   db-data:
+  model-data:

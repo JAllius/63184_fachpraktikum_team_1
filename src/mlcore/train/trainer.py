@@ -12,11 +12,12 @@ import pandas as pd
 from db.db import get_dataset_version, get_ml_problem, create_model
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 BASE_DIR = "./testdata/models"
 PRESET_DIR = "/code/mlcore/presets"
 NAME = None
-
 
 def train(
     problem_id: str,
@@ -106,13 +107,17 @@ def train(
 
     metadata["model_id"] = model_id
 
-    path_uri = Path(model_uri).parent
+    parent_path = Path(model_uri).parent
 
-    if save_model(model, path_uri) == "Success":
-        if save_metadata(metadata, path_uri) == "Success":
+    if save_model(model, parent_path):
+        logger.info(f"[SAVE_MODEL] Model saved at: {model_uri}")
+        if save_metadata(metadata, parent_path):
+            logger.info(f"[SAVE_MODEL_METADATA] Model's metadata saved at: {model_uri}")
             return model_id, model_uri
         else:
+            logger.error(f"[SAVE_MODEL_METADATA] Failed to save model's metadata at: {model_uri}")
             raise RuntimeError(
-                f"Failed to save the model's metadata at {path_uri}")
+                f"Failed to save the model's metadata at {parent_path}")
     else:
-        raise RuntimeError(f"Failed to save the model at {path_uri}")
+        logger.error(f"[SAVE_MODEL] Failed to save model at: {model_uri}")
+        raise RuntimeError(f"Failed to save the model at {parent_path}")
