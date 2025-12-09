@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 import pymysql
 from pymysql.cursors import DictCursor
 
-TEST_DB = "team1_db_test"
+TEST_DB = os.getenv("TEST_DB_NAME", "team1_db_test")
 
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
@@ -86,15 +86,23 @@ def main(input_path: str, reset: bool) -> None:
 
     # 2) apply schema into test DB (reuse your init_db.py)
     os.environ["DB_NAME"] = TEST_DB
-    from src.db.init_db import main as init_db_main
+    from ..db.init_db import main as init_db_main
     init_db_main(apply_seed=False)
+    
+    seed_db(input_path=input_path, reset=reset)
 
+
+def seed_db(input_path: str, reset: bool) -> None:
+    """
+    Seed DB with test_db data. Assumes init_db_main(apply_seed=False) is already done, and DB Schema exists.
+    """ 
+    
     # 3) optionally wipe tables
     if reset:
         _reset_tables()
 
     # 4) import helpers AFTER setting DB_NAME so they connect to test DB
-    from src.db.db import (
+    from ..db.db import (
         create_user,
         create_dataset,
         create_dataset_version,
@@ -120,7 +128,8 @@ def main(input_path: str, reset: bool) -> None:
 
     task = mp.get("task", "classification")
     target = mp.get("target", "target")
-    feature_strategy = mp.get("feature_strategy") or mp.get("feature_strategy_json") or {}
+    feature_strategy = mp.get("feature_strategy") or mp.get(
+        "feature_strategy_json") or {}
     schema_snapshot = mp.get("schema_snapshot") or schema_json or {}
 
     semantic_types = {}
@@ -189,13 +198,17 @@ def main(input_path: str, reset: bool) -> None:
     )
 
     print(f"Test DB ready: {TEST_DB}")
-    print(f"users={user_id} datasets={dataset_id} versions={version_id} problems={problem_id}")
+    print(
+        f"users={user_id} datasets={dataset_id} versions={version_id} problems={problem_id}")
     print(f"models={model_id} jobs={job_id} predictions={pred_id}")
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Create and populate team1_db_test with 1 row per table.")
-    ap.add_argument("--input", default="src/db/test_db.txt", help="Path to test_db.txt")
-    ap.add_argument("--reset", action="store_true", help="TRUNCATE tables before inserting")
+    ap = argparse.ArgumentParser(
+        description="Create and populate team1_db_test with 1 row per table.")
+    ap.add_argument("--input", default="src/db/test_db.txt",
+                    help="Path to test_db.txt")
+    ap.add_argument("--reset", action="store_true",
+                    help="TRUNCATE tables before inserting")
     args = ap.parse_args()
     main(args.input, args.reset)

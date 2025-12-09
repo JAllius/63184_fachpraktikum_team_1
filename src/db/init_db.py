@@ -8,19 +8,23 @@ DB_NAME = os.getenv("DB_NAME", "team1_db")
 DB_USER = os.getenv("DB_USER", "team1_user")
 DB_PASS = os.getenv("DB_PASS", "team1_pass")
 
-SCHEMA_PATH = os.getenv("SCHEMA_PATH", "src/db/schema_mysql.sql")
-SEED_PATH = os.getenv("SEED_PATH", "src/db/seed.sql") 
+dir = os.path.dirname(os.path.realpath(__file__))
+SCHEMA_PATH = os.getenv("SCHEMA_PATH", os.path.join(dir, "schema_mysql.sql"))
+SEED_PATH = os.getenv("SEED_PATH", os.path.join(dir, "seed.sql"))
+
 
 def run_sql_file(cur, path):
     with open(path, "r", encoding="utf-8") as f:
         sql = f.read()
-    
+
     statements = [s.strip() for s in sql.split(";") if s.strip()]
     for stmt in statements:
         cur.execute(stmt)
 
+
 def main(apply_seed: bool = True):
-    print(f"Connecting to MySQL {DB_HOST}:{DB_PORT} db={DB_NAME} as {DB_USER} ...")
+    print(
+        f"Connecting to MySQL {DB_HOST}:{DB_PORT} db={DB_NAME} as {DB_USER} ...")
     conn = pymysql.connect(
         host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS,
         database=DB_NAME, autocommit=True, cursorclass=pymysql.cursors.DictCursor,
@@ -35,6 +39,7 @@ def main(apply_seed: bool = True):
         print("DB initialized.")
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     main(apply_seed=False)
