@@ -4,7 +4,7 @@ import os
 import json
 import uuid
 import contextlib
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, List, Dict, Literal
 
 import pymysql
 from pymysql.cursors import DictCursor
@@ -96,7 +96,66 @@ def get_dataset(dataset_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (dataset_id,))
         return cur.fetchone()
+    
 
+ALLOWED_DATASET_SORT_FIELDS = {
+    "name": "name",
+    "created_at": "created_at",
+}
+
+def get_datasets(
+    page: int,
+    size: int,
+    sort: str,
+    dir: Literal["asc", "desc"],
+    q: Optional[str] = None,
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+) -> Tuple[List[Dict], int]:
+    '''
+    Return (items, total) for datasets with pagination, sorting and optional search.
+    '''
+    ### SORTING ###
+    sort_column = ALLOWED_DATASET_SORT_FIELDS.get(sort, "created_at")
+    dir_sql = "ASC" if dir=="asc" else "DESC"
+
+    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
+    where_clauses = []
+    params = []
+
+    if q:
+        like = f"%{q}%" # Search anything that contains q
+        where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+
+    if id:
+        where_clauses.append("id = %s")
+        params.append(id)
+
+    if name:
+        like = f"%{name}%" # Search name for anything that contains name
+        where_clauses.append("name LIKE %s")
+        params.append(name)
+    
+    where_sql = ""
+    if where_clauses:
+        where_sql = "WHERE" + "AND".join(where_clauses)
+
+    ### TOTAL CALCULATION ###
+    count_sql = f"SELECT COUNT(*) AS total FROM datasets {where_sql}"
+    with cursor() as cur:
+        cur.execute(count_sql, params)
+        row = cur.fetchone()
+        total = row["total"] if row else 0
+
+    ### RETURN ###
+    offset = (page-1)*size
+    datasets_sql = f"SELECT * FROM datasets {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    with cursor() as cur:
+        cur.execute(datasets_sql, params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        items = cur.fetchall()
+
+    return items, total
 
 # -------------------------------------------------------------------
 # DATASET VERSIONS
@@ -135,6 +194,13 @@ def get_dataset_version(version_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (version_id,))
         return cur.fetchone()
+    
+
+def get_dataset_versions(dataset_id: str) -> List[Dict]:
+    sql = "SELECT * FROM dataset_versions WHERE dataset_id = %s"
+    with cursor() as cur:
+        cur.execute(sql, (dataset_id,))
+        return cur.fetchall()
 
 
 # -------------------------------------------------------------------
@@ -181,6 +247,13 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (problem_id,))
         return cur.fetchone()
+    
+
+def get_ml_problems(dataset_version_id: str) -> List[Dict]:
+    sql = "SELECT * FROM ml_problems WHERE dataset_version_id = %s"
+    with cursor() as cur:
+        cur.execute(sql, (dataset_version_id,))
+        return cur.fetchall()
 
 
 # -------------------------------------------------------------------

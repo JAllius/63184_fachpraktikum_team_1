@@ -1,38 +1,30 @@
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import {
-  get_datasets,
-  type Dataset,
-  type DatasetListResponse,
-} from "../../../lib/actions/dataset.action";
-import { Link, useSearchParams } from "react-router-dom";
+import { get_ml_problems, type MLProblem } from "../../../lib/api";
 
-const DatasetsPage = () => {
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
+const DatasetVersionIdPage = () => {
+  const params = useParams<{ datasetId: string; datasetVersionId: string }>();
+  if (!params.datasetVersionId) {
+    throw new Error("datasetVersionId param missing");
+  }
+  const datasetVersionId = params.datasetVersionId;
+
+  const [mlProblems, setmlProblems] = useState<MLProblem[]>([]);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [seachParams, setSearchParams] = useSearchParams();
-
-  const q = seachParams.get("q") || "";
-  const id = seachParams.get("id") || "";
-  const name = seachParams.get("name") || "";
 
   useEffect(() => {
-    async function loadDatasets() {
+    async function loadMLProblems() {
       try {
-        const data: DatasetListResponse = await get_datasets({
-          q: q || undefined,
-          id: id || undefined,
-          name: name || undefined,
-        });
-        setDatasets(data.items);
+        const data = await get_ml_problems(datasetVersionId);
+        setmlProblems(data);
       } catch (error) {
         console.log(error);
       } finally {
         setLoading(false);
       }
     }
-    loadDatasets();
-  }, [q, name, id]);
+    loadMLProblems();
+  }, [datasetVersionId]);
 
   if (loading) {
     return (
@@ -44,9 +36,9 @@ const DatasetsPage = () => {
 
   return (
     <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>Datasets</h1>
+      <h1>ML Problems</h1>
       <ul>
-        {datasets.map((ds) => (
+        {mlProblems.map((ds) => (
           <li key={ds.id} className="flex">
             <div className="border rounded px-2 py-2 ">
               {ds.id}, {ds.created_at}
@@ -64,4 +56,4 @@ const DatasetsPage = () => {
   );
 };
 
-export default DatasetsPage;
+export default DatasetVersionIdPage;

@@ -4,7 +4,8 @@ import DashboardLayout from "../layouts/dashboard/DashboardLayout";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import DatasetsPage from "../pages/dashboard/datasets/DatasetsPage";
 import JobsPage from "../pages/dashboard/jobs/JobsPage";
-import DatasetDetailPage from "../pages/dashboard/datasets/DatasetDetailPage";
+import DatasetIdPage from "../pages/dashboard/datasets/DatasetIdPage";
+import DatasetVersionIdPage from "../pages/dashboard/dataset_versions/DatasetVersionIdPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <AppPage /> },
@@ -14,7 +15,11 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "datasets", element: <DatasetsPage /> },
-      { path: "datasets/:datasetId", element: <DatasetDetailPage /> },
+      { path: "datasets/:datasetId", element: <DatasetIdPage /> },
+      {
+        path: "datasets/:datasetId/:datasetVersionId",
+        element: <DatasetVersionIdPage />,
+      },
       { path: "jobs", element: <JobsPage /> },
     ],
   },

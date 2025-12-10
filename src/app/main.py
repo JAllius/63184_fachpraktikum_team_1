@@ -1,17 +1,28 @@
 from ..celery_handler import celery_app
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 import starlette.status as status
-from typing import Literal
+from typing import Literal, Optional
 import logging
 import json
 import time
 import os
 from ..db.init_db import main
+from ..db.db import get_datasets, get_dataset_versions, get_ml_problems
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_domain(request: Request):
@@ -101,6 +112,42 @@ async def post_dataset(name: str, user_id: int):
     return {}
 
 
+@app.get("/datasets")  # /datasets
+async def get_list_datasets(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+):
+    """get all datasets"""
+    items, total = get_datasets(
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        name=name,
+    )
+    total_pages = int((total + size -1)/size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        "name": name,
+    }
+
+
 @app.get("/dataset/{dataset_id}")
 async def get_dataset(dataset_id: int, user_id: int):
     """return the specified dataset if user has permission"""
@@ -146,6 +193,22 @@ async def delete_dataset_version(dataset_id: int, user_id: int):
     """delete the specified dataset version if user has permission"""
     return {}
 
+
+@app.get("/dataset/{dataset_id}/versions")  # /dataset_versions
+async def get_all_dataset_versions(dataset_id: str):
+    """get all dataset_versions"""
+    datasets = get_dataset_versions(dataset_id)
+    return datasets
+
+
+
+@app.get("/dataset/{dataset_version_id}/problems")  # ml_problems
+async def get_all_problems(dataset_version_id: str):
+    """get all ml_problems"""
+    ml_problems = get_ml_problems(dataset_version_id)
+    return ml_problems
+
+
 # ========== Profile specification ==========
 
 # TODO: get known algorithms from database and check if specified algorithm is available
@@ -182,7 +245,7 @@ async def delete_job(user_id: int):
  # TODO: later update/delete too but not so important for now.
 
 
-@app.post("/problems")  # or ml_problems for clarity
+@app.post("/problem")  # or ml_problems for clarity
 async def post_problem(
     user_id: int,
     dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
@@ -197,7 +260,7 @@ async def post_problem(
     return {}
 
 
-@app.get("/problems/{problem_id}")
+@app.get("/problem/{problem_id}")
 async def get_problem(problem_id: int):
     """return specified problem if user has permission"""
     return {}
