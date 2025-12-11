@@ -9,7 +9,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import get_datasets, get_dataset_versions, get_ml_problems
+from ..db.db import db_get_dataset, get_datasets, get_dataset_versions, get_ml_problems
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +149,10 @@ async def get_list_datasets(
 
 
 @app.get("/dataset/{dataset_id}")
-async def get_dataset(dataset_id: int, user_id: int):
+async def get_dataset(dataset_id: str): #, user_id: int):
     """return the specified dataset if user has permission"""
-    return {}
+    dataset = db_get_dataset(dataset_id)
+    return dataset
 
 
 @app.put("/dataset/{dataset_id}")
@@ -194,15 +195,45 @@ async def delete_dataset_version(dataset_id: int, user_id: int):
     return {}
 
 
-@app.get("/dataset/{dataset_id}/versions")  # /dataset_versions
-async def get_all_dataset_versions(dataset_id: str):
+@app.get("/datasetVersions/{dataset_id}")  # /dataset_versions
+async def get_list_dataset_versions(
+    dataset_id: str,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    #name: Optional[str] = Query(None),
+):
     """get all dataset_versions"""
-    datasets = get_dataset_versions(dataset_id)
-    return datasets
+    items, total = get_dataset_versions(
+        dataset_id=dataset_id,
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        # name=name,
+    )
+    total_pages = int((total + size -1)/size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        # "name": name,
+    }
 
 
-
-@app.get("/dataset/{dataset_version_id}/problems")  # ml_problems
+@app.get("/datasetVersionProblems/{dataset_version_id}")  # ml_problems
 async def get_all_problems(dataset_version_id: str):
     """get all ml_problems"""
     ml_problems = get_ml_problems(dataset_version_id)

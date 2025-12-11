@@ -1,13 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
-export type Dataset = {
+export type DatasetVersion = {
   id: string;
-  name: string;
+  // name: string;
   created_at: string;
 };
 
-export type DatasetListResponse = {
-  items: Dataset[];
+export type DatasetVersionListResponse = {
+  items: DatasetVersion[];
   page: number;
   size: number;
   total: number;
@@ -16,22 +16,23 @@ export type DatasetListResponse = {
   dir: "asc" | "desc";
   q: string | null;
   id: string | null;
-  name: string | null;
+  // name: string | null;
 };
 
-export type DatasetQueryParams = {
+export type DatasetVersionQueryParams = {
   page?: number;
   size?: number;
   sort?: string;
   dir?: "asc" | "desc";
   q?: string;
   id?: string;
-  name?: string;
+  // name?: string;
 };
 
-export async function get_datasets(
-  params: DatasetQueryParams = {}
-): Promise<DatasetListResponse> {
+export async function get_dataset_versions(
+  dataset_id: string,
+  params: DatasetVersionQueryParams = {}
+): Promise<DatasetVersionListResponse> {
   const search = new URLSearchParams();
 
   if (params.page !== undefined) search.set("page", String(params.page));
@@ -40,29 +41,19 @@ export async function get_datasets(
   if (params.dir !== undefined) search.set("dir", String(params.dir));
   if (params.q !== undefined) search.set("q", String(params.q));
   if (params.id !== undefined) search.set("id", String(params.id));
-  if (params.name !== undefined) search.set("name", String(params.name));
+  // if (params.name !== undefined) search.set("name", String(params.name));
 
   const queryString = search.toString();
 
   const url = queryString
-    ? `${API_URL}/datasets?${queryString}`
-    : `${API_URL}/datasets`;
+    ? `${API_URL}/datasetVersions/${dataset_id}?${queryString}`
+    : `${API_URL}/datasetVersions/${dataset_id}`;
 
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Failed to fetch datasets: ${res.status}`);
+    throw new Error(`Failed to fetch dataset_versions: ${res.status}`);
   }
   const data = await res.json();
-  console.log("datasets:", data);
-  return data;
-}
-
-export async function get_dataset(dataset_id: string): Promise<Dataset> {
-  const res = await fetch(`${API_URL}/dataset/${dataset_id}`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch dataset: ${res.status}`);
-  }
-  const data = await res.json();
-  console.log("dataset:", data);
+  console.log(`dataset_versions of ${dataset_id}:`, data);
   return data;
 }

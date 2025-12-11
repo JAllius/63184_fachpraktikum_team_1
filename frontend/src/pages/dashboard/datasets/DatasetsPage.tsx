@@ -49,7 +49,8 @@ const DatasetsPage = () => {
         {datasets.map((ds) => (
           <li key={ds.id} className="flex">
             <div className="border rounded px-2 py-2 ">
-              {ds.id}, {ds.created_at}
+              <span className="font-semibold">{ds.name}</span>,{ds.id},{" "}
+              {ds.created_at}
             </div>
             <Link
               to={`${ds.id}`}
