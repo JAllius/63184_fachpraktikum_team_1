@@ -9,7 +9,7 @@ from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from db.db import get_dataset_version, get_ml_problem, create_model
+from db.db import db_get_dataset_version, get_ml_problem, create_model
 import json
 from pathlib import Path
 import logging
@@ -33,7 +33,7 @@ def train(
     problem = get_ml_problem(problem_id)
     dataset_version_id = problem.get("dataset_version_id", False)
     target = problem.get("target", False)
-    dataset_version = get_dataset_version(dataset_version_id)
+    dataset_version = db_get_dataset_version(dataset_version_id)
 
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))

@@ -13,9 +13,9 @@ def calculate_cv(
 )-> dict:
     
     if task == "classification":
-        metrics = classification_cv(model, X_train, y_train, multi_class)
+        metrics = classification_cv(model=model, X_train=X_train, y_train=y_train, multi_class=multi_class, n_splits=n_splits, random_seed=random_seed)
     elif task == "regression":
-        metrics = regression_cv(model, X_train, y_train)
+        metrics = regression_cv(model=model, X_train=X_train, y_train=y_train, n_splits=n_splits, random_seed=random_seed)
     else:
         raise ValueError(f"Invalid task: '{task}'. Expected 'classification' or 'regression'.")
     return metrics
@@ -41,6 +41,7 @@ def classification_cv(
         y_train,
         cv = cv,
         scoring = score,
+        n_jobs=-1,
     )
 
     cv_summary = {
@@ -71,6 +72,7 @@ def regression_cv(
         y_train,
         cv = cv,
         scoring = "r2",
+        n_jobs=-1,
     )
 
     cv_summary = {

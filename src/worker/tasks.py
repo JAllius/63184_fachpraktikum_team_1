@@ -94,10 +94,9 @@ def train_task(
 @celery_app.task(name="predict.task", bind=True)
 def predict_task(
     self,
-    input: dict | str | None = None,
+    input_json: dict | str | None = None,
     input_uri: str | None = None,
     problem_id: str | None = None,
-    model_uri: str | None = None,
     model_id: str = "production",
 ):
     """
@@ -107,21 +106,17 @@ def predict_task(
         self.update_state(state="STARTED", meta={"problem_id": problem_id})
 
         # Rebuild DataFrame ONLY if input is a dict
-        if input is not None:
-            if isinstance(input, dict):
-                input = pd.DataFrame(input)
-            if isinstance(input, str):
-                try:
-                    raw = json.loads(input)
-                    input = pd.DataFrame(raw)
-                except json.JSONDecodeError:
-                    raise ValueError("Input string is not valid JSON.")
+        if input_json is not None:
+            try:
+                raw = json.loads(input_json)
+                input = pd.DataFrame(raw)
+            except json.JSONDecodeError:
+                raise ValueError("Input string is not valid JSON.")
 
         X, y_pred, summary = predict(
             input=input,
             input_uri=input_uri,
             problem_id=problem_id,
-            model_uri=model_uri,
             model_id=model_id,
         )
 

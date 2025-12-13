@@ -189,7 +189,7 @@ def create_dataset_version(
     return version_id
 
 
-def get_dataset_version(version_id: str) -> Optional[dict]:
+def db_get_dataset_version(version_id: str) -> Optional[dict]:
     sql = "SELECT * FROM dataset_versions WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (version_id,))
@@ -250,9 +250,9 @@ def get_dataset_versions(
 
     ### RETURN ###
     offset = (page-1)*size
-    datasets_sql = f"SELECT * FROM dataset_versions WHERE dataset_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    dataset_versions_sql = f"SELECT * FROM dataset_versions WHERE dataset_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(datasets_sql, [dataset_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(dataset_versions_sql, [dataset_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
         items = cur.fetchall()
 
     return items, total
@@ -304,11 +304,75 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
         return cur.fetchone()
     
 
-def get_ml_problems(dataset_version_id: str) -> List[Dict]:
-    sql = "SELECT * FROM ml_problems WHERE dataset_version_id = %s"
+ALLOWED_ML_PROBLEM_SORT_FIELDS = {
+    "name": "name",
+    "task": "task",
+    "target": "target",
+    "created_at": "created_at",
+}
+
+
+def get_ml_problems(
+    dataset_version_id: str,
+    page: int,
+    size: int,
+    sort: str,
+    dir: Literal["asc", "desc"],
+    q: Optional[str] = None,
+    id: Optional[str] = None,
+    task: Optional[str] = None,
+    target: Optional[str] = None,
+    #name: Optional[str] = None,
+) -> Tuple[List[Dict], int]:
+    '''
+    Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
+    '''
+    ### SORTING ###
+    sort_column = ALLOWED_ML_PROBLEM_SORT_FIELDS.get(sort, "created_at")
+    dir_sql = "ASC" if dir=="asc" else "DESC"
+
+    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
+    where_clauses = []
+    params = []
+
+    if q:
+        like = f"%{q}%" # Search anything that contains q
+        where_clauses.append("task LIKE %s OR target LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        params.extend([like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+
+    if id:
+        where_clauses.append("id = %s")
+        params.append(id)
+
+    if task:
+        like = f"%{task}%" # Search target for anything that contains target
+        where_clauses.append("task LIKE %s")
+        params.append(like)
+
+    if target:
+        like = f"%{target}%" # Search target for anything that contains target
+        where_clauses.append("target LIKE %s")
+        params.append(like)
+    
+    where_sql = ""
+    if where_clauses:
+        where_sql = " AND " + " AND ".join(where_clauses)
+
+    ### TOTAL CALCULATION ###
+    count_sql = f"SELECT COUNT(*) AS total FROM ml_problems WHERE dataset_version_id = %s {where_sql}"
     with cursor() as cur:
-        cur.execute(sql, (dataset_version_id,))
-        return cur.fetchall()
+        cur.execute(count_sql, [dataset_version_id] + params)
+        row = cur.fetchone()
+        total = row["total"] if row else 0
+
+    ### RETURN ###
+    offset = (page-1)*size
+    ml_problems_sql = f"SELECT * FROM ml_problems WHERE dataset_version_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    with cursor() as cur:
+        cur.execute(ml_problems_sql, [dataset_version_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        items = cur.fetchall()
+
+    return items, total
 
 
 # -------------------------------------------------------------------
@@ -365,13 +429,98 @@ def create_model(
     return model_id, uri
 
 
-
-
 def get_model(model_id: str) -> Optional[dict]:
     sql = "SELECT * FROM models WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (model_id,))
         return cur.fetchone()
+
+
+ALLOWED_MODEL_SORT_FIELDS = {
+    "name": "name",
+    "status": "status",
+    "created_at": "created_at",
+}
+
+
+def get_models(
+    problem_id: str,
+    page: int,
+    size: int,
+    sort: str,
+    dir: Literal["asc", "desc"],
+    q: Optional[str] = None,
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+    algorithm: Optional[str] = None,
+    train_mode: Optional[str] = None,
+    evaluation_strategy: Optional[str] = None,
+    status: Optional[str] = None,
+) -> Tuple[List[Dict], int]:
+    '''
+    Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
+    '''
+    ### SORTING ###
+    sort_column = ALLOWED_MODEL_SORT_FIELDS.get(sort, "created_at")
+    dir_sql = "ASC" if dir=="asc" else "DESC"
+
+    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
+    where_clauses = []
+    params = []
+
+    if q:
+        like = f"%{q}%" # Search anything that contains q
+        where_clauses.append("name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        params.extend([like, like, like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+
+    if id:
+        where_clauses.append("id = %s")
+        params.append(id)
+
+    if name:
+        like = f"%{name}%" # Search name for anything that contains name
+        where_clauses.append("name LIKE %s")
+        params.append(like)
+
+    if algorithm:
+        like = f"%{algorithm}%"
+        where_clauses.append("algorithm LIKE %s")
+        params.append(like)
+
+    if train_mode:
+        like = f"%{train_mode}%"
+        where_clauses.append("train_mode LIKE %s")
+        params.append(like)
+    
+    if evaluation_strategy:
+        like = f"%{evaluation_strategy}%"
+        where_clauses.append("evaluation_strategy LIKE %s")
+        params.append(like)
+
+    if status:
+        like = f"%{status}%"
+        where_clauses.append("status LIKE %s")
+        params.append(like)
+    
+    where_sql = ""
+    if where_clauses:
+        where_sql = " AND " + " AND ".join(where_clauses)
+
+    ### TOTAL CALCULATION ###
+    count_sql = f"SELECT COUNT(*) AS total FROM models WHERE problem_id = %s {where_sql}"
+    with cursor() as cur:
+        cur.execute(count_sql, [problem_id] + params)
+        row = cur.fetchone()
+        total = row["total"] if row else 0
+
+    ### RETURN ###
+    offset = (page-1)*size
+    models_sql = f"SELECT * FROM models WHERE problem_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    with cursor() as cur:
+        cur.execute(models_sql, [problem_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        items = cur.fetchall()
+
+    return items, total
 
 
 # -------------------------------------------------------------------
