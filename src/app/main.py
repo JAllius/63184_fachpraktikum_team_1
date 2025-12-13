@@ -1,9 +1,13 @@
 from ..celery_handler import celery_app
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
+import starlette.status as status
 from typing import Literal
 import logging
 import json
-from src.db.init_db import main
+import time
+import os
+from ..db.init_db import main
 
 logger = logging.getLogger(__name__)
 
@@ -25,20 +29,33 @@ def get_domain(request: Request):
         domain += f":{port}"
     return domain
 
+
 # .on_event is deprecated and it suggests to use lifespan, but i don't know it. It should still support .on_event.
 @app.on_event("startup")
 def on_startup():
+    duration = int(os.getenv("DELAY_DB_CONN_ON_STARTUP", 0))
+    if duration > 0:
+        logger.warning(
+            f"Waiting for {duration}s for MySQL to finish startup")
+        time.sleep(duration)
     main(apply_seed=False)
 
+    seed_test_data = os.getenv("SEED_TEST_DATA", False).lower() == "true"
+    if seed_test_data:
+        test_data_path = os.getenv("TEST_DATA_PATH", "db/test_db.txt")
+        try:
+            from ..db.init_test_db import seed_db
+            seed_db(test_data_path, reset=True)
+        except Exception as e:
+            print("Failed to seed the DB. Error: ", e)
+
+
 @app.get("/")
-async def read_root(request: Request):
+async def read_root():
     logger.info("Sending celery task 'hello.task'")
     task = celery_app.send_task("hello.task", args=["world"])
     # return task id and url
-    return dict(
-        id=task.id,
-        url=f"{get_domain(request)}/celery/{task.id}",
-    )
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/celery/{id}")
@@ -190,36 +207,43 @@ async def get_problem(problem_id: int):
 
 @app.post("/train")
 async def post_train(
-    user_id: int,
-    problem_id: int,
+    # user_id: int,
+    problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     explanation: bool = True,
 ):
     """create a request/job to train a model for a given problem_id and return model_id"""
-    return {}
+    logger.info("Sending celery task 'train.task'")
+
+    # TODO: re-add user_id when we add checking for permissions
+    task = celery_app.send_task(
+        "train.task", args=[problem_id, algorithm, train_mode, explanation])
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Predict ==========
 
 
 @app.post("/predict")
 async def post_predict(
-    user_id: int,
-    problem_id: int | None = None,
-    model_id: int | str = "production",
-    input: str | None = None,
+    input: dict | str | None = None,
     input_uri: str | None = None,
-    train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
-    explanation: bool = True,
+    problem_id: str | None = None,
+    model_uri: str | None = None,
+    model_id: str = "production",
 ):
-    if not problem_id and model_id == "production":
+    if not model_uri and not problem_id:
         # no problem or model given for the prediction
         return {}
     if not input and not input_uri:
         # no input given for the prediction
         return {}
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
-    return {}
+    logger.info("Sending celery task 'predict.task'")
+
+    task = celery_app.send_task(
+        "predict.task", args=[input, input_uri, problem_id, model_uri, model_id])
+    return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Models ==========
 

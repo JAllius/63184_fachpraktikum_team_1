@@ -1,20 +1,22 @@
 import json
 from pathlib import Path
-from src.db.db import get_ml_problem, get_model
+from db.db import get_ml_problem, get_model
+
 
 def load_metadata(
     metadata_uri: str,
     problem_id: str | None = None,
     model_id: str | None = "production",
     base_dir: str = "./testdata/models",
-)-> dict:
+) -> dict:
     """
     Load the metadata of a model either from a given URI or based on
     problem and model identifiers.
     """
     if not metadata_uri:
-        raise ValueError("No metadata_uri was provided. Provide a metadata_uri.")
-    
+        raise ValueError(
+            "No metadata_uri was provided. Provide a metadata_uri.")
+
     try:
         if metadata_uri:
             metadata_path = Path(metadata_uri)
@@ -26,7 +28,8 @@ def load_metadata(
                 model_path = model.get("uri", False)
                 metadata_path = model_path.with_name("metadata.json")
             else:
-                metadata_path = Path(base_dir) / problem_id / model_id / "metadata.json"
+                metadata_path = Path(base_dir) / problem_id / \
+                    model_id / "metadata.json"
         with open(metadata_path, "r") as f:
             metadata = json.load(f)
         return metadata

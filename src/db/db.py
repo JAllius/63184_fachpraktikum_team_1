@@ -10,6 +10,12 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 # -------------------------------------------------------------------
+# MODEL PATH CONFIG
+# -------------------------------------------------------------------
+
+MODEL_DIR = os.getenv("MODEL_BASE_PATH", "/models")
+
+# -------------------------------------------------------------------
 # DB CONFIG
 # -------------------------------------------------------------------
 
@@ -183,7 +189,7 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
 
 def build_model_uri(problem_id: str, model_id: str) -> str:
     # storage-agnostic default
-    return f"models/{problem_id}/{model_id}/model.joblib"
+    return f"{MODEL_DIR}/{problem_id}/{model_id}/model.joblib"
 
 def create_model(
     problem_id: str,

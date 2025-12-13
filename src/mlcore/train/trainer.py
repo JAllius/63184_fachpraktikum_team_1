@@ -1,19 +1,22 @@
-from ..io.preset_loader import loader
-from ..io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
-from ..io.model_saver import save_model
-from ..io.metadata_saver import save_metadata
-from ..profile.profiler import suggest_profile
-from ..explain.explanator import explain_model
-from ..metrics.metrics_calculator import calculate_metrics
-from ..metrics.cv_calculator import calculate_cv
+from mlcore.io.preset_loader import loader
+from mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
+from mlcore.io.model_saver import save_model
+from mlcore.io.metadata_saver import save_metadata
+from mlcore.profile.profiler import suggest_profile
+from mlcore.explain.explanator import explain_model
+from mlcore.metrics.metrics_calculator import calculate_metrics
+from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from src.db.db import get_dataset_version, get_ml_problem, create_model
+from db.db import get_dataset_version, get_ml_problem, create_model
 import json
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 BASE_DIR = "./testdata/models"
+PRESET_DIR = "/code/mlcore/presets"
 NAME = None
 
 def train(
@@ -24,6 +27,7 @@ def train(
     explain: bool = True,
     test_size_ratio: float = 0.2,
     random_seed: int = 42,
+    preset_dir: str = PRESET_DIR,
 ) -> Tuple[str, str]:
 
     problem = get_ml_problem(problem_id)
@@ -34,10 +38,12 @@ def train(
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))
     raw_profile = dataset_version.get("profile_json")
-    profile = json.loads(raw_profile) if isinstance(raw_profile, str) else raw_profile
+    profile = json.loads(raw_profile) if isinstance(
+        raw_profile, str) else raw_profile
     if not profile:
         profile = suggest_profile(pd.DataFrame(df))
-    multi_class = profile.get("columns", {}).get(target, {}).get("cardinality", 0) > 2
+    multi_class = profile.get("columns", {}).get(
+        target, {}).get("cardinality", 0) > 2
 
     X, y = preprocess_dataframe(df, target, profile)
     semantic_types = get_semantic_types(X, profile)
@@ -48,10 +54,11 @@ def train(
     boolean = semantic_types["boolean"]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed # stratify to keep class proportions
+        # stratify to keep class proportions
+        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
     )
 
-    build_model = loader(task, algorithm.lower())
+    build_model = loader(task, algorithm.lower(), preset_dir)
 
     model, metadata = build_model(categorical, numeric, boolean, train_mode)
 
@@ -83,7 +90,7 @@ def train(
     metadata["metrics"] = metrics
     if explanation:
         metadata["explanation"] = explanation
-    
+
     model_id, model_uri = create_model(
         problem_id=problem_id,
         algorithm=algorithm.lower(),
@@ -97,15 +104,20 @@ def train(
         created_by=NAME,
         name=None,
     )
-    
+
     metadata["model_id"] = model_id
 
-    path_uri = Path(model_uri).parent
+    parent_path = Path(model_uri).parent
 
-    if save_model(model, path_uri) == "Success":
-        if save_metadata(metadata, path_uri) == "Success":
+    if save_model(model, parent_path):
+        logger.info(f"[SAVE_MODEL] Model saved at: {model_uri}")
+        if save_metadata(metadata, parent_path):
+            logger.info(f"[SAVE_MODEL_METADATA] Model's metadata saved at: {model_uri}")
             return model_id, model_uri
         else:
-            raise RuntimeError(f"Failed to save the model's metadata at {path_uri}")
+            logger.error(f"[SAVE_MODEL_METADATA] Failed to save model's metadata at: {model_uri}")
+            raise RuntimeError(
+                f"Failed to save the model's metadata at {parent_path}")
     else:
-        raise RuntimeError(f"Failed to save the model at {path_uri}")
+        logger.error(f"[SAVE_MODEL] Failed to save model at: {model_uri}")
+        raise RuntimeError(f"Failed to save the model at {parent_path}")

@@ -1,3 +1,19 @@
+from ..db.db import (
+    create_user,
+    create_dataset,
+    create_dataset_version,
+    create_ml_problem,
+    create_model,
+    create_job,
+    create_prediction,
+    get_dataset,
+    get_model,
+    get_prediction,
+    get_job,
+    get_ml_problem,
+    get_dataset_version,
+)
+from ..db import init_db
 import os
 import pytest
 import pymysql
@@ -6,7 +22,8 @@ import pymysql
 # Skip in CI (no DB there)
 # ---------------------------------------------------------
 if os.getenv("PYTEST_CI_MODE") == "True":
-    pytest.skip("Skipping smoke tests in CI (no MySQL service).", allow_module_level=True)
+    pytest.skip("Skipping smoke tests in CI (no MySQL service).",
+                allow_module_level=True)
 
 
 # ---------------------------------------------------------
@@ -29,28 +46,13 @@ def _can_connect() -> bool:
 
 
 if not _can_connect():
-    pytest.skip("Skipping smoke tests (MySQL not reachable).", allow_module_level=True)
+    pytest.skip("Skipping smoke tests (MySQL not reachable).",
+                allow_module_level=True)
 
 
 # ---------------------------------------------------------
 # Imports from our DB layer
 # ---------------------------------------------------------
-from src.db import init_db
-from src.db.db import (
-    create_user,
-    create_dataset,
-    create_dataset_version,
-    create_ml_problem,
-    create_model,
-    create_job,
-    create_prediction,
-    get_dataset,
-    get_model,
-    get_prediction,
-    get_job,
-    get_ml_problem,
-    get_dataset_version,
-)
 
 
 # ---------------------------------------------------------
@@ -104,7 +106,7 @@ def test_smoke_full_flow():
     assert isinstance(prob_id, str)
 
     # 5) create model (evaluation_strategy now lives here)
-    model_id = create_model(
+    model_id, uri = create_model(
         problem_id=prob_id,
         algorithm="prophet",
         status="staging",
@@ -118,6 +120,7 @@ def test_smoke_full_flow():
         name="smoke_model",
     )
     assert isinstance(model_id, str)
+    assert isinstance(uri, str)
 
     # 6) create job for training
     job_id = create_job(

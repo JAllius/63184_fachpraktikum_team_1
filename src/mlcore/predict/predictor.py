@@ -1,10 +1,9 @@
 import pandas as pd
 from pathlib import Path
-from ..io.data_reader import get_dataframe_from_csv
-from ..io.model_loader import load_model
-from ..io.metadata_loader import load_metadata
-from src.db.db import get_ml_problem, get_model
-
+from mlcore.io.data_reader import get_dataframe_from_csv
+from mlcore.io.model_loader import load_model
+from mlcore.io.metadata_loader import load_metadata
+from db.db import get_ml_problem, get_model, create_prediction
 
 def predict(
     input: pd.DataFrame | None = None,
@@ -14,7 +13,7 @@ def predict(
     model_id: str | None = "production",
 ) -> str:
 
-    if not input and not input_uri:
+    if input is None and not input_uri:
         raise ValueError(
             "No input dataframe was specified. Provide an input or an input_uri.")
 
@@ -28,26 +27,29 @@ def predict(
         X = input
 
     if model_uri:
-        model = load_model(model_uri=model_uri)
         model_path = Path(model_uri)
+        model = load_model(model_uri=model_path)
         metadata_path = model_path.with_name("metadata.json")
         metadata = load_metadata(metadata_path)
+        model_id = metadata.get("model_id")
         target = metadata.get("target")
     else:
         if model_id == "production":
 
             problem = get_ml_problem(problem_id)
             model_id = problem.get("current_model_id", False)
-            model = get_model(model_id)
-            model_path = model.get("uri", False)
-            
+            model_db = get_model(model_id)
+            model_path = Path(model_db.get("uri", False))
             model = load_model(model_uri=model_path)
             metadata_path = model_path.with_name("metadata.json")
             metadata = load_metadata(metadata_path)
             target = metadata.get("target")
         else:
-            model = load_model(problem_id=problem_id, model_id=model_id)
-            metadata = load_metadata(problem_id=problem_id, model_id=model_id)
+            model_db = get_model(model_id)
+            model_path = Path(model_db.get("uri", False))
+            model = load_model(model_uri=model_path)
+            metadata_path = model_path.with_name("metadata.json")
+            metadata = load_metadata(metadata_path)
             target = metadata.get("target")
 
     if target in X.columns:
@@ -62,9 +64,15 @@ def predict(
     y_pred = model.predict(X)
 
     prediction_summary = {
-        "X": X,
-        "y_pred": y_pred,
+        "X": X.to_dict(orient="records"),
+        "y_pred": y_pred.tolist() if hasattr(y_pred, "tolist") else list(y_pred),
         "model_metadata": metadata,
     }
+
+    if input is None:
+        inputs_to_store = None
+    else:
+        inputs_to_store = input.to_dict(orient="records")
+    create_prediction(model_id, input_uri, inputs_to_store, prediction_summary, None, None)
 
     return X, y_pred, prediction_summary
