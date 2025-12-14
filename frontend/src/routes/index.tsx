@@ -7,7 +7,7 @@ import JobsPage from "../pages/dashboard/jobs/JobsPage";
 import DatasetIdPage from "../pages/dashboard/datasets/DatasetIdPage";
 import DatasetVersionIdPage from "../pages/dashboard/dataset_versions/DatasetVersionIdPage";
 import MLProblemIdPage from "../pages/dashboard/ml_problems/MLProblemIdPage";
-import ModelIdPage from "@/pages/dashboard/models/ModelIdPage";
+import ModelIdPage from "@/pages/dashboard/modelDetails/ModelIdPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <AppPage /> },
