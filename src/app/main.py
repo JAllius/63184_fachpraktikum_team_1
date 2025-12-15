@@ -125,13 +125,7 @@ async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     buffer = StringIO(decoded_contents)
 
     df: pd.DataFrame = pd.read_csv(buffer)
-    db.create_dataset_version(
-        dataset_id=dataset_id,
-        uri="?",
-        schema_json={"columns": df.labels},
-        profile_json=df.to_json(),
-        row_count=len(df)
-    )
+    db.create_dataset_version(df=df, dataset_id=dataset_id)
     return JSONResponse(content=df.to_json())
 
 

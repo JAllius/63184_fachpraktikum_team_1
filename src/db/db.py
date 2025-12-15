@@ -9,6 +9,8 @@ from typing import Any, Optional, Tuple
 import pymysql
 from pymysql.cursors import DictCursor
 
+import pandas as pd
+
 # -------------------------------------------------------------------
 # DB CONFIG
 # -------------------------------------------------------------------
@@ -96,18 +98,13 @@ def get_dataset(dataset_id: str) -> Optional[dict]:
 # DATASET VERSIONS
 # -------------------------------------------------------------------
 
-def create_dataset_version(
-    dataset_id: str,
-    uri: str,
-    schema_json: Optional[dict] = None,
-    profile_json: Optional[dict] = None,
-    row_count: Optional[int] = None,
-) -> str:
+def create_dataset_version(df: pd.DataFrame,
+                           dataset_id: str) -> str:
     version_id = str(uuid.uuid4())
     sql = """
         INSERT INTO dataset_versions
-        (id, dataset_id, uri, schema_json, profile_json, row_count)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        (id, dataset_id, data_json)
+        VALUES (%s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -115,10 +112,7 @@ def create_dataset_version(
             (
                 version_id,
                 dataset_id,
-                uri,
-                _json_dump(schema_json),
-                _json_dump(profile_json),
-                row_count,
+                df.to_json(),
             ),
         )
     return version_id
@@ -129,6 +123,16 @@ def get_dataset_version(version_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (version_id,))
         return cur.fetchone()
+
+
+def get_dataset_version_as_dataframe(version_id: str) -> pd.DataFrame:
+    # TODO: implement
+    query = get_dataset_version(version_id)
+    df = pd.DataFrame(json.loads(query["data_json"]))
+    return df
+    # get data_json from query
+    # build df from data_json
+    # return df
 
 
 # -------------------------------------------------------------------
@@ -185,6 +189,7 @@ def build_model_uri(problem_id: str, model_id: str) -> str:
     # storage-agnostic default
     return f"models/{problem_id}/{model_id}/model.joblib"
 
+
 def create_model(
     problem_id: str,
     algorithm: str,
@@ -192,7 +197,7 @@ def create_model(
     train_mode: Optional[str] = None,
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
-    uri: Optional[str] = None,         
+    uri: Optional[str] = None,
     metadata_uri: Optional[str] = None,
     explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
@@ -229,8 +234,6 @@ def create_model(
             ),
         )
     return model_id, uri
-
-
 
 
 def get_model(model_id: str) -> Optional[dict]:

@@ -23,11 +23,8 @@ CREATE TABLE IF NOT EXISTS datasets (
 
 CREATE TABLE IF NOT EXISTS dataset_versions (
   id CHAR(36) PRIMARY KEY,
-  dataset_id CHAR(36) NOT NULL,
-  uri TEXT NOT NULL,                        -- where the dataset file is stored
-  schema_json JSON,                         -- inferred schema at upload
-  profile_json JSON,                        -- data profile / stats
-  row_count INT,
+  dataset_id CHAR(36) NOT NULL,                      -- where the dataset file is stored
+  data_json JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dataset_id) REFERENCES datasets(id)
 );

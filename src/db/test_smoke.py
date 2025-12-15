@@ -12,11 +12,13 @@ from ..db.db import (
     get_job,
     get_ml_problem,
     get_dataset_version,
+    get_dataset_version_as_dataframe
 )
 from ..db import init_db
 import os
 import pytest
 import pymysql
+import pandas as pd
 
 # ---------------------------------------------------------
 # Skip in CI (no DB there)
@@ -82,15 +84,17 @@ def test_smoke_full_flow():
     ds_id = create_dataset("smoke_dataset", owner_id=user_id)
     assert isinstance(ds_id, str)
 
-    # 3) create dataset version
+    # 3a) create dataset version
+    df_in = pd.read_csv("./testdata/test_dataset.csv", sep=" ")
     dv_id = create_dataset_version(
-        ds_id,
-        uri="/data/smoke.csv",
-        schema_json={"columns": ["x", "y"]},
-        profile_json={"row_count": 10},
-        row_count=10,
+        df=df_in,
+        dataset_id=ds_id
     )
     assert isinstance(dv_id, str)
+
+    # 3b) return dataset version
+    df_out = get_dataset_version_as_dataframe(dv_id)
+    assert isinstance(df_out, pd.DataFrame)
 
     # 4) create ml_problem (validation_strategy moved off this table)
     prob_id = create_ml_problem(
