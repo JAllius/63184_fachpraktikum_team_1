@@ -1,9 +1,9 @@
 FROM python:3.13-slim
 WORKDIR /code
 COPY ./pyproject.toml /code/pyproject.toml
-RUN pip install --no-cache-dir --upgrade -e '/code[app]'
+RUN pip install --no-cache-dir --upgrade -e '/code[api]'
 COPY ./src/__init__.py /code/__init__.py
-COPY ./src/app /code/app
+COPY ./src/api /code/api
 COPY ./src/celery_handler /code/celery_handler
 COPY ./src/db /code/db
 RUN apt update -y ; apt install curl -y
