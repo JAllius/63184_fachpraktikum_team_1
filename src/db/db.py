@@ -101,6 +101,7 @@ def get_dataset(dataset_id: str) -> Optional[dict]:
 
 def create_dataset_version(df: pd.DataFrame,
                            dataset_id: str) -> str:
+    """stores DataFrame in db as dataset_version"""
     version_id = str(uuid.uuid4())
     sql = """
         INSERT INTO dataset_versions
@@ -120,6 +121,7 @@ def create_dataset_version(df: pd.DataFrame,
 
 
 def get_dataset_version_dump(version_id: str) -> Optional[dict]:
+    """returns dataset_version as stored in db"""
     sql = "SELECT * FROM dataset_versions WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (version_id,))
@@ -127,6 +129,7 @@ def get_dataset_version_dump(version_id: str) -> Optional[dict]:
 
 
 def get_dataset_version(version_id: str) -> pd.DataFrame:
+    """returns dataset_version as DataFrame"""
     query = get_dataset_version_dump(version_id)
     df = pd.DataFrame(json.loads(query["data_json"]))
     return df
@@ -193,6 +196,7 @@ def create_model(
     created_by: Optional[str] = None,
     name: Optional[str] = None,
 ) -> str:
+    """stores model as base64 encoded byte object in db"""
     model_id = str(uuid.uuid4())
     data = base64.b64encode(model)
     sql = """
@@ -222,6 +226,7 @@ def create_model(
 
 
 def get_model_dump(model_id: str) -> Optional[dict]:
+    """returns model as stored in db"""
     sql = "SELECT * FROM models WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (model_id,))
@@ -229,6 +234,7 @@ def get_model_dump(model_id: str) -> Optional[dict]:
 
 
 def get_model(model_id: str):
+    """returns model as base64 decoded object"""
     query = get_model_dump(model_id)
     model = base64.b64decode(query["data"])
     return model

@@ -1,6 +1,4 @@
 import pandas as pd
-from pathlib import Path
-from mlcore.io.data_reader import get_dataframe_from_csv
 from db.db import get_ml_problem, get_model, get_model_dump
 
 
@@ -26,11 +24,8 @@ def predict(
     if target in X.columns:
         X = X.drop(columns=[target])
 
-    schema_snapshot = metadata["schema_snapshot"]
-
-    ### MISSING ###
-    # Check schema snapshot and compare with X
-    ### END MISSING ###
+    # TODO: Check schema snapshot and compare with X
+    # schema_snapshot = metadata["schema_snapshot"]
 
     y_pred = model.predict(X)
 
