@@ -92,7 +92,8 @@ def check_task(id: str):
 @app.post("/dataset")  # /dataset?name=test&user_id=1
 async def post_dataset(name: str, user_id: int):
     """create a stub for a new dataset and return the id"""
-    return {}
+    dataset_id = db.create_dataset(name=name, owner_id=user_id)
+    return {"dataset_id": dataset_id}
 
 
 @app.get("/dataset/{dataset_id}")
