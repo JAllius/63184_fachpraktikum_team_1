@@ -10,6 +10,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 import pandas as pd
+import base64
 
 # -------------------------------------------------------------------
 # DB CONFIG
@@ -118,15 +119,15 @@ def create_dataset_version(df: pd.DataFrame,
     return version_id
 
 
-def get_dataset_version(version_id: str) -> Optional[dict]:
+def get_dataset_version_dump(version_id: str) -> Optional[dict]:
     sql = "SELECT * FROM dataset_versions WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (version_id,))
         return cur.fetchone()
 
 
-def get_dataset_version_as_dataframe(version_id: str) -> pd.DataFrame:
-    query = get_dataset_version(version_id)
+def get_dataset_version(version_id: str) -> pd.DataFrame:
+    query = get_dataset_version_dump(version_id)
     df = pd.DataFrame(json.loads(query["data_json"]))
     return df
 
@@ -137,7 +138,6 @@ def get_dataset_version_as_dataframe(version_id: str) -> pd.DataFrame:
 
 def create_ml_problem(
     dataset_version_id: str,
-    dataset_version_uri: Optional[str],
     task: str,
     target: str,
     feature_strategy_json: Optional[dict] = None,
@@ -148,9 +148,9 @@ def create_ml_problem(
     problem_id = str(uuid.uuid4())
     sql = """
         INSERT INTO ml_problems
-        (id, dataset_version_id, dataset_version_uri, task, target,
+        (id, dataset_version_id, task, target,
         feature_strategy_json, schema_snapshot, semantic_types, current_model_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -158,7 +158,6 @@ def create_ml_problem(
             (
                 problem_id,
                 dataset_version_id,
-                dataset_version_uri,
                 task,
                 target,
                 _json_dump(feature_strategy_json),
@@ -181,41 +180,33 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
 # MODELS
 # -------------------------------------------------------------------
 
-def build_model_uri(problem_id: str, model_id: str) -> str:
-    # storage-agnostic default
-    return f"models/{problem_id}/{model_id}/model.joblib"
-
-
 def create_model(
+    model,
     problem_id: str,
     algorithm: str,
     status: str,
     train_mode: Optional[str] = None,
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
-    uri: Optional[str] = None,
-    metadata_uri: Optional[str] = None,
-    explanation_uri: Optional[str] = None,
+    metadata_json: Optional[dict] = None,
+    # explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
-) -> Tuple[str, str]:
+) -> str:
     model_id = str(uuid.uuid4())
-
-    # Default URI derived from IDs
-    if uri is None:
-        uri = build_model_uri(problem_id, model_id)
-
+    data = base64.b64encode(model)
     sql = """
         INSERT INTO models
-        (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-         metrics_json, uri, metadata_uri, explanation_uri, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id, data, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
+         metrics_json, metadata_uri, created_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
             sql,
             (
                 model_id,
+                data,
                 problem_id,
                 name,
                 algorithm,
@@ -223,20 +214,24 @@ def create_model(
                 evaluation_strategy,
                 status,
                 _json_dump(metrics_json),
-                uri,
-                metadata_uri,
-                explanation_uri,
+                _json_dump(metadata_json),
                 created_by,
             ),
         )
-    return model_id, uri
+    return model_id
 
 
-def get_model(model_id: str) -> Optional[dict]:
+def get_model_dump(model_id: str) -> Optional[dict]:
     sql = "SELECT * FROM models WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (model_id,))
         return cur.fetchone()
+
+
+def get_model(model_id: str):
+    query = get_model_dump(model_id)
+    model = base64.b64decode(query["data"])
+    return model
 
 
 # -------------------------------------------------------------------

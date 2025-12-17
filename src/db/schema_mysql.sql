@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS dataset_versions (
 CREATE TABLE IF NOT EXISTS ml_problems (
   id CHAR(36) PRIMARY KEY,
   dataset_version_id CHAR(36) NOT NULL,
-  dataset_version_uri TEXT,                 -- snapshot of the URI used for training
   task VARCHAR(64) NOT NULL,                -- 'timeseries' | 'regression' | 'classification'
   target VARCHAR(255) NOT NULL,             -- target column name
   feature_strategy_json JSON,               -- e.g. {"include": [...], "exclude": [...]}
@@ -54,6 +53,7 @@ CREATE TABLE IF NOT EXISTS ml_problems (
 
 CREATE TABLE IF NOT EXISTS models (
   id CHAR(36) PRIMARY KEY,
+  data LONGBLOB,
   problem_id CHAR(36) NOT NULL,
   name VARCHAR(255),                        -- human readable name
   algorithm VARCHAR(128) NOT NULL,          -- e.g. 'sklearn_random_forest', 'prophet'
@@ -61,9 +61,8 @@ CREATE TABLE IF NOT EXISTS models (
   evaluation_strategy VARCHAR(128),         -- e.g. 'train_test_split', 'cv_5fold'
   status VARCHAR(32) NOT NULL,              -- 'staging' | 'production' | 'archived'
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
-  uri TEXT,                                 -- where the model file is stored (joblib, etc.)
-  metadata_uri TEXT,                        -- optional extra metadata file
-  explanation_uri TEXT,                     -- optional explanation/shap file
+  metadata_json JSON,                       -- optional extra metadata file
+  -- explanation_uri TEXT,                  -- optional explanation/shap file  --! removed for now, too many files to handle
   created_by CHAR(36),                      -- FK to users.id (who trained it)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (problem_id) REFERENCES ml_problems(id),

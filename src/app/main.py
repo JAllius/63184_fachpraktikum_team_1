@@ -134,7 +134,7 @@ async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
 async def get_dataset_version(dataset_id: int, version: int, user_id: int):
     """return the specified dataset version if user has permission"""
     #! what are dataset_id and user_id used for?
-    db.get_dataset_version(version_id=version)
+    db.get_dataset_version_dump(version_id=version)
     return {}
 
 

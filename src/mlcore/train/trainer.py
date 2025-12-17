@@ -1,7 +1,5 @@
 from mlcore.io.preset_loader import loader
 from mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
-from mlcore.io.model_saver import save_model
-from mlcore.io.metadata_saver import save_metadata
 from mlcore.profile.profiler import suggest_profile
 from mlcore.explain.explanator import explain_model
 from mlcore.metrics.metrics_calculator import calculate_metrics
@@ -9,9 +7,8 @@ from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from db.db import get_dataset_version, get_ml_problem, create_model
+from db.db import get_dataset_version_dump, get_ml_problem, create_model
 import json
-from pathlib import Path
 
 BASE_DIR = "./testdata/models"
 NAME = None
@@ -30,7 +27,7 @@ def train(
     problem = get_ml_problem(problem_id)
     dataset_version_id = problem.get("dataset_version_id", False)
     target = problem.get("target", False)
-    dataset_version = get_dataset_version(dataset_version_id)
+    dataset_version = get_dataset_version_dump(dataset_version_id)
 
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))
@@ -88,7 +85,9 @@ def train(
     if explanation:
         metadata["explanation"] = explanation
 
-    model_id, model_uri = create_model(
+    # save model to db
+    model_id = create_model(
+        model=model,
         problem_id=problem_id,
         algorithm=algorithm.lower(),
         status="staging",
@@ -96,21 +95,8 @@ def train(
         evaluation_strategy=evaluation_strategy,
         metrics_json=metrics,
         uri=None,
-        metadata_uri=None,
+        metadata_json=metadata,
         explanation_uri=None,
         created_by=NAME,
         name=None,
     )
-
-    metadata["model_id"] = model_id
-
-    path_uri = Path(model_uri).parent
-
-    if save_model(model, path_uri) == "Success":
-        if save_metadata(metadata, path_uri) == "Success":
-            return model_id, model_uri
-        else:
-            raise RuntimeError(
-                f"Failed to save the model's metadata at {path_uri}")
-    else:
-        raise RuntimeError(f"Failed to save the model at {path_uri}")
