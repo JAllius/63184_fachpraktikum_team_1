@@ -20,7 +20,7 @@ build: clean
 	./venv/bin/python3 -m pip install -e '.[dev]'
 
 docker: build
-	docker build -t jallius/fachpraktikum-app -f DockerfileApp .
+	docker build -t jallius/fachpraktikum-app -f DockerfileApi .
 	docker build -t jallius/fachpraktikum-worker -f DockerfileWorker .
 
 deploy_local: docker

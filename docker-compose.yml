@@ -3,7 +3,7 @@ services:
     # image: jallius/fachpraktikum-app
     build:
       context: .
-      dockerfile: DockerfileApp
+      dockerfile: DockerfileApi
     environment:
       REDISSERVER: redis://redis_server:6379
       # Misspelling with DELAY_DB_CONN_ON_StARTUP -> DELAY_DB_CONN_ON_STARTUP

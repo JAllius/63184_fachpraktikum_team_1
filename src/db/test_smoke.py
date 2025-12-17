@@ -6,12 +6,12 @@ from ..db.db import (
     create_model,
     create_job,
     create_prediction,
-    get_dataset,
+    db_get_dataset,
     get_model,
     get_prediction,
     get_job,
     get_ml_problem,
-    get_dataset_version,
+    db_get_dataset_version,
 )
 from ..db import init_db
 import os
@@ -145,11 +145,11 @@ def test_smoke_full_flow():
     assert isinstance(pred_id, str)
 
     # 8) read a few things back to ensure they exist
-    ds = get_dataset(ds_id)
+    ds = db_get_dataset(ds_id)
     assert ds is not None
     assert ds["id"] == ds_id
 
-    dv = get_dataset_version(dv_id)
+    dv = db_get_dataset_version(dv_id)
     assert dv is not None
     assert dv["id"] == dv_id
 
