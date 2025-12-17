@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import {
   get_ml_problem,
   type MLProblem,
-} from "../../../lib/actions/mlProblem.action";
+} from "../../../lib/actions/mlProblems/mlProblem.action";
 import {
   get_models,
   type Model,
   type ModelListResponse,
-} from "../../../lib/actions/model.action";
+} from "../../../lib/actions/models/model.action";
 import TrainFormDrawer from "@/components/ml/train/TrainFormDrawer";
 import PredictFormDrawer from "@/components/ml/predict/PredictFormDrawer";
 
@@ -25,8 +25,7 @@ const MLProblemIdPage = () => {
 
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [seachParams, setSearchParams] = useSearchParams();
+  const [seachParams] = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [mlProblem, setMlProblem] = useState<MLProblem | null>(null);
 

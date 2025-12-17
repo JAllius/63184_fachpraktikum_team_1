@@ -4,11 +4,11 @@ import {
   get_ml_problems,
   type MLProblem,
   type MLProblemListResponse,
-} from "../../../lib/actions/mlProblem.action";
+} from "../../../lib/actions/mlProblems/mlProblem.action";
 import {
   get_dataset_version,
   type DatasetVersion,
-} from "../../../lib/actions/datasetVersion.action";
+} from "../../../lib/actions/dataset_versions/datasetVersion.action";
 
 const DatasetVersionIdPage = () => {
   const params = useParams<{ datasetId: string; datasetVersionId: string }>();

@@ -139,7 +139,7 @@ def get_datasets(
     
     where_sql = ""
     if where_clauses:
-        where_sql = "WHERE" + " AND ".join(where_clauses)
+        where_sql = "WHERE " + " AND ".join(where_clauses)
 
     ### TOTAL CALCULATION ###
     count_sql = f"SELECT COUNT(*) AS total FROM datasets {where_sql}"

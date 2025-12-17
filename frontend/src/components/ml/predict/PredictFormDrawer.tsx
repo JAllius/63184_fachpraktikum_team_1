@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { post_predict } from "@/lib/actions/prediction.action";
+import { post_predict } from "@/lib/actions/ml/prediction.action";
 
 type Props = {
   problemId?: string;
@@ -164,7 +164,7 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
           </Button>
         </SheetFooter>
       </SheetContent>
-      <SheetOverlay className="bg-black/40 backdrop-blur-sm" />
+      <SheetOverlay className="bg-black/30 backdrop-blur-sm" />
     </Sheet>
   );
 };

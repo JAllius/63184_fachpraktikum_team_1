@@ -3,14 +3,23 @@ import {
   get_datasets,
   type Dataset,
   type DatasetListResponse,
-} from "../../../lib/actions/dataset.action";
-import { Link, useSearchParams } from "react-router-dom";
+} from "../../../lib/actions/datasets/dataset.action";
+import { useSearchParams } from "react-router-dom";
+import {
+  DatasetDelete,
+  DatasetsFilterbar,
+  DatasetsTable,
+  type DeleteTarget,
+} from "@/components/datasets";
+import { Pagination } from "@/components/table";
 
 const DatasetsPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [seachParams, setSearchParams] = useSearchParams();
+  const [seachParams] = useSearchParams();
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>();
+  const [openDelete, setOpenDelete] = useState(false);
 
   const q = seachParams.get("q") || "";
   const id = seachParams.get("id") || "";
@@ -25,6 +34,7 @@ const DatasetsPage = () => {
           name: name || undefined,
         });
         setDatasets(data.items);
+        setTotalPages(data.total_pages);
       } catch (error) {
         console.log(error);
       } finally {
@@ -32,35 +42,44 @@ const DatasetsPage = () => {
       }
     }
     loadDatasets();
-  }, [q, name, id]);
+  }, [q, id, name]);
+
+  const askDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+    setOpenDelete(true);
+  };
 
   if (loading) {
     return (
       <div className="min-w-full flex items-center justify-center">
-        Loading . . .
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>Datasets</h1>
-      <ul>
-        {datasets.map((ds) => (
-          <li key={ds.id} className="flex">
-            <div className="border rounded px-2 py-2 ">
-              <span className="font-semibold">{ds.name}</span>,{ds.id},{" "}
-              {ds.created_at}
-            </div>
-            <Link
-              to={`${ds.id}`}
-              className="px-3 py-1 rounded-md flex items-center justify-center text-blue-500 hover:bg-blue-500 hover:text-white hover:scale-105 active:scale-95 transition-all duration-150"
-            >
-              View
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="w-full pl-4">
+      <div className="mx-auto w-full px-6">
+        <h1>Datasets</h1>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Manage uploaded datasets.
+        </p>
+        <DatasetsFilterbar />
+        <DatasetsTable datasets={datasets} askDelete={askDelete} />
+        {/* <Pagination totalPages={totalPages} /> */}
+        {totalPages > 1 && (
+          <div className="mt-2 flex justify-center">
+            <Pagination totalPages={totalPages} />
+          </div>
+        )}
+        {deleteTarget && (
+          <DatasetDelete
+            target={deleteTarget}
+            open={openDelete}
+            onOpenChange={setOpenDelete}
+          />
+        )}
+      </div>
     </div>
   );
 };

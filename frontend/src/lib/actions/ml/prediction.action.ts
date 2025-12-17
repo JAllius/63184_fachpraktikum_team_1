@@ -33,8 +33,7 @@ export async function post_predict(req: unknown): Promise<PredictResponse> {
     // const res = await fetch(url, {
     //   method: "POST",
     // });
-    const res = await fetch(url, { method: "POST", redirect: "manual" });
-    console.log(res.status, res.headers.get("location"));
+    const res = await fetch(url, { method: "POST" });
     if (!res.ok) {
       return {
         ok: false,

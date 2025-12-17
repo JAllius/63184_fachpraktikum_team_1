@@ -91,12 +91,14 @@ export default function Sidebar() {
           alt={user?.name || "Unknown User"}
           className="h-10 w-10 rounded-full object-cover justify-items-start"
         />
-        <article className="ml-2">
-          <h2 className="truncate text-sm font-medium">
-            {user?.name} {user?.lastName}
-          </h2>
-          <p className="text-xs text-gray-500">{user?.role}</p>
-        </article>
+        {!collapsed && (
+          <article className="ml-2">
+            <h2 className="truncate text-sm font-medium">
+              {user?.name} {user?.lastName}
+            </h2>
+            <p className="text-xs text-muted-foreground">{user?.role}</p>
+          </article>
+        )}
       </footer>
     </aside>
   );

@@ -4,10 +4,10 @@ import DashboardLayout from "../layouts/dashboard/DashboardLayout";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import DatasetsPage from "../pages/dashboard/datasets/DatasetsPage";
 import JobsPage from "../pages/dashboard/jobs/JobsPage";
-import DatasetIdPage from "../pages/dashboard/datasets/DatasetIdPage";
-import DatasetVersionIdPage from "../pages/dashboard/dataset_versions/DatasetVersionIdPage";
-import MLProblemIdPage from "../pages/dashboard/ml_problems/MLProblemIdPage";
-import ModelIdPage from "@/pages/dashboard/modelDetails/ModelIdPage";
+import DatasetDetailPage from "../pages/dashboard/datasets/DatasetDetailPage";
+import DatasetVersionDetailPage from "../pages/dashboard/dataset_versions/DatasetVersionDetailPage";
+import MLProblemDetailPage from "../pages/dashboard/ml_problems/MLProblemDetailPage";
+import ModelDetailPage from "@/pages/dashboard/modelDetails/ModelDetailPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <AppPage /> },
@@ -17,18 +17,18 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "datasets", element: <DatasetsPage /> },
-      { path: "datasets/:datasetId", element: <DatasetIdPage /> },
+      { path: "datasets/:datasetId", element: <DatasetDetailPage /> },
       {
         path: "datasets/:datasetId/:datasetVersionId",
-        element: <DatasetVersionIdPage />,
+        element: <DatasetVersionDetailPage />,
       },
       {
         path: "datasets/:datasetId/:datasetVersionId/:problemId",
-        element: <MLProblemIdPage />,
+        element: <MLProblemDetailPage />,
       },
       {
         path: "datasets/:datasetId/:datasetVersionId/:problemId/:modelId",
-        element: <ModelIdPage />,
+        element: <ModelDetailPage />,
       },
       { path: "jobs", element: <JobsPage /> },
     ],

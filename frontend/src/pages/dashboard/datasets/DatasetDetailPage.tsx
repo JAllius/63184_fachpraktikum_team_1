@@ -4,8 +4,11 @@ import {
   get_dataset_versions,
   type DatasetVersion,
   type DatasetVersionListResponse,
-} from "../../../lib/actions/datasetVersion.action";
-import { get_dataset, type Dataset } from "../../../lib/actions/dataset.action";
+} from "../../../lib/actions/dataset_versions/datasetVersion.action";
+import {
+  get_dataset,
+  type Dataset,
+} from "../../../lib/actions/datasets/dataset.action";
 
 const DatasetIdPage = () => {
   const params = useParams<{ datasetId: string }>();

@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { SelectTrigger, SelectValue } from "@radix-ui/react-select";
 import { Switch } from "@/components/ui/switch";
-import { post_train } from "@/lib/actions/train.action";
+import { post_train } from "@/lib/actions/ml/train.action";
 
 type Props = {
   problemId?: string;
@@ -181,7 +181,7 @@ const TrainFormDrawer = ({ problemId }: Props) => {
                         onCheckedChange={field.onChange}
                         className="shrink-0 w-9"
                       />
-                      <FieldLabel className="font-normal text-gray-300">
+                      <FieldLabel className="font-normal text-muted-foreground">
                         {field.value ? "Yes" : "No"}
                       </FieldLabel>
                     </div>
@@ -213,7 +213,7 @@ const TrainFormDrawer = ({ problemId }: Props) => {
           </Button>
         </SheetFooter>
       </SheetContent>
-      <SheetOverlay className="bg-black/40 backdrop-blur-sm" />
+      <SheetOverlay className="bg-black/30 backdrop-blur-sm" />
     </Sheet>
   );
 };
