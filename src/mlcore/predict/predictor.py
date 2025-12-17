@@ -1,5 +1,5 @@
+from db.db import get_ml_problem, get_model, get_model_dump, create_prediction
 import pandas as pd
-from db.db import get_ml_problem, get_model, get_model_dump
 
 
 def predict(
@@ -30,9 +30,16 @@ def predict(
     y_pred = model.predict(X)
 
     prediction_summary = {
-        "X": X,
-        "y_pred": y_pred,
+        "X": X.to_dict(orient="records"),
+        "y_pred": y_pred.tolist() if hasattr(y_pred, "tolist") else list(y_pred),
         "model_metadata": metadata,
     }
+
+    if input is None:
+        inputs_to_store = None
+    else:
+        inputs_to_store = input.to_dict(orient="records")
+    create_prediction(model_id, None, inputs_to_store,
+                      prediction_summary, None, None)
 
     return X, y_pred, prediction_summary

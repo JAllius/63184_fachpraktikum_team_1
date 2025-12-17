@@ -11,6 +11,7 @@ from db.db import get_dataset_version_dump, get_ml_problem, create_model
 import json
 
 BASE_DIR = "./testdata/models"
+PRESET_DIR = "/code/mlcore/presets"
 NAME = None
 
 
@@ -22,6 +23,7 @@ def train(
     explain: bool = True,
     test_size_ratio: float = 0.2,
     random_seed: int = 42,
+    preset_dir: str = PRESET_DIR,
 ) -> Tuple[str, str]:
 
     problem = get_ml_problem(problem_id)
@@ -52,7 +54,7 @@ def train(
         X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
     )
 
-    build_model = loader(task, algorithm.lower())
+    build_model = loader(task, algorithm.lower(), preset_dir)
 
     model, metadata = build_model(categorical, numeric, boolean, train_mode)
 

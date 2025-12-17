@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 import pymysql
 from pymysql.cursors import DictCursor
 
-TEST_DB = "team1_db_test"
+TEST_DB = os.getenv("TEST_DB_NAME", "team1_db_test")
 
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
@@ -88,7 +88,15 @@ def main(input_path: str, reset: bool) -> None:
     os.environ["DB_NAME"] = TEST_DB
     from ..db.init_db import main as init_db_main
     init_db_main(apply_seed=False)
+    
+    seed_db(input_path=input_path, reset=reset)
 
+
+def seed_db(input_path: str, reset: bool) -> None:
+    """
+    Seed DB with test_db data. Assumes init_db_main(apply_seed=False) is already done, and DB Schema exists.
+    """ 
+    
     # 3) optionally wipe tables
     if reset:
         _reset_tables()

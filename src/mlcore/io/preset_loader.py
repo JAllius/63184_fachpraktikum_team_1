@@ -15,11 +15,16 @@ def loader(
     path = Path(base_dir) / task / f"{algorithm}.py"
     if not path.exists():
         raise FileNotFoundError(f"Preset not found: {path}")
+    
+    # Automatically detect the correct top-level package name (src locally, code in Docker)
+    # Use of rsplit because the length from the right side is known, while the length from
+    # left side is unknown.
+    base_pkg = __package__.rsplit(".",1)[0]
 
     try:
         # Create a specification of the module from */*.py
         spec = importlib.util.spec_from_file_location(
-            f"src.mlcore.presets.{task}.{algorithm}", path)
+            f"{base_pkg}.mlcore.presets.{task}.{algorithm}", path)
         # Create an empty container/module from this specification
         module = importlib.util.module_from_spec(spec)
         # Run all top-level code to populate the module
