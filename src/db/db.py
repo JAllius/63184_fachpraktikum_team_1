@@ -126,13 +126,9 @@ def get_dataset_version(version_id: str) -> Optional[dict]:
 
 
 def get_dataset_version_as_dataframe(version_id: str) -> pd.DataFrame:
-    # TODO: implement
     query = get_dataset_version(version_id)
     df = pd.DataFrame(json.loads(query["data_json"]))
     return df
-    # get data_json from query
-    # build df from data_json
-    # return df
 
 
 # -------------------------------------------------------------------
