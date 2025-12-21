@@ -73,12 +73,19 @@ const TrainFormDrawer = ({ problemId }: Props) => {
       <SheetTrigger asChild>
         <Button className="hover:scale-105 active:scale-95">Train Model</Button>
       </SheetTrigger>
-      <SheetContent className="flex h-full flex-col">
+      <SheetContent
+        className="flex h-full flex-col"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle>Train Model</SheetTitle>
         </SheetHeader>
 
-        <form className="mt-6 space-y-6">
+        <form
+          id="train_form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="mt-6 space-y-6"
+        >
           <FieldSet>
             <FieldGroup>
               {/* Problem id */}
@@ -205,7 +212,8 @@ const TrainFormDrawer = ({ problemId }: Props) => {
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
+            form="train_form"
             disabled={isSubmitting}
             className="w-20 hover:scale-105 active:scale-95"
           >

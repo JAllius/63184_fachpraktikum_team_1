@@ -1,12 +1,12 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
-type SortableHeaderProps = {
+type Props = {
   field: string;
   label: string;
 };
 
-const SortableHeader = ({ field, label }: SortableHeaderProps) => {
+const SortableHeader = ({ field, label }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const sort = searchParams.get("sort");
   const dir = searchParams.get("dir");
@@ -15,14 +15,14 @@ const SortableHeader = ({ field, label }: SortableHeaderProps) => {
     const params = new URLSearchParams(searchParams);
 
     if (sort !== field) {
-      // activate new column -> desc
+      // activate new column -> asc
       params.set("sort", field);
-      params.set("dir", "desc");
-    } else if (dir === "desc") {
-      // desc -> asc
       params.set("dir", "asc");
+    } else if (dir === "asc") {
+      // asc -> desc
+      params.set("dir", "desc");
     } else {
-      // asc -> remove sorting
+      // desc -> remove sorting
       params.delete("sort");
       params.delete("dir");
     }

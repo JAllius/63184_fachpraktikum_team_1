@@ -1,3 +1,8 @@
+import {
+  DatasetSchema,
+  type DatasetInput,
+} from "@/components/datasets/dataset.schema";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type Dataset = {
@@ -53,16 +58,53 @@ export async function get_datasets(
     throw new Error(`Failed to fetch datasets: ${res.status}`);
   }
   const data = await res.json();
-  console.log("datasets:", data);
   return data;
 }
 
 export async function get_dataset(dataset_id: string): Promise<Dataset> {
-  const res = await fetch(`${API_URL}/dataset/${dataset_id}`);
+  const url = `${API_URL}/dataset/${dataset_id}`;
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to fetch dataset: ${res.status}`);
   }
   const data = await res.json();
   console.log("dataset:", data);
   return data;
+}
+
+type CreateDatasetResponse = { ok: true } | { ok: false; error: string };
+
+export async function create_dataset(
+  req: unknown
+): Promise<CreateDatasetResponse> {
+  const parsed = DatasetSchema.safeParse(req);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Invalid parameters to create a dataset.",
+    };
+  }
+
+  const data: DatasetInput = parsed.data;
+
+  const qs = new URLSearchParams({
+    name: data.name,
+  });
+
+  const url = `${API_URL}/dataset?${qs}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Create dataset request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error while creating dataset." };
+  }
 }

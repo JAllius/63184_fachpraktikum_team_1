@@ -8,21 +8,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Dataset } from "@/lib/actions/datasets/dataset.action";
 import { Link } from "react-router-dom";
 import { RowActions, SortableHeader } from "../table";
+import type { DatasetVersion } from "@/lib/actions/dataset_versions";
 
 type Props = {
-  datasets: Dataset[];
-  askDelete: (id: string, name: string) => void;
-  askUpdate: (id: string, name: string) => void;
+  datasetVersions: DatasetVersion[];
+  askDelete: (id: string) => void;
+  askUpdate: (id: string) => void;
 };
 
-const DatasetsTable = ({ datasets, askDelete, askUpdate }: Props) => {
+const DatasetVersionsTable = ({
+  datasetVersions,
+  askDelete,
+  askUpdate,
+}: Props) => {
   return (
     <div>
       <Table>
-        <TableCaption>List of Datasets</TableCaption>
+        <TableCaption>List of Dataset Versions</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>
@@ -36,21 +40,21 @@ const DatasetsTable = ({ datasets, askDelete, askUpdate }: Props) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {datasets.map((ds) => (
-            <TableRow key={ds.id}>
+          {datasetVersions.map((dsv) => (
+            <TableRow key={dsv.id}>
               <TableCell className="font-medium">
-                <Link to={`${ds.id}`} aria-label="View dataset">
-                  {ds.name}
+                <Link to={`${dsv.id}`} aria-label="View dataset">
+                  {dsv.name}
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground">{ds.id}</TableCell>
-              <TableCell>{ds.created_at}</TableCell>
+              <TableCell className="text-muted-foreground">{dsv.id}</TableCell>
+              <TableCell>{dsv.created_at}</TableCell>
               <TableCell>
                 <RowActions
-                  id={ds.id}
-                  parent="Dataset"
-                  onDelete={() => askDelete(ds.id, ds.name)}
-                  onUpdate={() => askUpdate(ds.id, ds.name)}
+                  id={dsv.id}
+                  parent="Dataset Version"
+                  onDelete={() => askDelete(dsv.id)}
+                  onUpdate={() => askUpdate(dsv.id)}
                 />
               </TableCell>
             </TableRow>
@@ -59,7 +63,9 @@ const DatasetsTable = ({ datasets, askDelete, askUpdate }: Props) => {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>Total</TableCell>
-            <TableCell className="text-right">{datasets.length}</TableCell>
+            <TableCell className="text-right">
+              {datasetVersions.length}
+            </TableCell>
           </TableRow>
         </TableFooter>
       </Table>
@@ -67,4 +73,4 @@ const DatasetsTable = ({ datasets, askDelete, askUpdate }: Props) => {
   );
 };
 
-export default DatasetsTable;
+export default DatasetVersionsTable;

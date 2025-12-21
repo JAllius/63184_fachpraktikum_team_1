@@ -1,5 +1,5 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import {
   get_dataset_versions,
   type DatasetVersion,
@@ -9,6 +9,11 @@ import {
   get_dataset,
   type Dataset,
 } from "../../../lib/actions/datasets/dataset.action";
+import {
+  DatasetVersionsTable,
+  type DeleteTarget,
+  type UpdateTarget,
+} from "@/components/dataset_versions";
 
 const DatasetIdPage = () => {
   const params = useParams<{ datasetId: string }>();
@@ -19,13 +24,26 @@ const DatasetIdPage = () => {
 
   const [datasetVersions, setDatasetVersions] = useState<DatasetVersion[]>([]);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [seachParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [dataset, setDataset] = useState<Dataset | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [totalPages, setTotalPages] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [openDelete, setOpenDelete] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [deleting, setDeleting] = useState(false);
+  const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [openUpdate, setOpenUpdate] = useState(false);
 
-  const q = seachParams.get("q") || "";
-  const id = seachParams.get("id") || "";
-  // const name = seachParams.get("name") || "";
+  const page = Number(searchParams.get("page") ?? 1);
+  const size = Number(searchParams.get("size") ?? 20);
+  const sort = searchParams.get("sort") ?? "created_at";
+  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const q = searchParams.get("q") || "";
+  const id = searchParams.get("id") || "";
+  // const name = searchParams.get("name") || "";
 
   useEffect(() => {
     async function loadDataset() {
@@ -39,54 +57,104 @@ const DatasetIdPage = () => {
     loadDataset();
   }, [datasetId]);
 
-  useEffect(() => {
-    async function loadDatasetVersions() {
-      try {
-        const data: DatasetVersionListResponse = await get_dataset_versions(
-          datasetId,
-          {
-            q: q || undefined,
-            id: id || undefined,
-            // name: name || undefined,
-          }
-        );
-        setDatasetVersions(data.items);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
+  const loadDatasetVersions = useCallback(async () => {
+    try {
+      const data: DatasetVersionListResponse = await get_dataset_versions(
+        datasetId,
+        {
+          page,
+          size,
+          sort,
+          dir,
+          q: q || undefined,
+          id: id || undefined,
+          // name: name || undefined,
+        }
+      );
+      setDatasetVersions(data.items);
+      setTotalPages(data.total_pages);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
+  }, [datasetId, page, size, sort, dir, q, id]); // name
+
+  useEffect(() => {
     loadDatasetVersions();
-  }, [datasetId, q, id]); // name
+  }, [loadDatasetVersions]);
+
+  const askDelete = (id: string) => {
+    setDeleteTarget({ id });
+    setOpenDelete(true);
+  };
+
+  const cancelDelete = () => {
+    setOpenDelete(false);
+    setDeleteTarget(null);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      console.log("Deleting");
+      await loadDatasetVersions();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      console.log("Done");
+      cancelDelete();
+      setDeleting(false);
+    }
+  };
+
+  const askUpdate = (id: string) => {
+    setUpdateTarget({ id });
+    setOpenUpdate(true);
+  };
+
+  const cancelUpdate = () => {
+    setOpenUpdate(false);
+    setUpdateTarget(null);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onUpdate = async () => {
+    if (!updateTarget) return;
+    try {
+      console.log("Updating");
+      await loadDatasetVersions();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      console.log("Done");
+      cancelUpdate();
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-w-full flex items-center justify-center">
-        Loading . . .
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>Versions of: {dataset?.name ?? datasetId}</h1>
-      <ul>
-        {datasetVersions.map((dsv) => (
-          <li key={dsv.id} className="flex">
-            <div className="border rounded px-2 py-2 ">
-              {/* <span className="font-semibold">{dsv.name}</span>, */}
-              {dsv.id}, {dsv.created_at}
-            </div>
-            <Link
-              to={`${dsv.id}`}
-              className="px-3 py-1 rounded-md flex items-center justify-center text-blue-500 hover:bg-blue-500 hover:text-white hover:scale-105 active:scale-95 transition-all duration-150"
-            >
-              View
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="w-full pl-4 pt-8">
+      <div className="mx-auto w-full px-6">
+        <h1>Versions of {dataset?.name}</h1>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Manage all dataset versions of {dataset?.name}.
+        </p>
+        <DatasetVersionsTable
+          datasetVersions={datasetVersions}
+          askDelete={askDelete}
+          askUpdate={askUpdate}
+        />
+      </div>
     </div>
   );
 };

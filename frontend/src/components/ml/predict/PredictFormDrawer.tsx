@@ -69,12 +69,19 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
       <SheetTrigger asChild>
         <Button className="hover:scale-105 active:scale-95">Predict</Button>
       </SheetTrigger>
-      <SheetContent className="flex h-full flex-col">
+      <SheetContent
+        className="flex h-full flex-col"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle>Predict</SheetTitle>
         </SheetHeader>
 
-        <form className="mt-6 space-y-6">
+        <form
+          id="predict_form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="mt-6 space-y-6"
+        >
           <FieldSet>
             <FieldGroup>
               <div className="flex gap-2">
@@ -156,7 +163,8 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
+            form="predict_form"
             disabled={isSubmitting}
             className="w-20 hover:scale-105 active:scale-95"
           >

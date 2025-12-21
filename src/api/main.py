@@ -9,7 +9,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problems, get_models
+from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problems, get_models
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +107,10 @@ def check_task(id: str):
 
 
 @app.post("/dataset")  # /dataset?name=test&user_id=1
-async def post_dataset(name: str, user_id: int):
+async def post_dataset(name: str,): # user_id: int):
     """create a stub for a new dataset and return the id"""
-    return {}
+    dataset_id = create_dataset(name)
+    return {dataset_id}
 
 
 @app.get("/datasets")  # /datasets
@@ -181,7 +182,7 @@ async def post_dataset_version(dataset_id: int, user_id: int):
 async def get_dataset_version(version: str): #, user_id: int):
     """return the specified dataset version if user has permission"""
     dataset_version = db_get_dataset_version(version)
-    return dataset_version
+    return {dataset_version}
 
 
 @app.put("/dataset/{dataset_id}/{version}")

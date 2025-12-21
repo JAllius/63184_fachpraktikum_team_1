@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import DatasetCreate from "./DatasetCreate";
+import { DatasetCreate } from "../datasets";
 
 type Props = {
   onCreate: () => Promise<void> | void;

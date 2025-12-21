@@ -15,13 +15,14 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-type RowActionsProps = {
+type Props = {
   id: string;
   parent: string;
   onDelete: () => void;
+  onUpdate: () => void;
 };
 
-const RowActions = ({ id, parent, onDelete }: RowActionsProps) => {
+const RowActions = ({ id, parent, onDelete, onUpdate }: Props) => {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-center justify-start gap-1.5">
@@ -76,10 +77,12 @@ const RowActions = ({ id, parent, onDelete }: RowActionsProps) => {
             </Tooltip>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem className="group text-muted-foreground">
-              <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
-              View
-            </DropdownMenuItem>
+            <Link to={`${id}`}>
+              <DropdownMenuItem className="group text-muted-foreground">
+                <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                View
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(id);
@@ -92,7 +95,10 @@ const RowActions = ({ id, parent, onDelete }: RowActionsProps) => {
               <Copy className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Copy id
             </DropdownMenuItem>
-            <DropdownMenuItem className="group text-muted-foreground">
+            <DropdownMenuItem
+              onClick={onUpdate}
+              className="group text-muted-foreground"
+            >
               <Edit className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Edit
             </DropdownMenuItem>

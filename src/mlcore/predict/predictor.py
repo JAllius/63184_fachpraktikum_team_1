@@ -7,13 +7,13 @@ from mlcore.io.metadata_loader import load_metadata
 from db.db import get_ml_problem, get_model, create_prediction
 
 def predict(
-    input: pd.DataFrame | None = None,
+    input_df: pd.DataFrame | None = None,
     input_uri: str | None = None,
     problem_id: str | None = None,
     model_id: str | None = "production",
 ) -> tuple[pd.DataFrame, Any, dict]:
 
-    if input is None and not input_uri:
+    if input_df is None and not input_uri:
         raise ValueError(
             "No input dataframe was specified. Provide an input or an input_uri.")
 
@@ -24,7 +24,7 @@ def predict(
     if input_uri:
         X = get_dataframe_from_csv(input_uri)
     else:
-        X = input
+        X = input_df
     if X is None:
         raise ValueError("Input resolved to None.")
 
@@ -66,10 +66,10 @@ def predict(
         "model_metadata": metadata,
     }
 
-    if input is None:
+    if input_df is None:
         inputs_to_store = None
     else:
-        inputs_to_store = input.to_dict(orient="records")
+        inputs_to_store = input_df.to_dict(orient="records")
     create_prediction(model_id, input_uri, inputs_to_store, prediction_summary, None, None)
 
     return X, y_pred, prediction_summary

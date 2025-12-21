@@ -23,7 +23,7 @@ type Props = {
 
 export type DeleteTarget = {
   id: string;
-  name: string;
+  // name: string;
 };
 
 const DatasetDelete = ({

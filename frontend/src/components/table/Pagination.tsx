@@ -1,13 +1,13 @@
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../ui/button";
 
-type PaginationProps = {
+type Props = {
   totalPages: number;
   // size shows how many pages to show in total. Default 9 -> +- 4 from current page
   size?: number;
 };
 
-const Pagination = ({ totalPages, size = 9 }: PaginationProps) => {
+const Pagination = ({ totalPages, size = 9 }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawPage = searchParams.get("page");
   const current =
