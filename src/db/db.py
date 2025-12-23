@@ -616,3 +616,65 @@ def get_prediction(prediction_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (prediction_id,))
         return cur.fetchone()
+    
+
+ALLOWED_PREDICTION_SORT_FIELDS = {
+    "name": "name",
+    "created_at": "created_at",
+}
+
+
+def get_predictions(
+    model_id: str,
+    page: int,
+    size: int,
+    sort: str,
+    dir: Literal["asc", "desc"],
+    q: Optional[str] = None,
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+) -> Tuple[List[Dict], int]:
+    '''
+    Return (items, total) for predictions for a given dataset_id with pagination, sorting and optional search.
+    '''
+    ### SORTING ###
+    sort_column = ALLOWED_PREDICTION_SORT_FIELDS.get(sort, "created_at")
+    dir_sql = "ASC" if dir=="asc" else "DESC"
+
+    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
+    where_clauses = []
+    params = []
+
+    # if q:
+    #     like = f"%{q}%" # Search anything that contains q
+    #     where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+    #     params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+
+    if id:
+        where_clauses.append("id = %s")
+        params.append(id)
+
+    # if name:
+    #     like = f"%{name}%" # Search name for anything that contains name
+    #     where_clauses.append("name LIKE %s")
+    #     params.append(like)
+    
+    where_sql = ""
+    if where_clauses:
+        where_sql = " AND " + " AND ".join(where_clauses)
+
+    ### TOTAL CALCULATION ###
+    count_sql = f"SELECT COUNT(*) AS total FROM predictions WHERE model_id = %s {where_sql}"
+    with cursor() as cur:
+        cur.execute(count_sql, [model_id] + params)
+        row = cur.fetchone()
+        total = row["total"] if row else 0
+
+    ### RETURN ###
+    offset = (page-1)*size
+    dataset_versions_sql = f"SELECT * FROM predictions WHERE model_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    with cursor() as cur:
+        cur.execute(dataset_versions_sql, [model_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        items = cur.fetchall()
+
+    return items, total

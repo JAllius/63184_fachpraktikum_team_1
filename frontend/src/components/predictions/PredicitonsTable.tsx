@@ -10,23 +10,19 @@ import {
 } from "@/components/ui/table";
 import { Link } from "react-router-dom";
 import { RowActions, SortableHeader } from "../table";
-import type { DatasetVersion } from "@/lib/actions/dataset_versions";
+import type { Prediction } from "@/lib/actions/predictions";
 
 type Props = {
-  datasetVersions: DatasetVersion[];
+  predictions: Prediction[];
   askDelete: (id: string) => void;
   askUpdate: (id: string) => void;
 };
 
-const DatasetVersionsTable = ({
-  datasetVersions,
-  askDelete,
-  askUpdate,
-}: Props) => {
+const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
   return (
     <div>
       <Table>
-        <TableCaption>List of Dataset Versions</TableCaption>
+        <TableCaption>List of Predictions</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>
@@ -40,21 +36,21 @@ const DatasetVersionsTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {datasetVersions.map((dsv) => (
-            <TableRow key={dsv.id}>
+          {predictions.map((pr) => (
+            <TableRow key={pr.id}>
               <TableCell className="font-medium">
-                <Link to={`${dsv.id}`} aria-label="View dataset version">
-                  {dsv.name}
+                <Link to={`${pr.id}`} aria-label="View prediction">
+                  {pr.name}
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground">{dsv.id}</TableCell>
-              <TableCell>{dsv.created_at}</TableCell>
+              <TableCell className="text-muted-foreground">{pr.id}</TableCell>
+              <TableCell>{pr.created_at}</TableCell>
               <TableCell>
                 <RowActions
-                  id={dsv.id}
+                  id={pr.id}
                   parent="Dataset Version"
-                  onDelete={() => askDelete(dsv.id)}
-                  onUpdate={() => askUpdate(dsv.id)}
+                  onDelete={() => askDelete(pr.id)}
+                  onUpdate={() => askUpdate(pr.id)}
                 />
               </TableCell>
             </TableRow>
@@ -63,9 +59,7 @@ const DatasetVersionsTable = ({
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>Total</TableCell>
-            <TableCell className="text-right">
-              {datasetVersions.length}
-            </TableCell>
+            <TableCell className="text-right">{predictions.length}</TableCell>
           </TableRow>
         </TableFooter>
       </Table>
@@ -73,4 +67,4 @@ const DatasetVersionsTable = ({
   );
 };
 
-export default DatasetVersionsTable;
+export default PredictionsTable;

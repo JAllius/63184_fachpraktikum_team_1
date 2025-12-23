@@ -3,13 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import DatasetCreate from "./DatasetCreate";
 
-type Props = {
-  onCreate: () => Promise<void> | void;
-};
-
-const DatasetsFilterbar = ({ onCreate }: Props) => {
+const DatasetsFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const initial = {
@@ -75,35 +70,31 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search"
-            value={filters.q}
-            onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              onClick={resetFilters}
-              className="hover:scale-105 active:scale-95"
-              type="button"
-            >
-              Reset
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className={`hover:scale-105 active:scale-95 ${
-                open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""
-              }`}
-            >
-              {open ? "- Advanced Filters" : "+ Advanced Filters"}
-            </Button>
-          </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Search"
+          value={filters.q}
+          onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+          className="shadow border rounded-md px-2 py-1 w-60"
+        />
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            onClick={resetFilters}
+            className="hover:scale-105 active:scale-95"
+            type="button"
+          >
+            Reset
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`hover:scale-105 active:scale-95 ${
+              open ? "bg-secondary-foreground" : ""
+            }`}
+          >
+            {open ? "- Advanced Filters" : "+ Advanced Filters"}
+          </Button>
         </div>
-        {/* Create Dataset */}
-        <DatasetCreate onCreate={onCreate} />
       </div>
       {open && (
         <div className="flex flex-row gap-2 mt-2">

@@ -9,7 +9,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problems, get_models
+from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problems, get_models, get_predictions
 
 logger = logging.getLogger(__name__)
 
@@ -379,10 +379,11 @@ async def post_predict(
     return {"task_id": task.id, "status": f"/celery/{task.id}"}
     # return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
+
 # ========== ML_Models ==========
 
 
-@app.get("/models/{problem_id}")  # models
+@app.get("/problemModels/{problem_id}")  # models
 async def get_list_models(
     problem_id: str,
     page: int = Query(1, ge=1),
@@ -431,6 +432,46 @@ async def get_list_models(
         "status":status,
     }
 
+
+# ========== ML_Predictions ==========
+
+
+@app.get("/modelPredictions/{model_id}")  # models
+async def get_list_predictions(
+    model_id: str,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+):
+    """get all predictions"""
+    items, total = get_predictions(
+        model_id=model_id,
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        name=name,
+    )
+    total_pages = int((total + size -1)/size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        "name":name,
+    }
 
 
 # I am not sure how this works with the storage and if we need an endpoint.

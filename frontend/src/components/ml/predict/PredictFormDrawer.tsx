@@ -37,6 +37,8 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
+    unregister,
     reset,
   } = useForm<PredictFormInput>({
     resolver: zodResolver(PredictFormSchema),
@@ -47,6 +49,17 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
       model_id: modelId ?? "production",
     },
   });
+
+  function handleInputToggle(checked: boolean) {
+    setInput(checked);
+    if (checked) {
+      setValue("input_json", "");
+      unregister("input_json");
+    } else {
+      setValue("input_uri", "");
+      unregister("input_uri");
+    }
+  }
 
   async function onSubmit(data: PredictFormInput) {
     const res = await post_predict(data);
@@ -88,7 +101,7 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
                 <span>Json</span>
                 <Switch
                   checked={input}
-                  onCheckedChange={setInput}
+                  onCheckedChange={handleInputToggle}
                   className="shrink-0 w-9"
                 />
                 <span>Uri</span>

@@ -131,9 +131,9 @@ const TrainFormDrawer = ({ problemId }: Props) => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fast">fast</SelectItem>
-                        <SelectItem value="balanced">balanced</SelectItem>
-                        <SelectItem value="accurate">accurate</SelectItem>
+                        <SelectItem value="fast">Fast</SelectItem>
+                        <SelectItem value="balanced">Balanced</SelectItem>
+                        <SelectItem value="accurate">Accurate</SelectItem>
                       </SelectContent>
                     </Select>
                     <FieldError

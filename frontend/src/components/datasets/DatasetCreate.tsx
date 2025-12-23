@@ -67,7 +67,7 @@ const DatasetCreate = ({ onCreate }: Props) => {
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader>
-          <SheetTitle>Create Dataset</SheetTitle>
+          <SheetTitle>Create a new Dataset</SheetTitle>
         </SheetHeader>
 
         <form

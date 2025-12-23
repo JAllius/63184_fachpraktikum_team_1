@@ -1,7 +1,20 @@
+import QuickStatCards from "@/components/home/QuickStatCards";
+import { FoxWatermark } from "@/components/io/test";
+
 const DashboardPage = () => {
   return (
-    <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>Home</h1>
+    <div className="relative min-h-screen bg-background p-8">
+      <div className="flex items-center">
+        <FoxWatermark
+          aria-hidden
+          size="80%"
+          className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+          style={{ color: "hsl(var(--sidebar-foreground))" }}
+          nodeFill="hsl(var(--sidebar-foreground))"
+        />
+      </div>
+      <h1 className="relative z-10 pl-2 pb-8">Overview</h1>
+      <QuickStatCards />
     </div>
   );
 };

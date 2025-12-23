@@ -10,6 +10,8 @@ import {
   type Dataset,
 } from "../../../lib/actions/datasets/dataset.action";
 import {
+  DatasetVersionCreate,
+  DatasetVersionsFilterbar,
   DatasetVersionsTable,
   type DeleteTarget,
   type UpdateTarget,
@@ -149,6 +151,15 @@ const DatasetIdPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all dataset versions of {dataset?.name}.
         </p>
+        <div className="flex justify-between">
+          <div className="relative">
+            <DatasetVersionsFilterbar />
+          </div>
+          <DatasetVersionCreate
+            onCreate={loadDatasetVersions}
+            datasetId={datasetId}
+          />
+        </div>
         <DatasetVersionsTable
           datasetVersions={datasetVersions}
           askDelete={askDelete}

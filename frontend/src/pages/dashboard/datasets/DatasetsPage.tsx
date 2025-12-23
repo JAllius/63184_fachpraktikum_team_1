@@ -6,6 +6,7 @@ import {
 } from "../../../lib/actions/datasets/dataset.action";
 import { useSearchParams } from "react-router-dom";
 import {
+  DatasetCreate,
   DatasetDelete,
   DatasetsFilterbar,
   DatasetsTable,
@@ -121,7 +122,12 @@ const DatasetsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all datasets.
         </p>
-        <DatasetsFilterbar onCreate={loadDatasets} />
+        <div className="flex justify-between">
+          <div className="relative">
+            <DatasetsFilterbar />
+          </div>
+          <DatasetCreate onCreate={loadDatasets} />
+        </div>
         <DatasetsTable
           datasets={datasets}
           askDelete={askDelete}
