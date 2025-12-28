@@ -59,6 +59,21 @@ def cursor():
     finally:
         conn.close()
 
+def _build_update_sql(table: str, id_col: str, id_val: str, fields: Dict[str, Any]) -> Tuple[Optional[str], Optional[List[Any]]]:
+    set_parts = []
+    params: List[Any] = []
+    for col, val in fields.items():
+        if val is None:
+            continue
+        set_parts.append(f"{col}=%s")
+        params.append(val)
+
+    if not set_parts:
+        return None, None
+
+    sql = f"UPDATE {table} SET " + ", ".join(set_parts) + f" WHERE {id_col}=%s"
+    params.append(id_val)
+    return sql, params
 
 # -------------------------------------------------------------------
 # USERS
@@ -76,6 +91,35 @@ def get_user(user_id: str) -> Optional[dict]:
     sql = "SELECT * FROM users WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (user_id,))
+        return cur.fetchone()
+
+# -------------------------------------------------------------------
+# UPLOADS / IO
+# -------------------------------------------------------------------
+
+def create_upload(
+    kind: str,
+    filename: str,
+    owner_id: Optional[str] = None,
+    content_type: Optional[str] = None,
+    size_bytes: Optional[int] = None,
+    uri: Optional[str] = None,
+) -> str:
+    upload_id = str(uuid.uuid4())
+    sql = """
+        INSERT INTO uploads
+        (id, owner_id, kind, filename, content_type, size_bytes, uri)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    with cursor() as cur:
+        cur.execute(sql, (upload_id, owner_id, kind, filename, content_type, size_bytes, uri))
+    return upload_id
+
+
+def get_upload(upload_id: str) -> Optional[dict]:
+    sql = "SELECT * FROM uploads WHERE id = %s"
+    with cursor() as cur:
+        cur.execute(sql, (upload_id,))
         return cur.fetchone()
 
 
@@ -157,6 +201,14 @@ def get_datasets(
 
     return items, total
 
+def update_dataset(dataset_id: str, name: Optional[str] = None, owner_id: Optional[str] = None) -> bool:
+    sql, params = _build_update_sql("datasets", "id", dataset_id, {"name": name, "owner_id": owner_id})
+    if not sql:
+        return False
+    with cursor() as cur:
+        cur.execute(sql, params)
+        return cur.rowcount > 0
+
 # -------------------------------------------------------------------
 # DATASET VERSIONS
 # -------------------------------------------------------------------
@@ -167,12 +219,13 @@ def create_dataset_version(
     schema_json: Optional[dict] = None,
     profile_json: Optional[dict] = None,
     row_count: Optional[int] = None,
+    upload_id: Optional[str] = None,
 ) -> str:
     version_id = str(uuid.uuid4())
     sql = """
         INSERT INTO dataset_versions
-        (id, dataset_id, uri, schema_json, profile_json, row_count)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        (id, dataset_id, uri, upload_id, schema_json, profile_json, row_count)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -181,6 +234,7 @@ def create_dataset_version(
                 version_id,
                 dataset_id,
                 uri,
+                upload_id,
                 _json_dump(schema_json),
                 _json_dump(profile_json),
                 row_count,
@@ -257,6 +311,31 @@ def get_dataset_versions(
 
     return items, total
 
+def update_dataset_version(
+    version_id: str,
+    uri: Optional[str] = None,
+    upload_id: Optional[str] = None,
+    schema_json: Optional[dict] = None,
+    profile_json: Optional[dict] = None,
+    row_count: Optional[int] = None,
+) -> bool:
+    sql, params = _build_update_sql(
+        "dataset_versions",
+        "id",
+        version_id,
+        {
+            "uri": uri,
+            "upload_id": upload_id,
+            "schema_json": _json_dump(schema_json) if schema_json is not None else None,
+            "profile_json": _json_dump(profile_json) if profile_json is not None else None,
+            "row_count": row_count,
+        },
+    )
+    if not sql:
+        return False
+    with cursor() as cur:
+        cur.execute(sql, params)
+        return cur.rowcount > 0
 
 # -------------------------------------------------------------------
 # ML PROBLEMS
@@ -373,6 +452,36 @@ def get_ml_problems(
         items = cur.fetchall()
 
     return items, total
+
+def update_ml_problem(
+    problem_id: str,
+    task: Optional[str] = None,
+    target: Optional[str] = None,
+    dataset_version_uri: Optional[str] = None,
+    feature_strategy_json: Optional[dict] = None,
+    schema_snapshot: Optional[dict] = None,
+    semantic_types: Optional[dict] = None,
+    current_model_id: Optional[str] = None,
+) -> bool:
+    sql, params = _build_update_sql(
+        "ml_problems",
+        "id",
+        problem_id,
+        {
+            "task": task,
+            "target": target,
+            "dataset_version_uri": dataset_version_uri,
+            "feature_strategy_json": _json_dump(feature_strategy_json) if feature_strategy_json is not None else None,
+            "schema_snapshot": _json_dump(schema_snapshot) if schema_snapshot is not None else None,
+            "semantic_types": _json_dump(semantic_types) if semantic_types is not None else None,
+            "current_model_id": current_model_id,
+        },
+    )
+    if not sql:
+        return False
+    with cursor() as cur:
+        cur.execute(sql, params)
+        return cur.rowcount > 0
 
 
 # -------------------------------------------------------------------
@@ -588,12 +697,13 @@ def create_prediction(
     outputs_json: Optional[dict] = None,
     outputs_uri: Optional[str] = None,
     requested_by: Optional[str] = None,
+    input_upload_id: Optional[str] = None,
 ) -> str:
     prediction_id = str(uuid.uuid4())
     sql = """
         INSERT INTO predictions
-        (id, model_id, input_uri, inputs_json, outputs_json, outputs_uri, requested_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        (id, model_id, input_uri, input_upload_id, inputs_json, outputs_json, outputs_uri, requested_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -602,6 +712,7 @@ def create_prediction(
                 prediction_id,
                 model_id,
                 input_uri,
+                input_upload_id,
                 _json_dump(inputs_json),
                 _json_dump(outputs_json),
                 outputs_uri,
@@ -678,3 +789,152 @@ def get_predictions(
         items = cur.fetchall()
 
     return items, total
+
+
+# -------------------------------------------------------------------
+# DELETE HELPERS
+# -------------------------------------------------------------------
+
+def delete_prediction(prediction_id: str) -> bool:
+    sql = "DELETE FROM predictions WHERE id=%s"
+    with cursor() as cur:
+        cur.execute(sql, (prediction_id,))
+        return cur.rowcount > 0
+
+
+def delete_job(job_id: str) -> bool:
+    sql = "DELETE FROM jobs WHERE id=%s"
+    with cursor() as cur:
+        cur.execute(sql, (job_id,))
+        return cur.rowcount > 0
+
+
+def delete_model(model_id: str) -> bool:
+    """
+    Deletes:
+      - predictions (by model_id)
+      - jobs (by model_id)
+      - clears ml_problems.current_model_id if it matches
+      - model row
+    """
+    with cursor() as cur:
+        cur.execute("DELETE FROM predictions WHERE model_id=%s", (model_id,))
+        cur.execute("DELETE FROM jobs WHERE model_id=%s", (model_id,))
+        cur.execute("UPDATE ml_problems SET current_model_id=NULL WHERE current_model_id=%s", (model_id,))
+        cur.execute("DELETE FROM models WHERE id=%s", (model_id,))
+        return cur.rowcount > 0
+
+
+def delete_ml_problem(problem_id: str) -> bool:
+    """
+    Deletes:
+      - models (+ predictions/jobs)
+      - jobs (by problem_id)
+      - ml_problem row
+    """
+    with cursor() as cur:
+        cur.execute("SELECT id FROM models WHERE problem_id=%s", (problem_id,))
+        model_ids = [r["id"] for r in (cur.fetchall() or [])]
+
+    for mid in model_ids:
+        delete_model(mid)
+
+    with cursor() as cur:
+        cur.execute("DELETE FROM jobs WHERE problem_id=%s", (problem_id,))
+        cur.execute("DELETE FROM ml_problems WHERE id=%s", (problem_id,))
+        return cur.rowcount > 0
+
+
+def delete_dataset_version(version_id: str) -> bool:
+    """
+    Deletes:
+      - ml_problems (+ models/predictions/jobs)
+      - dataset_version row
+    """
+    with cursor() as cur:
+        cur.execute("SELECT id FROM ml_problems WHERE dataset_version_id=%s", (version_id,))
+        problem_ids = [r["id"] for r in (cur.fetchall() or [])]
+
+    for pid in problem_ids:
+        delete_ml_problem(pid)
+
+    with cursor() as cur:
+        cur.execute("DELETE FROM dataset_versions WHERE id=%s", (version_id,))
+        return cur.rowcount > 0
+
+
+def delete_dataset(dataset_id: str) -> bool:
+    """
+    Deletes:
+      - dataset_versions (+ problems/models/predictions/jobs)
+      - dataset row
+    """
+    with cursor() as cur:
+        cur.execute("SELECT id FROM dataset_versions WHERE dataset_id=%s", (dataset_id,))
+        version_ids = [r["id"] for r in (cur.fetchall() or [])]
+
+    for vid in version_ids:
+        delete_dataset_version(vid)
+
+    with cursor() as cur:
+        cur.execute("DELETE FROM datasets WHERE id=%s", (dataset_id,))
+        return cur.rowcount > 0
+
+
+# -------------------------------------------------------------------
+# JOIN HELPERS
+# -------------------------------------------------------------------
+
+def get_dataset_version_detail(version_id: str) -> Optional[dict]:
+    """
+    Returns dataset_versions + dataset name/owner_id.
+    """
+    sql = """
+        SELECT dv.*, d.name AS dataset_name, d.owner_id AS dataset_owner_id
+        FROM dataset_versions dv
+        JOIN datasets d ON d.id = dv.dataset_id
+        WHERE dv.id = %s
+    """
+    with cursor() as cur:
+        cur.execute(sql, (version_id,))
+        return cur.fetchone()
+
+
+def get_ml_problem_detail(problem_id: str) -> Optional[dict]:
+    """
+    Returns ml_problems + dataset_version info + dataset name.
+    """
+    sql = """
+        SELECT mp.*,
+               dv.id AS dataset_version_id,
+               dv.created_at AS dataset_version_created_at,
+               d.id AS dataset_id,
+               d.name AS dataset_name
+        FROM ml_problems mp
+        JOIN dataset_versions dv ON dv.id = mp.dataset_version_id
+        JOIN datasets d ON d.id = dv.dataset_id
+        WHERE mp.id = %s
+    """
+    with cursor() as cur:
+        cur.execute(sql, (problem_id,))
+        return cur.fetchone()
+
+
+def get_model_detail(model_id: str) -> Optional[dict]:
+    """
+    Returns models + problem task/target + dataset name.
+    """
+    sql = """
+        SELECT m.*,
+               mp.task AS problem_task,
+               mp.target AS problem_target,
+               d.name AS dataset_name
+        FROM models m
+        JOIN ml_problems mp ON mp.id = m.problem_id
+        JOIN dataset_versions dv ON dv.id = mp.dataset_version_id
+        JOIN datasets d ON d.id = dv.dataset_id
+        WHERE m.id = %s
+    """
+    with cursor() as cur:
+        cur.execute(sql, (model_id,))
+        return cur.fetchone()

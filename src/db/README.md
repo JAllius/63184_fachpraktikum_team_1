@@ -4,23 +4,27 @@ This folder contains everything needed to create and verify the database for our
 
 1) What each script/file does
 
-src/db/schema_mysql.sql – Creates all tables (users, datasets, dataset_versions, ml_problems, models, jobs, predictions).
+src/db/schema_mysql.sql – Creates all tables (users, uploads, datasets, dataset_versions, ml_problems, models, jobs, predictions).
 
 IDs are UUID strings (CHAR(36)).
 
 evaluation_strategy lives on models (not ml_problems).
 
-src/db/seed.sql – Optional local-only seed script (UUID-based).
+uploads table stores file metadata (CSV uploads etc.).
 
-It inserts a tiny demo graph and then TRUNCATES all tables at the end (so it acts like a “seed self-test” and leaves the DB empty).
+dataset_versions can reference uploads via upload_id (uri optional).
 
-src/db/init_db.py – Python runner that connects to MySQL and applies the schema (and optionally seed).
+predictions can reference uploads via input_upload_id (input_uri optional).
 
-src/db/db.py – DB helper functions used by the API (create/read users, datasets, versions, problems, models, jobs, predictions).
+src/db/db.py – DB helper functions used by the API (create/read users, uploads, datasets, versions, problems, models, jobs, predictions).
 
 Prediction helper is create_prediction (legacy alias save_prediction may exist during transition).
 
-src/db/test_smoke.py – Local smoke test that runs the happy-path using db.py (quick verification).
+Added update helpers: update_dataset, update_dataset_version, update_ml_problem.
+
+Added delete helpers: delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_job, delete_prediction.
+
+Added join helpers for frontend navigation: get_dataset_version_detail, get_ml_problem_detail, get_model_detail.
 
 2) Prerequisites
 

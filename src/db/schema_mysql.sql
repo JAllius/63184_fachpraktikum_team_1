@@ -10,6 +10,22 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- ==========================================
+-- UPLOADS / IO
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS uploads (
+  id CHAR(36) PRIMARY KEY,
+  owner_id CHAR(36),                        -- FK to users.id
+  kind VARCHAR(32) NOT NULL,                -- 'dataset_csv' | 'predict_csv' | 'plot'
+  filename VARCHAR(255) NOT NULL,           -- original file name
+  content_type VARCHAR(127),                -- e.g. 'text/csv'
+  size_bytes BIGINT,                        -- file size in bytes (optional)
+  uri TEXT,                                 -- where the uploaded file is stored (optional)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+
+-- ==========================================
 -- DATASETS & VERSIONS
 -- ==========================================
 
@@ -24,12 +40,14 @@ CREATE TABLE IF NOT EXISTS datasets (
 CREATE TABLE IF NOT EXISTS dataset_versions (
   id CHAR(36) PRIMARY KEY,
   dataset_id CHAR(36) NOT NULL,
-  uri TEXT NOT NULL,                        -- where the dataset file is stored
+  uri TEXT,                                 -- where the dataset file is stored
+  upload_id CHAR(36),                       -- FK to uploads.id (preferred over uri)
   schema_json JSON,                         -- inferred schema at upload
   profile_json JSON,                        -- data profile / stats
   row_count INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+  FOREIGN KEY (dataset_id) REFERENCES datasets(id),
+  FOREIGN KEY (upload_id) REFERENCES uploads(id)
 );
 
 -- ==========================================
@@ -101,11 +119,13 @@ CREATE TABLE IF NOT EXISTS predictions (
   id CHAR(36) PRIMARY KEY,
   model_id CHAR(36) NOT NULL,               -- which model was used
   input_uri TEXT,                           -- file with inputs (e.g. CSV)
+  input_upload_id CHAR(36),                 -- FK to uploads.id (preferred over input_uri)
   inputs_json JSON,                         -- small inputs inline
   outputs_json JSON,                        -- small outputs inline
   outputs_uri TEXT,                         -- file with outputs (CSV/Parquet)
   requested_by CHAR(36),                    -- FK: who asked for the prediction
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (model_id) REFERENCES models(id),
-  FOREIGN KEY (requested_by) REFERENCES users(id)
+  FOREIGN KEY (requested_by) REFERENCES users(id),
+  FOREIGN KEY (input_upload_id) REFERENCES uploads(id)
 );
