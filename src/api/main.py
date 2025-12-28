@@ -9,7 +9,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problems, get_models, get_predictions
+from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_models, get_predictions
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +182,7 @@ async def post_dataset_version(dataset_id: int, user_id: int):
 async def get_dataset_version(version: str): #, user_id: int):
     """return the specified dataset version if user has permission"""
     dataset_version = db_get_dataset_version(version)
-    return {dataset_version}
+    return dataset_version
 
 
 @app.put("/dataset/{dataset_id}/{version}")
@@ -331,9 +331,10 @@ async def post_problem(
 
 
 @app.get("/problem/{problem_id}")
-async def get_problem(problem_id: int):
+async def get_problem(problem_id: str):
     """return specified problem if user has permission"""
-    return {}
+    ml_problem = get_ml_problem(problem_id)
+    return ml_problem
 
 # ========== ML_Train ==========
 
@@ -341,6 +342,7 @@ async def get_problem(problem_id: int):
 @app.post("/train")
 async def post_train(
     # user_id: int,
+    name: str,
     problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
@@ -352,7 +354,7 @@ async def post_train(
 
     # TODO: re-add user_id when we add checking for permissions
     task = celery_app.send_task(
-        "train.task", args=[problem_id, algorithm, train_mode, evaluation_strategy, explanation])
+        "train.task", args=[name, problem_id, algorithm, train_mode, evaluation_strategy, explanation])
     return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Predict ==========

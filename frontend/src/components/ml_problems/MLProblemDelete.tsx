@@ -26,7 +26,7 @@ export type DeleteTarget = {
   name?: string;
 };
 
-const DatasetVersionDelete = ({
+const MLProblemDelete = ({
   target,
   open,
   onConfirm,
@@ -45,25 +45,24 @@ const DatasetVersionDelete = ({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Delete Dataset Version</DialogTitle>
+          <DialogTitle>Delete Dataset</DialogTitle>
           <DialogDescription className="sr-only">
-            Deleting the dataset version {target.name} will permanently delete
-            all associated problems, and models. Type delete to confirm.
+            Deleting the ML problem {target.name} will permanently deletes all
+            associated models. Type delete to confirm.
           </DialogDescription>
           <div className="text-sm">
-            Are you sure you want to delete dataset version:{" "}
-            <b>{target.name}?</b>
+            Are you sure you want to delete ML problem: <b>{target.name}?</b>
           </div>
           <div className="text-muted-foreground text-sm">
             <i>id: {target.id}</i>
           </div>
           <div className="text-sm">
-            Deleting this dataset version will permanently delete all associated
-            problems, and models.
+            Deleting this ML problem will permanently delete all associated
+            models.
           </div>
         </DialogHeader>
         <form
-          id="delete-datasetVersion-form"
+          id="delete-dataset-form"
           onSubmit={(e) => {
             e.preventDefault();
             if (!canDelete || deleting) return;
@@ -88,7 +87,7 @@ const DatasetVersionDelete = ({
           <Button
             variant="destructive"
             type="submit"
-            form="delete-datasetVersion-form"
+            form="delete-dataset-form"
             disabled={!canDelete || deleting}
           >
             {deleting ? "Deleting…" : "Delete"}
@@ -100,4 +99,4 @@ const DatasetVersionDelete = ({
   );
 };
 
-export default DatasetVersionDelete;
+export default MLProblemDelete;

@@ -11,11 +11,15 @@ import {
 } from "../../../lib/actions/datasets/dataset.action";
 import {
   DatasetVersionCreate,
+  DatasetVersionDelete,
   DatasetVersionsFilterbar,
   DatasetVersionsTable,
+  DatasetVersionUpdate,
   type DeleteTarget,
   type UpdateTarget,
 } from "@/components/dataset_versions";
+import { PageSize, Pagination } from "@/components/table";
+// import { Edit } from "lucide-react";
 
 const DatasetIdPage = () => {
   const params = useParams<{ datasetId: string }>();
@@ -28,15 +32,11 @@ const DatasetIdPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [dataset, setDataset] = useState<Dataset | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [totalPages, setTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [openDelete, setOpenDelete] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deleting, setDeleting] = useState(false);
   const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [openUpdate, setOpenUpdate] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
@@ -86,8 +86,8 @@ const DatasetIdPage = () => {
     loadDatasetVersions();
   }, [loadDatasetVersions]);
 
-  const askDelete = (id: string) => {
-    setDeleteTarget({ id });
+  const askDelete = (id: string, name?: string) => {
+    setDeleteTarget({ id, name });
     setOpenDelete(true);
   };
 
@@ -96,7 +96,6 @@ const DatasetIdPage = () => {
     setDeleteTarget(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -112,8 +111,8 @@ const DatasetIdPage = () => {
     }
   };
 
-  const askUpdate = (id: string) => {
-    setUpdateTarget({ id });
+  const askUpdate = (id: string, name?: string) => {
+    setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
 
@@ -122,7 +121,6 @@ const DatasetIdPage = () => {
     setUpdateTarget(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const onUpdate = async () => {
     if (!updateTarget) return;
     try {
@@ -147,7 +145,10 @@ const DatasetIdPage = () => {
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
-        <h1>Versions of {dataset?.name}</h1>
+        <div className="flex flex-inline items-center gap-2">
+          <h1>Dataset details: {dataset?.name}</h1>
+        </div>
+
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all dataset versions of {dataset?.name}.
         </p>
@@ -165,6 +166,36 @@ const DatasetIdPage = () => {
           askDelete={askDelete}
           askUpdate={askUpdate}
         />
+        <div className="mt-2 grid grid-cols-3 items-center">
+          <div />
+          {totalPages > 1 ? (
+            <div className="flex justify-center">
+              <Pagination totalPages={totalPages} />
+            </div>
+          ) : (
+            <div />
+          )}
+          <div className="flex justify-end">
+            <PageSize size={size} />
+          </div>
+        </div>
+        {deleteTarget && (
+          <DatasetVersionDelete
+            target={deleteTarget}
+            open={openDelete}
+            onConfirm={onDelete}
+            onCancel={cancelDelete}
+            deleting={deleting}
+          />
+        )}
+        {updateTarget && (
+          <DatasetVersionUpdate
+            target={updateTarget}
+            open={openUpdate}
+            onConfirm={onUpdate}
+            onCancel={cancelUpdate}
+          />
+        )}
       </div>
     </div>
   );

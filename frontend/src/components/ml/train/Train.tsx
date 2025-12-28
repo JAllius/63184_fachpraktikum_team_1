@@ -31,7 +31,7 @@ type Props = {
   problemId?: string;
 };
 
-const TrainFormDrawer = ({ problemId }: Props) => {
+const Train = ({ problemId }: Props) => {
   const [open, setOpen] = useState(false);
 
   const {
@@ -44,6 +44,7 @@ const TrainFormDrawer = ({ problemId }: Props) => {
     resolver: zodResolver(TrainFormSchema),
     defaultValues: {
       problem_id: problemId ?? "",
+      name: "",
       algorithm: "auto",
       train_mode: "balanced",
       evaluation_strategy: "cv",
@@ -61,6 +62,7 @@ const TrainFormDrawer = ({ problemId }: Props) => {
     setOpen(false);
     reset({
       problem_id: problemId ?? "",
+      name: "",
       algorithm: "auto",
       train_mode: "balanced",
       evaluation_strategy: "cv",
@@ -102,6 +104,16 @@ const TrainFormDrawer = ({ problemId }: Props) => {
                 <FieldError
                   errors={errors.problem_id ? [errors.problem_id] : undefined}
                 />
+              </Field>
+              {/* Problem id */}
+              <Field data-invalid={!!errors.name}>
+                <FieldLabel htmlFor="name">Model name</FieldLabel>
+                <Input
+                  id="name"
+                  aria-invalid={!!errors.name}
+                  {...register("name")}
+                />
+                <FieldError errors={errors.name ? [errors.name] : undefined} />
               </Field>
               {/* Algorithm */}
               <Field data-invalid={!!errors.algorithm}>
@@ -226,4 +238,4 @@ const TrainFormDrawer = ({ problemId }: Props) => {
   );
 };
 
-export default TrainFormDrawer;
+export default Train;

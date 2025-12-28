@@ -2,7 +2,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type MLProblem = {
   id: string;
-  // name: string;
+  name?: string;
   task: string;
   target: string;
   created_at: string;

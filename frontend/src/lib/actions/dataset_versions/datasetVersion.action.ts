@@ -4,6 +4,8 @@ export type DatasetVersion = {
   id: string;
   name?: string;
   created_at: string;
+  uri: string;
+  profile_json: string;
 };
 
 export type DatasetVersionListResponse = {

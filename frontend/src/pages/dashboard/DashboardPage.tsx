@@ -1,11 +1,11 @@
 import QuickStatCards from "@/components/home/QuickStatCards";
-import { FoxWatermark } from "@/components/io/test";
+import { Fox } from "@/components/watermark/Fox";
 
 const DashboardPage = () => {
   return (
     <div className="relative min-h-screen bg-background p-8">
       <div className="flex items-center">
-        <FoxWatermark
+        <Fox
           aria-hidden
           size="80%"
           className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"

@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { ThemeProviderState } from "./theme.types";
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: "dark",
   setTheme: () => null,
 };
 

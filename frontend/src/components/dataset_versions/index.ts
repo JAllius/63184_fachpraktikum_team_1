@@ -5,7 +5,7 @@ export {
   type DeleteTarget,
 } from "./DatasetVersionDelete";
 export {
-  default as DatasetUpdate,
+  default as DatasetVersionUpdate,
   type UpdateTarget,
 } from "./DatasetVersionUpdate";
 export { default as DatasetVersionCreate } from "./DatasetVersionCreate";

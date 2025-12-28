@@ -1,5 +1,5 @@
 import { TypewriterText } from "@/components/app/Typewriter";
-import { FoxWatermark } from "@/components/io/test";
+import { Fox } from "@/components/watermark/Fox";
 import { useCallback, useState } from "react";
 
 export default function AppPage() {
@@ -7,7 +7,7 @@ export default function AppPage() {
   return (
     <div className="min-h-screen flex bg-background">
       <div className="relative w-3/4 border-r p-8 overflow-hidden">
-        <FoxWatermark
+        <Fox
           aria-hidden
           size="80%"
           className="pointer-events-none absolute inset-0 m-auto opacity-[0.12]"
@@ -23,7 +23,7 @@ export default function AppPage() {
           </div>
           {step >= 2 && (
             <div className="font-mono text-xl md:text-2xl text-muted-foreground tracking-tight pt-6">
-              <TypewriterText text="// turning data into desicions" />
+              <TypewriterText text="// turning data into decisions" />
             </div>
           )}
         </div>

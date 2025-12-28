@@ -1,19 +1,14 @@
-// src/components/ui/FoxWatermark.tsx
 import * as React from "react";
 
 type FoxWatermarkProps = Omit<React.SVGProps<SVGSVGElement>, "color"> & {
   size?: number | string;
-  /** Stroke color for the lines (defaults to currentColor like Lucide) */
   strokeColor?: string;
-  /** Fill color for the nodes */
   nodeFill?: string;
-  /** Stroke width for the lines */
   strokeWidth?: number | string;
-  /** Node radius */
   nodeRadius?: number;
 };
 
-export const FoxWatermark = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
+export const Fox = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
   (
     {
       size = 256,
@@ -88,4 +83,4 @@ export const FoxWatermark = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
   }
 );
 
-FoxWatermark.displayName = "FoxWatermark";
+Fox.displayName = "Fox";

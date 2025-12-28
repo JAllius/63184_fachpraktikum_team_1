@@ -20,6 +20,7 @@ export async function post_train(req: unknown): Promise<TrainResponse> {
 
   const qs = new URLSearchParams({
     problem_id: data.problem_id,
+    name: data.name,
     algorithm: data.algorithm,
     train_mode: data.train_mode,
     evaluation_strategy: data.evaluation_strategy,

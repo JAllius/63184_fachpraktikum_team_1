@@ -133,7 +133,6 @@ const DatasetsPage = () => {
           askDelete={askDelete}
           askUpdate={askUpdate}
         />
-        {/* <Pagination totalPages={totalPages} /> */}
         <div className="mt-2 grid grid-cols-3 items-center">
           <div />
           {totalPages > 1 ? (

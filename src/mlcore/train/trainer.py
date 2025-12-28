@@ -20,6 +20,7 @@ PRESET_DIR = "/code/mlcore/presets"
 NAME = None
 
 def train(
+    name: str,
     problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
@@ -79,6 +80,7 @@ def train(
         # explanation = explain_model(task, model_shap, X_train_shap, X_test_shap)
         explain_model(task, model_shap, X_train_shap, X_test_shap)
 
+    metadata["model_name"] = name
     metadata["problem_id"] = problem_id
     metadata["target"] = target
     metadata["schema_snapshot"]["X"] = {
@@ -102,7 +104,7 @@ def train(
         metadata_uri=None,
         explanation_uri=None,
         created_by=NAME,
-        name=None,
+        name=name,
     )
 
     metadata["model_id"] = model_id

@@ -3,11 +3,11 @@ import { ThemeSwitch } from "../ui/theme-switch";
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const isLight = theme === "light";
 
   return (
     <ThemeSwitch
-      checked={isDark}
+      checked={isLight}
       onCheckedChange={(checked) => setTheme(checked ? "light" : "dark")}
     />
   );

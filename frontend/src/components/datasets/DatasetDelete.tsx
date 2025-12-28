@@ -47,9 +47,8 @@ const DatasetDelete = ({
         <DialogHeader>
           <DialogTitle>Delete Dataset</DialogTitle>
           <DialogDescription className="sr-only">
-            Deleting the dataset with name {target.name} will permanently
-            deletes all associated versions, problems, and models. Type delete
-            to confirm.
+            Deleting the dataset {target.name} will permanently delete all
+            associated versions, problems and models. Type delete to confirm.
           </DialogDescription>
           <div className="text-sm">
             Are you sure you want to delete dataset: <b>{target.name}?</b>

@@ -1,6 +1,12 @@
-export { default as DatasetsFilterbar } from "./DatasetsFilterbar";
-export { default as DatasetsTable } from "./DatasetsTable";
-export { default as DatasetDelete, type DeleteTarget } from "./DatasetDelete";
-export { default as DatasetUpdate, type UpdateTarget } from "./DatasetUpdate";
-export { default as DatasetCreate } from "./DatasetCreate";
-export { DatasetSchema, type DatasetInput } from "./dataset.schema";
+export { default as MLProblemsFilterbar } from "./MLProblemsFilterbar";
+export { default as MLProblemsTable } from "./MLProblemsTable";
+export {
+  default as MLProblemDelete,
+  type DeleteTarget,
+} from "./MLProblemDelete";
+export {
+  default as MLProblemUpdate,
+  type UpdateTarget,
+} from "./MLProblemUpdate";
+export { default as MLProblemCreate } from "./MLProblemCreate";
+export { MLProblemSchema, type MLProblemInput } from "./ml_problem.schema";

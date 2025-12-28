@@ -3,25 +3,36 @@ import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import DatasetCreate from "./DatasetCreate";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
-type Props = {
-  onCreate: () => Promise<void> | void;
-};
-
-const DatasetsFilterbar = ({ onCreate }: Props) => {
+const MLProblemsFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const initial = {
     q: searchParams.get("q") ?? "",
     id: searchParams.get("id") ?? "",
     name: searchParams.get("name") ?? "",
+    task: searchParams.get("task") ?? "",
+    target: searchParams.get("target") ?? "",
   };
   const [filters, setFilters] = useState({
     q: initial.q,
     id: initial.id,
     name: initial.name,
+    task: initial.task,
+    target: initial.target,
   });
+
+  const tasks = [
+    { value: "classification", label: "Classification" },
+    { value: "regression", label: "Regression" },
+  ];
 
   useDebounce(
     () => {
@@ -31,17 +42,23 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
         q: searchParams.get("q") ?? "",
         id: searchParams.get("id") ?? "",
         name: searchParams.get("name") ?? "",
+        task: searchParams.get("task") ?? "",
+        target: searchParams.get("target") ?? "",
       };
       const next = {
         q: filters.q.trim(),
         id: filters.id.trim(),
         name: filters.name.trim(),
+        task: filters.task.trim(),
+        target: filters.target.trim(),
       };
 
       const isChanged =
         current.q !== next.q ||
         current.id !== next.id ||
-        current.name !== next.name;
+        current.name !== next.name ||
+        current.task !== next.task ||
+        current.target !== next.target;
 
       if (filters.q) params.set("q", filters.q);
       else params.delete("q");
@@ -51,6 +68,12 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
 
       if (filters.name) params.set("name", filters.name);
       else params.delete("name");
+
+      if (filters.task) params.set("task", filters.task);
+      else params.delete("task");
+
+      if (filters.target) params.set("target", filters.target);
+      else params.delete("task");
 
       if (isChanged) params.delete("page");
 
@@ -63,12 +86,14 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
   );
 
   const resetFilters = () => {
-    setFilters({ q: "", id: "", name: "" });
+    setFilters({ q: "", id: "", name: "", task: "", target: "" });
 
     const params = new URLSearchParams(searchParams);
     params.delete("q");
     params.delete("id");
     params.delete("name");
+    params.delete("task");
+    params.delete("target");
 
     setSearchParams(params, { replace: true });
   };
@@ -102,8 +127,6 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
             </Button>
           </div>
         </div>
-        {/* Create Dataset */}
-        <DatasetCreate onCreate={onCreate} />
       </div>
       {open && (
         <div className="flex flex-row gap-2 mt-2">
@@ -114,10 +137,33 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
             className="shadow border rounded-md px-2 py-1 w-60"
           />
           <Input
-            placeholder="Dataset name"
+            placeholder="ML Problem name"
             value={filters.name}
             onChange={(e) =>
               setFilters((f) => ({ ...f, name: e.target.value }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <Select
+            value={filters.task ?? ""}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, task: value }))
+            }
+          >
+            <SelectTrigger className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Task" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {tasks.map((task) => (
+                <SelectItem value={task.value}>{task.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Target"
+            value={filters.target}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, target: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
@@ -127,4 +173,4 @@ const DatasetsFilterbar = ({ onCreate }: Props) => {
   );
 };
 
-export default DatasetsFilterbar;
+export default MLProblemsFilterbar;

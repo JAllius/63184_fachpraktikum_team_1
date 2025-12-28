@@ -123,7 +123,21 @@ const DatasetVersionCreate = ({ datasetId, onCreate }: Props) => {
                   errors={errors.dataset_id ? [errors.dataset_id] : undefined}
                 />
               </Field>
-              <FieldLabel>Version's Data</FieldLabel>
+              {/* Dataset version name */}
+              <Field data-invalid={!!errors.name}>
+                <FieldLabel htmlFor="create_name">
+                  Dataset version name
+                </FieldLabel>
+                <Input
+                  id="create_name"
+                  placeholder="Choose a dataset name"
+                  aria-invalid={!!errors.name}
+                  {...register("name")}
+                />
+                <FieldError errors={errors.name ? [errors.name] : undefined} />
+              </Field>
+              {/* Data File */}
+              <FieldLabel>Data File</FieldLabel>
               <Tabs
                 value={mode}
                 onValueChange={(v) => {

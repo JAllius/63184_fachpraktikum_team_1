@@ -17,18 +17,15 @@ import {
   FieldLabel,
   FieldError,
 } from "../ui/field";
-import {
-  DatasetVersionSchema,
-  type DatasetVersionInput,
-} from "./datasetVersion.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
+import { MLProblemSchema, type MLProblemInput } from "./ml_problem.schema";
 
 type Props = {
   target: { id: string; name?: string };
   open: boolean;
-  onConfirm: (id: string, data: DatasetVersionInput) => Promise<void>;
+  onConfirm: (id: string, data: MLProblemInput) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -37,14 +34,14 @@ export type UpdateTarget = {
   name?: string;
 };
 
-const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
+const MLProblemUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<DatasetVersionInput>({
-    resolver: zodResolver(DatasetVersionSchema),
+  } = useForm<MLProblemInput>({
+    resolver: zodResolver(MLProblemSchema),
     defaultValues: {
       name: target.name,
     },
@@ -67,12 +64,12 @@ const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader>
-          <SheetTitle>Update Dataset Version</SheetTitle>
+          <SheetTitle>Update ML Problem</SheetTitle>
           <SheetDescription>{target.name}</SheetDescription>
         </SheetHeader>
 
         <form
-          id="update-datasetVersion-form"
+          id="update-mlProblem-form"
           onSubmit={handleSubmit((data) => onConfirm(target.id, data))}
           className="mt-6 space-y-6"
         >
@@ -80,12 +77,10 @@ const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
             <FieldGroup>
               {/* Dataset Name */}
               <Field data-invalid={!!errors.name}>
-                <FieldLabel htmlFor="update_name">
-                  Dataset Version name
-                </FieldLabel>
+                <FieldLabel htmlFor="update_name">ML problem name</FieldLabel>
                 <Input
                   id="update_name"
-                  placeholder="Choose a dataset version name"
+                  placeholder="Choose a dataset name"
                   aria-invalid={!!errors.name}
                   {...register("name")}
                 />
@@ -100,7 +95,7 @@ const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
           </SheetClose>
           <Button
             type="submit"
-            form="update-datasetVersion-form"
+            form="update-mlProblem-form"
             disabled={isSubmitting}
             className="w-20 hover:scale-105 active:scale-95"
           >
@@ -113,4 +108,4 @@ const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
   );
 };
 
-export default DatasetVersionUpdate;
+export default MLProblemUpdate;

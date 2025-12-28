@@ -29,7 +29,7 @@ type Props = {
   modelId?: string;
 };
 
-const PredictFormDrawer = ({ problemId, modelId }: Props) => {
+const Predict = ({ problemId, modelId }: Props) => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState(true);
 
@@ -190,4 +190,4 @@ const PredictFormDrawer = ({ problemId, modelId }: Props) => {
   );
 };
 
-export default PredictFormDrawer;
+export default Predict;

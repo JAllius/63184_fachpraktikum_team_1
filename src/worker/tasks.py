@@ -50,6 +50,7 @@ def hello_world(self, name):
 @celery_app.task(name="train.task", bind=True)
 def train_task(
     self,
+    name: str,
     problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
@@ -67,6 +68,7 @@ def train_task(
 
         # Call core training logic
         model_uri = train(
+            name=name,
             problem_id=problem_id,
             algorithm=algorithm,
             train_mode=train_mode,

@@ -1,5 +1,5 @@
 import { useParams, useSearchParams } from "react-router-dom";
-import PredictFormDrawer from "@/components/ml/predict/PredictFormDrawer";
+import Predict from "@/components/ml/predict/Predict";
 import {
   PredictionsTable,
   type DeleteTarget,
@@ -148,7 +148,7 @@ const ModelDetailPage = () => {
         </p>
         <div className="flex justify-between">
           <div className="relative">{/* <PredictionsFilterbar /> */}</div>
-          <PredictFormDrawer problemId={problemId} modelId={modelId} />
+          <Predict problemId={problemId} modelId={modelId} />
         </div>
         <PredictionsTable
           predictions={predictions}

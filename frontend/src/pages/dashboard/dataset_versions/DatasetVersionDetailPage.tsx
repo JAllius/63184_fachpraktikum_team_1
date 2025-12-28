@@ -1,5 +1,5 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import {
   get_ml_problems,
   type MLProblem,
@@ -9,27 +9,63 @@ import {
   get_dataset_version,
   type DatasetVersion,
 } from "../../../lib/actions/dataset_versions/datasetVersion.action";
+import MLProblemsTable from "@/components/ml_problems/MLProblemsTable";
+import {
+  MLProblemCreate,
+  MLProblemDelete,
+  MLProblemUpdate,
+  type DeleteTarget,
+  type UpdateTarget,
+} from "@/components/ml_problems";
+import MLProblemsFilterbar from "@/components/ml_problems/MLProblemsFilterbar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageSize, Pagination } from "@/components/table";
+import DatasetVersionDetails from "@/components/dataset_version_details/DatasetVersionDetails";
 
-const DatasetVersionIdPage = () => {
+export type ColumnDetails = { name: string; analysis: string };
+type Metadata = { suggested_analysis: string };
+export type Profile = {
+  summary: { n_cols: number; n_rows: number; missing_pct: number };
+  columns: Record<string, Metadata>;
+  id_candidates: Record<string, string>;
+  exclude_suggestions: Record<string, string>;
+  leakage_columns: Record<string, string>;
+};
+
+const DatasetVersionDetailPage = () => {
   const params = useParams<{ datasetId: string; datasetVersionId: string }>();
   if (!params.datasetVersionId) {
     throw new Error("datasetVersionId param missing");
   }
   const datasetVersionId = params.datasetVersionId;
 
-  const [mlProblems, setMlProblems] = useState<MLProblem[]>([]);
+  const [mlProblems, setMLProblems] = useState<MLProblem[]>([]);
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [seachParams, setSearchParams] = useSearchParams();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [searchParams] = useSearchParams();
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
     null
   );
+  const [totalPages, setTotalPages] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
+  const [openUpdate, setOpenUpdate] = useState(false);
+  const [tabValue, setTabValue] = useState("ml_problems");
+  const [csv, setCsv] = useState<string | null>(null);
+  const [csvLoading, setCsvLoading] = useState(false);
+  const [columnsDetails, setColumnsDetails] = useState<
+    ColumnDetails[] | undefined
+  >(undefined);
 
-  const q = seachParams.get("q") || "";
-  const id = seachParams.get("id") || "";
-  const task = seachParams.get("task") || "";
-  const target = seachParams.get("target") || "";
+  const page = Number(searchParams.get("page") ?? 1);
+  const size = Number(searchParams.get("size") ?? 20);
+  const sort = searchParams.get("sort") ?? "created_at";
+  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const q = searchParams.get("q") || "";
+  const id = searchParams.get("id") || "";
+  const task = searchParams.get("task") || "";
+  const target = searchParams.get("target") || "";
   // const name = seachParams.get("name") || "";
 
   useEffect(() => {
@@ -47,58 +83,239 @@ const DatasetVersionIdPage = () => {
   }, [datasetVersionId]);
 
   useEffect(() => {
-    async function loadMlProblems() {
-      try {
-        const data: MLProblemListResponse = await get_ml_problems(
-          datasetVersionId,
-          {
-            q: q || undefined,
-            id: id || undefined,
-            task: id || undefined,
-            target: id || undefined,
-            // name: name || undefined,
-          }
-        );
-        setMlProblems(data.items);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
+    if (!datasetVersion?.profile_json) return;
+    try {
+      const profile: Profile = JSON.parse(datasetVersion.profile_json);
+      const details = Object.entries(profile.columns).map(
+        ([name, metadata]) => ({
+          name: name,
+          analysis: metadata.suggested_analysis,
+        })
+      );
+      setColumnsDetails(details);
+    } catch (error) {
+      console.log(error);
+      setColumnsDetails(undefined);
     }
-    loadMlProblems();
-  }, [datasetVersionId, q, id, task, target]); // name
+  }, [datasetVersion]);
+
+  const profile: Profile = datasetVersion?.profile_json
+    ? JSON.parse(datasetVersion?.profile_json)
+    : null;
+
+  const loadMLProblems = useCallback(async () => {
+    try {
+      const data: MLProblemListResponse = await get_ml_problems(
+        datasetVersionId,
+        {
+          page,
+          size,
+          sort,
+          dir,
+          q: q || undefined,
+          id: id || undefined,
+          task: task || undefined,
+          target: target || undefined,
+          // name: name || undefined,
+        }
+      );
+      setMLProblems(data.items);
+      setTotalPages(data.total_pages);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [datasetVersionId, page, size, sort, dir, q, id, task, target]); // name
+
+  useEffect(() => {
+    loadMLProblems();
+  }, [loadMLProblems]);
+
+  const loadCSV = useCallback(async () => {
+    if (!datasetVersion?.uri) {
+      setCsv(null);
+      return;
+    }
+    setCsvLoading(true);
+    try {
+      const raw_csv = await fetch(datasetVersion.uri);
+      const csv = await raw_csv.text();
+      setCsv(csv);
+    } catch (error) {
+      setCsv(null);
+      console.log(error);
+    } finally {
+      setCsvLoading(false);
+    }
+  }, [datasetVersion?.uri]);
+
+  useEffect(() => {
+    if (tabValue === "data" && csv === null && !csvLoading) {
+      loadCSV();
+    }
+  }, [tabValue, csv, csvLoading, loadCSV]);
+
+  const askDelete = (id: string, name?: string) => {
+    setDeleteTarget({ id, name });
+    setOpenDelete(true);
+  };
+
+  const cancelDelete = () => {
+    setOpenDelete(false);
+    setDeleteTarget(null);
+  };
+
+  const onDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      console.log("Deleting");
+      await loadMLProblems();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      console.log("Done");
+      cancelDelete();
+      setDeleting(false);
+    }
+  };
+
+  const askUpdate = (id: string, name?: string) => {
+    setUpdateTarget({ id, name });
+    setOpenUpdate(true);
+  };
+
+  const cancelUpdate = () => {
+    setOpenUpdate(false);
+    setUpdateTarget(null);
+  };
+
+  const onUpdate = async () => {
+    if (!updateTarget) return;
+    try {
+      console.log("Updating");
+      await loadMLProblems();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      console.log("Done");
+      cancelUpdate();
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-w-full flex items-center justify-center">
-        Loading . . .
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>ML Problems of: {datasetVersionId}</h1>{" "}
-      {/* datasetVersion?.name ?? */}
-      <ul>
-        {mlProblems.map((mlp) => (
-          <li key={mlp.id} className="flex">
-            <div className="border rounded px-2 py-2 ">
-              {/* <span className="font-semibold">{dsv.name}</span>, */}
-              {mlp.id}, {mlp.task}, {mlp.target}, {mlp.created_at}
+    <div className="w-full pl-4 pt-8">
+      <div className="mx-auto w-full px-6">
+        <h1>Dataset version details: {datasetVersion?.name}</h1>
+        {tabValue === "ml_problems" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Manage all ML problems of {datasetVersion?.name}.
+          </p>
+        )}{" "}
+        {tabValue === "overview" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Manage the details of {datasetVersion?.name}.
+          </p>
+        )}{" "}
+        {tabValue === "data" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Data overview of {datasetVersion?.name}.
+          </p>
+        )}
+        <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
+          <TabsList className="w-full items-center justify-start gap-2">
+            <TabsTrigger value="ml_problems">ML Problems</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
+          </TabsList>
+          <TabsContent value="ml_problems">
+            {mlProblems.length > 0 ? (
+              <div>
+                <div className="flex justify-between">
+                  <div className="relative">
+                    <MLProblemsFilterbar />
+                  </div>
+                  <MLProblemCreate
+                    onCreate={loadMLProblems}
+                    datasetVersionId={datasetVersionId}
+                    columnsDetails={columnsDetails}
+                  />
+                </div>
+                <MLProblemsTable
+                  mlProblems={mlProblems}
+                  askDelete={askDelete}
+                  askUpdate={askUpdate}
+                />
+                <div className="mt-2 grid grid-cols-3 items-center">
+                  <div />
+                  {totalPages > 1 ? (
+                    <div className="flex justify-center">
+                      <Pagination totalPages={totalPages} />
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex justify-end">
+                    <PageSize size={size} />
+                  </div>
+                </div>
+                {deleteTarget && (
+                  <MLProblemDelete
+                    target={deleteTarget}
+                    open={openDelete}
+                    onConfirm={onDelete}
+                    onCancel={cancelDelete}
+                    deleting={deleting}
+                  />
+                )}
+                {updateTarget && (
+                  <MLProblemUpdate
+                    target={updateTarget}
+                    open={openUpdate}
+                    onConfirm={onUpdate}
+                    onCancel={cancelUpdate}
+                  />
+                )}
+              </div>
+            ) : (
+              <div>
+                <div>Create an ML Problem to activate this Tab.</div>
+                <MLProblemCreate
+                  onCreate={loadMLProblems}
+                  datasetVersionId={datasetVersionId}
+                  columnsDetails={columnsDetails}
+                />
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="overview">
+            <div>
+              {profile ? (
+                <DatasetVersionDetails profile={profile} />
+              ) : (
+                <div>
+                  No profile was found. Run the profiler to activate this tab.
+                </div>
+              )}
             </div>
-            <Link
-              to={`${mlp.id}`}
-              className="px-3 py-1 rounded-md flex items-center justify-center text-blue-500 hover:bg-blue-500 hover:text-white hover:scale-105 active:scale-95 transition-all duration-150"
-            >
-              View
-            </Link>
-          </li>
-        ))}
-      </ul>
+          </TabsContent>
+          <TabsContent value="data">
+            {csvLoading && <div>Loading CSV...</div>}
+            {!csvLoading && csv && <div>{csv}</div>}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
 
-export default DatasetVersionIdPage;
+export default DatasetVersionDetailPage;

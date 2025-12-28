@@ -14,8 +14,8 @@ import type { DatasetVersion } from "@/lib/actions/dataset_versions";
 
 type Props = {
   datasetVersions: DatasetVersion[];
-  askDelete: (id: string) => void;
-  askUpdate: (id: string) => void;
+  askDelete: (id: string, name?: string) => void;
+  askUpdate: (id: string, name?: string) => void;
 };
 
 const DatasetVersionsTable = ({
@@ -53,8 +53,8 @@ const DatasetVersionsTable = ({
                 <RowActions
                   id={dsv.id}
                   parent="Dataset Version"
-                  onDelete={() => askDelete(dsv.id)}
-                  onUpdate={() => askUpdate(dsv.id)}
+                  onDelete={() => askDelete(dsv.id, dsv.name)}
+                  onUpdate={() => askUpdate(dsv.id, dsv.name)}
                 />
               </TableCell>
             </TableRow>

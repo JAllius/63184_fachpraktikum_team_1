@@ -7,6 +7,7 @@ export type Model = {
   train_mode: string;
   evaluation_strategy: string;
   status: "staging" | "production" | "archived";
+  metrics_json: string;
   created_at: string;
 };
 
