@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import AppPage from "../pages/app/AppPage";
 import DashboardLayout from "../layouts/dashboard/DashboardLayout";
-import DashboardPage from "../pages/dashboard/DashboardPage";
+import OverviewPage from "../pages/dashboard/OverviewPage";
 import DatasetsPage from "../pages/dashboard/datasets/DatasetsPage";
 import JobsPage from "../pages/dashboard/jobs/JobsPage";
 import DatasetDetailPage from "../pages/dashboard/datasets/DatasetDetailPage";
@@ -15,7 +15,7 @@ export const router = createBrowserRouter([
     path: "/dashboard",
     element: <DashboardLayout />,
     children: [
-      { index: true, element: <DashboardPage /> },
+      { index: true, element: <OverviewPage /> },
       { path: "datasets", element: <DatasetsPage /> },
       { path: "datasets/:datasetId", element: <DatasetDetailPage /> },
       {

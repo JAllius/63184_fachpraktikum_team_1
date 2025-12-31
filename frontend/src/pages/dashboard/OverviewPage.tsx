@@ -1,7 +1,7 @@
 import QuickStatCards from "@/components/home/QuickStatCards";
 import { Fox } from "@/components/watermark/Fox";
 
-const DashboardPage = () => {
+const OverviewPage = () => {
   return (
     <div className="relative min-h-screen bg-background p-8">
       <div className="flex items-center">
@@ -19,4 +19,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default OverviewPage;

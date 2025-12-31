@@ -17,7 +17,7 @@ import {
   FieldLabel,
   FieldError,
 } from "../ui/field";
-import { DatasetSchema, type DatasetInput } from "./dataset.schema";
+import { ModelSchema, type ModelInput } from "./model.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
@@ -25,7 +25,7 @@ import { useEffect } from "react";
 type Props = {
   target: { id: string; name: string };
   open: boolean;
-  onConfirm: (id: string, data: DatasetInput) => Promise<void>;
+  onConfirm: (id: string, data: ModelInput) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -34,14 +34,14 @@ export type UpdateTarget = {
   name: string;
 };
 
-const DatasetUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
+const ModelUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<DatasetInput>({
-    resolver: zodResolver(DatasetSchema),
+  } = useForm<ModelInput>({
+    resolver: zodResolver(ModelSchema),
     defaultValues: {
       name: target.name,
     },
@@ -108,4 +108,4 @@ const DatasetUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
   );
 };
 
-export default DatasetUpdate;
+export default ModelUpdate;

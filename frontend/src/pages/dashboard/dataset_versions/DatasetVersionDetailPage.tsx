@@ -23,7 +23,32 @@ import { PageSize, Pagination } from "@/components/table";
 import DatasetVersionDetails from "@/components/dataset_version_details/DatasetVersionDetails";
 
 export type ColumnDetails = { name: string; analysis: string };
-type Metadata = { suggested_analysis: string };
+export type Metadata = {
+  dtype_raw: string;
+  semantic_type: string;
+  missing_pct: number;
+  cardinality: number;
+  cardinality_ratio: number;
+  is_empty: boolean;
+  is_constant: boolean;
+  is_unique: boolean;
+  exclude_for_analysis: boolean;
+  suggested_analysis: string;
+  exclusion_reason?: string;
+  min?: number;
+  max?: number;
+  mean?: number;
+  std?: number;
+  top_value?: string;
+  top_count?: number;
+  top_freq_ratio?: number;
+  coverage_top3?: number;
+  true_pct?: number;
+  false_pct?: number;
+  earliest_date?: string;
+  latest_date?: string;
+};
+
 export type Profile = {
   summary: { n_cols: number; n_rows: number; missing_pct: number };
   columns: Record<string, Metadata>;
@@ -215,20 +240,26 @@ const DatasetVersionDetailPage = () => {
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
-        <h1>Dataset version details: {datasetVersion?.name}</h1>
+        <h1>
+          Dataset version details:{" "}
+          {datasetVersion?.name ?? "Unknown Dataset Version"}
+        </h1>
         {tabValue === "ml_problems" && (
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Manage all ML problems of {datasetVersion?.name}.
+            Manage all ML problems of{" "}
+            {datasetVersion?.name ?? "Unknown Dataset Version"}.
           </p>
-        )}{" "}
+        )}
         {tabValue === "overview" && (
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Manage the details of {datasetVersion?.name}.
+            Manage the details of{" "}
+            {datasetVersion?.name ?? "Unknown Dataset Version"}.
           </p>
-        )}{" "}
+        )}
         {tabValue === "data" && (
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Data overview of {datasetVersion?.name}.
+            Data overview of {datasetVersion?.name ?? "Unknown Dataset Version"}
+            .
           </p>
         )}
         <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>

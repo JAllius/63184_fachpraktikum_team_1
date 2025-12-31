@@ -15,6 +15,7 @@ import {
   type UpdateTarget,
 } from "@/components/datasets";
 import { PageSize, Pagination } from "@/components/table";
+import Loading from "@/components/loading/Loading";
 
 const DatasetsPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -108,11 +109,7 @@ const DatasetsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-w-full flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

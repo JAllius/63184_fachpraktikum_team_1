@@ -142,9 +142,9 @@ const ModelDetailPage = () => {
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
-        <h1>Details of {model?.name}</h1>
+        <h1>Model details: {model?.name ?? "Unknown Model"}</h1>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Manage {model?.name}.
+          Manage {model?.name ?? "Unknown Model"}.
         </p>
         <div className="flex justify-between">
           <div className="relative">{/* <PredictionsFilterbar /> */}</div>

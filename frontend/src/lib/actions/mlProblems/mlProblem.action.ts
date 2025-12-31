@@ -5,6 +5,8 @@ export type MLProblem = {
   name?: string;
   task: string;
   target: string;
+  feature_strategy: string;
+  semantic_types: string;
   created_at: string;
 };
 

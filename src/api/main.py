@@ -320,8 +320,8 @@ async def post_problem(
     user_id: int,
     dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
     target: str,
+    task: Literal["classification", "regression"],
     dataset_version_id: int | str = "latest",
-    task: Literal["classification", "regression", "auto"] = "auto",
     # we will see later how we will impliment this exactly
     feature_strategy: dict | str = "auto",
     validation_strategy: Literal["CV", "holdout"] = "CV",  # for now only CV

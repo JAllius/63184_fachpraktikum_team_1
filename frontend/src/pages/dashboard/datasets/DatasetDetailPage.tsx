@@ -146,11 +146,11 @@ const DatasetIdPage = () => {
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
         <div className="flex flex-inline items-center gap-2">
-          <h1>Dataset details: {dataset?.name}</h1>
+          <h1>Dataset details: {dataset?.name ?? "Unknown Dataset"}</h1>
         </div>
 
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Manage all dataset versions of {dataset?.name}.
+          Manage all dataset versions of {dataset?.name ?? "Unknown Dataset"}.
         </p>
         <div className="flex justify-between">
           <div className="relative">

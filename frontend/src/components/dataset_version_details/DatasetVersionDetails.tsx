@@ -8,9 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import StatCard from "./StatCard";
-import ColumnBadges from "./ColumnBadges";
+import StatCard from "../ui/stat-card";
+import ColumnBadges from "../ui/column-badges";
 import { Button } from "../ui/button";
+import ColumnsDetailsTable from "./column_details/ColumnsDetailsTable";
+import { Input } from "../ui/input";
+import Filterbar from "./column_details/Filterbar";
 
 type Props = {
   profile: Profile;
@@ -43,12 +46,12 @@ const DatasetVersionDetails = ({ profile }: Props) => {
             <StatCard label="Missing values" value={missingValues} />
           </div>
           <h3 className="mt-8 mb-4 text-sm font-medium text-muted-foreground">
-            Column analysis
+            Column Analysis
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
             <Card className="w-full h-full flex flex-col">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-foreground">
                   <CardTitle>Suggested Exclusions</CardTitle>
                   <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
                     Edit
@@ -65,7 +68,7 @@ const DatasetVersionDetails = ({ profile }: Props) => {
             </Card>
             <Card className="w-full h-full flex flex-col">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-foreground">
                   <CardTitle>Identifier Columns</CardTitle>
                   <div className="h-6" />
                 </div>
@@ -80,7 +83,7 @@ const DatasetVersionDetails = ({ profile }: Props) => {
             </Card>
             <Card className="w-full h-full flex flex-col">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-foreground">
                   <CardTitle>Potential Data Leakage (manual)</CardTitle>
                   <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
                     Edit
@@ -97,11 +100,8 @@ const DatasetVersionDetails = ({ profile }: Props) => {
           </div>
         </TabsContent>
         <TabsContent value="columns">
-          <div className="flex flex-col gap-2">
-            {Object.entries(profile?.columns).map((r) => (
-              <div>{JSON.stringify(r)}</div>
-            ))}
-          </div>
+          <Filterbar />
+          <ColumnsDetailsTable columns={Object.entries(profile?.columns)} />
         </TabsContent>
       </Tabs>
     </div>

@@ -31,7 +31,7 @@ const RowActions = ({ id, parent, onDelete, onUpdate }: Props) => {
           <TooltipTrigger asChild>
             <Link
               to={`${id}`}
-              aria-label="View dataset"
+              aria-label={"View " + parent}
               className="inline-flex items-center justify-center text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
             >
               <FileText className="w-4 h-4" />
