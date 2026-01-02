@@ -19,6 +19,8 @@ import {
   type UpdateTarget,
 } from "@/components/dataset_versions";
 import { PageSize, Pagination } from "@/components/table";
+import Loading from "@/components/loading/Loading";
+import NotFound from "@/components/errors/not_found/NotFound";
 // import { Edit } from "lucide-react";
 
 const DatasetIdPage = () => {
@@ -135,12 +137,10 @@ const DatasetIdPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-w-full flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loading />;
   }
+
+  if (!dataset) return <NotFound name="Dataset" />;
 
   return (
     <div className="w-full pl-4 pt-8">

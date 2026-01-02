@@ -8,6 +8,7 @@ import DatasetDetailPage from "../pages/dashboard/datasets/DatasetDetailPage";
 import DatasetVersionDetailPage from "../pages/dashboard/dataset_versions/DatasetVersionDetailPage";
 import MLProblemDetailPage from "../pages/dashboard/ml_problems/MLProblemDetailPage";
 import ModelDetailPage from "@/pages/dashboard/modelDetails/ModelDetailPage";
+import PredictionPage from "@/pages/predictions/PredictionPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <AppPage /> },
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
       {
         path: "datasets/:datasetId/:datasetVersionId/:problemId/:modelId",
         element: <ModelDetailPage />,
+      },
+      {
+        path: "datasets/:datasetId/:datasetVersionId/:problemId/:modelId/:predictionId",
+        element: <PredictionPage />,
       },
       { path: "jobs", element: <JobsPage /> },
     ],

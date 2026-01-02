@@ -3,6 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 export type Prediction = {
   id: string;
   name?: string;
+  outputs_json: string;
   created_at: string;
 };
 

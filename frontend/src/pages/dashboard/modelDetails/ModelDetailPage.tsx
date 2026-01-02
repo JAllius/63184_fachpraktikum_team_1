@@ -5,28 +5,52 @@ import {
   type DeleteTarget,
   type UpdateTarget,
 } from "@/components/predictions";
-import type { Model } from "@/lib/actions/models/model.action";
+import { get_model, type Model } from "@/lib/actions/models/model.action";
 import {
   type Prediction,
   type PredictionListResponse,
   get_predictions,
 } from "@/lib/actions/predictions";
 import { useState, useCallback, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageSize, Pagination } from "@/components/table";
+import Loading from "@/components/loading/Loading";
+import ModelDetails from "@/components/model_details/ModelDetails";
+import {
+  get_ml_problem,
+  type MLProblem,
+} from "@/lib/actions/mlProblems/mlProblem.action";
+import { Fox } from "@/components/watermark/Fox";
+import NotFound from "@/components/errors/not_found/NotFound";
 
 const ModelDetailPage = () => {
-  const params = useParams<{ problemId: string; modelId: string }>();
+  const params = useParams<{
+    datasetId: string;
+    datasetVersionId: string;
+    problemId: string;
+    modelId: string;
+  }>();
+  if (!params.datasetId) {
+    throw new Error("datasetId param missing");
+  }
+  if (!params.problemId) {
+    throw new Error("problemId param missing");
+  }
+  if (!params.datasetVersionId) {
+    throw new Error("datasetVersionId param missing");
+  }
   if (!params.modelId) {
     throw new Error("modelId param missing");
   }
+  const datasetId = params.datasetId;
+  const datasetVersionId = params.datasetVersionId;
   const problemId = params.problemId;
   const modelId = params.modelId;
 
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [model, setModel] = useState<Model | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [totalPages, setTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,6 +60,8 @@ const ModelDetailPage = () => {
   const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [openUpdate, setOpenUpdate] = useState(false);
+  const [tabValue, setTabValue] = useState("predictions");
+  const [mlProblem, setMLProblem] = useState<MLProblem | null>(null);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -45,17 +71,33 @@ const ModelDetailPage = () => {
   const id = searchParams.get("id") || "";
   // const name = searchParams.get("name") || "";
 
-  // useEffect(() => {
-  //   async function loadModel() {
-  //     try {
-  //       const data: Model = await get_model(modelId);
-  //       setDataset(data);
-  //     } catch (error) {
-  //       console.log(error);
-  //     }
-  //   }
-  //   loadModel();
-  // }, [modelId]);
+  useEffect(() => {
+    async function loadModel() {
+      try {
+        const data: Model = await get_model(modelId);
+        setModel(data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    loadModel();
+  }, [modelId]);
+
+  useEffect(() => {
+    async function loadMLProblem() {
+      try {
+        const data: MLProblem = await get_ml_problem(problemId);
+        setMLProblem(data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    loadMLProblem();
+  }, [problemId]);
+
+  const metadata = model?.metadata_json
+    ? JSON.parse(model?.metadata_json)
+    : null;
 
   const loadPredictions = useCallback(async () => {
     try {
@@ -132,29 +174,122 @@ const ModelDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-w-full flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loading />;
   }
+
+  if (!model) return <NotFound name="Model" />;
 
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
         <h1>Model details: {model?.name ?? "Unknown Model"}</h1>
-        <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Manage {model?.name ?? "Unknown Model"}.
-        </p>
-        <div className="flex justify-between">
-          <div className="relative">{/* <PredictionsFilterbar /> */}</div>
-          <Predict problemId={problemId} modelId={modelId} />
-        </div>
-        <PredictionsTable
-          predictions={predictions}
-          askDelete={askDelete}
-          askUpdate={askUpdate}
-        />
+        {tabValue === "predictions" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Manage all predictions of {model?.name ?? "Unknown Model"}.
+          </p>
+        )}
+        {tabValue === "details" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Details of {model?.name ?? "Unknown Model"}.
+          </p>
+        )}
+        {tabValue === "explainability" && (
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Explain {model?.name ?? "Unknown Model"}.
+          </p>
+        )}
+        <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
+          <TabsList className="w-full items-center justify-start gap-2">
+            <TabsTrigger value="predictions">Predictions</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="explainability">Explainability</TabsTrigger>
+          </TabsList>
+          <TabsContent value="predictions">
+            {predictions.length > 0 ? (
+              <div>
+                <div className="flex justify-between">
+                  <div className="relative">
+                    {/* <PredictionsFilterbar /> */}
+                  </div>
+                  <Predict problemId={problemId} modelId={modelId} />
+                </div>
+                <PredictionsTable
+                  predictions={predictions}
+                  askDelete={askDelete}
+                  askUpdate={askUpdate}
+                />
+                <div className="mt-2 grid grid-cols-3 items-center">
+                  <div />
+                  {totalPages > 1 ? (
+                    <div className="flex justify-center">
+                      <Pagination totalPages={totalPages} />
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex justify-end">
+                    <PageSize size={size} />
+                  </div>
+                </div>
+                {/* {deleteTarget && (
+                  <PredictionDelete
+                    target={deleteTarget}
+                    open={openDelete}
+                    onConfirm={onDelete}
+                    onCancel={cancelDelete}
+                    deleting={deleting}
+                  />
+                )}
+                {updateTarget && (
+                  <PredictionUpdate
+                    target={updateTarget}
+                    open={openUpdate}
+                    onConfirm={onUpdate}
+                    onCancel={cancelUpdate}
+                  />
+                )} */}
+              </div>
+            ) : (
+              <div className="relative min-h-[80vh] bg-background">
+                <div className="flex items-center">
+                  <Fox
+                    aria-hidden
+                    size="80%"
+                    className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                    style={{ color: "hsl(var(--sidebar-foreground))" }}
+                    nodeFill="hsl(var(--sidebar-foreground))"
+                  />
+                </div>
+                <div>
+                  <p className="text-base font-semibold">No predictions yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Run a prediction to activate this tab.
+                  </p>
+                  <div className="mt-5">
+                    <Predict problemId={problemId} modelId={modelId} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="details">
+            {model && (
+              <ModelDetails
+                status={model?.status}
+                datasetId={datasetId}
+                datasetVersionId={datasetVersionId}
+                mlProblemId={problemId}
+                mlProblemName={mlProblem?.name}
+                created_at={model.created_at}
+                metadata={metadata}
+              />
+            )}
+            {/* <div>{JSON.stringify(metadata)}</div> */}
+          </TabsContent>
+          <TabsContent value="explainability">
+            <div>Explainability</div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

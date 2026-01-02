@@ -21,6 +21,8 @@ import MLProblemsFilterbar from "@/components/ml_problems/MLProblemsFilterbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageSize, Pagination } from "@/components/table";
 import DatasetVersionDetails from "@/components/dataset_version_details/DatasetVersionDetails";
+import Loading from "@/components/loading/Loading";
+import NotFound from "@/components/errors/not_found/NotFound";
 
 export type ColumnDetails = { name: string; analysis: string };
 export type Metadata = {
@@ -230,12 +232,10 @@ const DatasetVersionDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-w-full flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loading />;
   }
+
+  if (!datasetVersion) return <NotFound name="Dataset Version" />;
 
   return (
     <div className="w-full pl-4 pt-8">
@@ -340,7 +340,11 @@ const DatasetVersionDetailPage = () => {
             </div>
           </TabsContent>
           <TabsContent value="data">
-            {csvLoading && <div>Loading CSV...</div>}
+            {csvLoading && (
+              <div>
+                <Loading />
+              </div>
+            )}
             {!csvLoading && csv && <div>{csv}</div>}
           </TabsContent>
         </Tabs>

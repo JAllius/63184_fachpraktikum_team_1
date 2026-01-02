@@ -35,10 +35,10 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
   } | null>(null);
   const [openTechnical, setOpenTechnical] = useState(false);
 
-  function pct_string(value?: number) {
+  function pct_string(value?: number, decimals: number = 2) {
     if (!value) return;
     const valuePct = value * 100;
-    return valuePct.toString() + "%";
+    return valuePct.toFixed(decimals) + "%";
   }
 
   function round(value?: number) {
@@ -201,15 +201,15 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
                     <div className="text-sm space-y-1 pt-1">
                       <div>
                         <span className="text-muted-foreground">
-                          Top value:{" "}
+                          Prevalent value:{" "}
                         </span>
                         {selected.metadata?.top_value}
                       </div>
                       <div>
                         <span className="text-muted-foreground">
-                          Top share:{" "}
+                          Value prevalence:{" "}
                         </span>
-                        {selected.metadata?.top_freq_ratio?.toFixed(2)}
+                        {pct_string(selected.metadata?.top_freq_ratio, 0)}
                       </div>
                       {/* <div>
                         <span className="text-muted-foreground">

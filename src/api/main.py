@@ -9,7 +9,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_models, get_predictions
+from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
 
 logger = logging.getLogger(__name__)
 
@@ -435,6 +435,13 @@ async def get_list_models(
     }
 
 
+@app.get("/model/{model_id}")
+async def get_model_info(model_id: str): #, user_id: int):
+    """return the specified model if user has permission"""
+    model = get_model(model_id)
+    return model
+
+
 # ========== ML_Predictions ==========
 
 
@@ -474,6 +481,13 @@ async def get_list_predictions(
         "id": id,
         "name":name,
     }
+
+
+@app.get("/prediction/{prediction_id}")
+async def get_prediction_info(prediction_id: str): #, user_id: int):
+    """return the specified model if user has permission"""
+    prediction = get_prediction(prediction_id)
+    return prediction
 
 
 # I am not sure how this works with the storage and if we need an endpoint.

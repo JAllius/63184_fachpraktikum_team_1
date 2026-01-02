@@ -1,6 +1,18 @@
 import { TypewriterText } from "@/components/app/Typewriter";
 import { Fox } from "@/components/watermark/Fox";
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
 
 export default function AppPage() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -28,20 +40,58 @@ export default function AppPage() {
           )}
         </div>
       </div>
-
-      <div className="w-1/4 p-8 flex flex-col gap-4 bg-[hsl(var(--sidebar-background))]">
-        <h1 className="text-xl font-semibold">App page</h1>
-
-        <div className="text-sm text-muted-foreground">
-          Placeholder for authentication:
+      <div className="w-1/4 min-h-screen flex flex-col gap-4 bg-[hsl(var(--sidebar-background))]">
+        <div className="p-8 h-full">
+          <Card className="w-full max-w-sm flex flex-col h-full">
+            <CardHeader>
+              <CardTitle>Login to your account</CardTitle>
+              <CardDescription>
+                Placeholder for authentication. Click "Login" to continue.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form>
+                <div className="flex flex-col gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@doe.com"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="password">Password</Label>
+                      <a
+                        href=""
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </a>
+                    </div>
+                    <Input id="password" type="password" required />
+                  </div>
+                </div>
+              </form>
+              {/* <Button type="submit" className="w-full">
+              Login
+            </Button> */}
+              <Link to="/dashboard" className="w-full mt-6 block">
+                <Button className="w-full">Login</Button>
+              </Link>
+            </CardContent>
+            <CardFooter className="mt-auto flex-col gap-2">
+              <div className="text-sm flex gap-1 items-center">
+                <div>Not a member?</div>
+                <button className="underline decoration-white/50 decoration-dotted">
+                  Sign up now
+                </button>
+              </div>
+            </CardFooter>
+          </Card>
         </div>
-
-        <a
-          href="/dashboard"
-          className="inline-block w-fit rounded-md border px-4 py-2 hover:bg-accent"
-        >
-          Move to dashboard
-        </a>
       </div>
     </div>
   );

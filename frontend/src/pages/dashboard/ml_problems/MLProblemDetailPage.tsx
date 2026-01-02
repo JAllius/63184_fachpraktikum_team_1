@@ -25,6 +25,7 @@ import {
 } from "@/lib/actions/dataset_versions";
 import type { Profile } from "../dataset_versions/DatasetVersionDetailPage";
 import Loading from "@/components/loading/Loading";
+import NotFound from "@/components/errors/not_found/NotFound";
 
 export type FeatureStrategy = {
   include: [string, string][];
@@ -230,14 +231,10 @@ const MLProblemDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-w-full flex items-center justify-center">
-        <Loading />
-      </div>
-    );
+    return <Loading />;
   }
-  console.log(mlProblem);
-  if (!mlProblem) return;
+
+  if (!mlProblem) return <NotFound name="ML Problem" />;
 
   return (
     <div className="w-full pl-4 pt-8">

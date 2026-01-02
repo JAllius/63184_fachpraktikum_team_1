@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS models (
   status VARCHAR(32) NOT NULL,              -- 'staging' | 'production' | 'archived'
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
   uri TEXT,                                 -- where the model file is stored (joblib, etc.)
-  metadata_uri TEXT,                        -- optional extra metadata file
+  metadata_json JSON,                       -- optional extra metadata file
   explanation_uri TEXT,                     -- optional explanation/shap file
   created_by CHAR(36),                      -- FK to users.id (who trained it)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

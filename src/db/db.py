@@ -391,7 +391,7 @@ def create_model(
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
     uri: Optional[str] = None,         
-    metadata_uri: Optional[str] = None,
+    metadata_json: Optional[dict] = None,
     explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
@@ -405,7 +405,7 @@ def create_model(
     sql = """
         INSERT INTO models
         (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-         metrics_json, uri, metadata_uri, explanation_uri, created_by)
+         metrics_json, uri, metadata_json, explanation_uri, created_by)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
@@ -421,7 +421,7 @@ def create_model(
                 status,
                 _json_dump(metrics_json),
                 uri,
-                metadata_uri,
+                _json_dump(metadata_json),
                 explanation_uri,
                 created_by,
             ),

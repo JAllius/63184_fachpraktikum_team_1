@@ -174,7 +174,7 @@ def seed_db(input_path: str, reset: bool) -> None:
         status="staging",
         metrics_json={"note": "test model row"},
         uri=None,
-        metadata_uri=None,
+        metadata_json=None,
         explanation_uri=None,
         created_by=user_id,
     )

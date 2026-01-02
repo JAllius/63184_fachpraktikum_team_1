@@ -101,7 +101,7 @@ def train(
         evaluation_strategy=evaluation_strategy,
         metrics_json=metrics,
         uri=None,
-        metadata_uri=None,
+        metadata_json=metadata,
         explanation_uri=None,
         created_by=NAME,
         name=name,

@@ -8,6 +8,7 @@ export type Model = {
   evaluation_strategy: string;
   status: "staging" | "production" | "archived";
   metrics_json: string;
+  metadata_json: string;
   created_at: string;
 };
 
