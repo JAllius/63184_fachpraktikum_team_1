@@ -1,0 +1,106 @@
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Link } from "react-router-dom";
+import { RowActions, SortableHeader } from "../table";
+import type { Model } from "@/lib/actions/models/model.action";
+
+type Props = {
+  models: Model[];
+  askDelete: (id: string, name: string) => void;
+  askUpdate: (id: string, name: string) => void;
+  task: string;
+};
+
+const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
+  console.log(models);
+  return (
+    <div>
+      <Table>
+        <TableCaption>
+          <p>List of Models</p>
+          {task === "classification" ? (
+            <p className="text-xs">* Higher metrics are better</p>
+          ) : (
+            <p className="text-xs">* Lower metrics are better</p>
+          )}
+        </TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>
+              <SortableHeader field="name" label="Name" />
+            </TableHead>
+            <TableHead>id</TableHead>
+            <TableHead>
+              <SortableHeader field="status" label="Status" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="algorithm" label="Algorithm" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="metrics" label="Metrics *" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="train_mode" label="Train Mode" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader
+                field="evaluation_strategy"
+                label="Evaluation Strategy"
+              />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="created_at" label="Created" />
+            </TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {models.map((m) => (
+            <TableRow key={m.id}>
+              <TableCell className="font-medium">
+                <Link to={`${m.id}`} aria-label="View Model">
+                  {m.name}
+                </Link>
+              </TableCell>
+              <TableCell className="text-muted-foreground">{m.id}</TableCell>
+              <TableCell>{m.status}</TableCell>
+              <TableCell>{m.algorithm}</TableCell>
+              <TableCell>
+                {task === "classification"
+                  ? JSON.parse(m.metrics_json).f1 ?? ""
+                  : JSON.parse(m.metrics_json).rmse ?? ""}
+              </TableCell>
+              <TableCell>{m.train_mode}</TableCell>
+              <TableCell>{m.evaluation_strategy}</TableCell>
+              <TableCell>{m.created_at}</TableCell>
+              <TableCell>
+                <RowActions
+                  id={m.id}
+                  parent="Model"
+                  onDelete={() => askDelete(m.id, m.name)}
+                  onUpdate={() => askUpdate(m.id, m.name)}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={8}>Total</TableCell>
+            <TableCell className="text-right">{models.length}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </div>
+  );
+};
+
+export default ModelsTable;

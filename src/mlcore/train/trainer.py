@@ -1,3 +1,6 @@
+import json
+from db.db import get_dataset_version, get_ml_problem, create_model
+from db.db import get_dataset_version_dump, get_ml_problem, create_model
 from mlcore.io.preset_loader import loader
 from mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from mlcore.profile.profiler import suggest_profile
@@ -7,8 +10,6 @@ from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from db.db import get_dataset_version_dump, get_ml_problem, create_model
-import json
 
 BASE_DIR = "./testdata/models"
 PRESET_DIR = "/code/mlcore/presets"
@@ -16,6 +17,7 @@ NAME = None
 
 
 def train(
+    name: str,
     problem_id: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
@@ -29,7 +31,7 @@ def train(
     problem = get_ml_problem(problem_id)
     dataset_version_id = problem.get("dataset_version_id", False)
     target = problem.get("target", False)
-    dataset_version = get_dataset_version_dump(dataset_version_id)
+    dataset_version = get_dataset_version(dataset_version_id)
 
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))
@@ -75,6 +77,7 @@ def train(
         # explanation = explain_model(task, model_shap, X_train_shap, X_test_shap)
         explain_model(task, model_shap, X_train_shap, X_test_shap)
 
+    metadata["model_name"] = name
     metadata["problem_id"] = problem_id
     metadata["target"] = target
     metadata["schema_snapshot"]["X"] = {
@@ -100,5 +103,5 @@ def train(
         metadata_json=metadata,
         explanation_uri=None,
         created_by=NAME,
-        name=None,
+        name=name,
     )
