@@ -20,7 +20,11 @@ type Props = {
 };
 
 const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
-  console.log(models);
+  function round(value?: number, decimals: number = 2) {
+    if (!value) return;
+    return Math.round(value * 10 ** decimals) / 10 ** decimals;
+  }
+
   return (
     <div>
       <Table>
@@ -75,8 +79,8 @@ const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
               <TableCell>{m.algorithm}</TableCell>
               <TableCell>
                 {task === "classification"
-                  ? JSON.parse(m.metrics_json).f1 ?? ""
-                  : JSON.parse(m.metrics_json).rmse ?? ""}
+                  ? round(JSON.parse(m.metrics_json).f1, 3) ?? ""
+                  : JSON.parse(m.metrics_json).rmse.toFixed(2) ?? ""}
               </TableCell>
               <TableCell>{m.train_mode}</TableCell>
               <TableCell>{m.evaluation_strategy}</TableCell>

@@ -69,26 +69,26 @@ const ModelDetails = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Accuracy"
-            value={metadata.metrics.accuracy.toFixed(2)}
+            value={metadata.metrics.accuracy.toFixed(3)}
             tooltip="Percentage of correct predictions overall."
           />
           <StatCard
             label="Precision"
-            value={metadata.metrics.precision.toFixed(2)}
+            value={metadata.metrics.precision.toFixed(3)}
             tooltip="Percentage of positive predictions that are correct."
           />
           <StatCard
             label="Recall"
-            value={metadata.metrics.recall.toFixed(2)}
+            value={metadata.metrics.recall.toFixed(3)}
             tooltip="Percentage of actual positives that are correctly identified."
           />
           {metadata?.cross_validation ? (
             <StatCard
               label="F1 score"
-              value={metadata.metrics.f1.toFixed(2)}
+              value={metadata.metrics.f1.toFixed(3)}
               secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
-                2
-              )}±${metadata?.cross_validation?.std.toFixed(2)}`}
+                3
+              )}±${metadata?.cross_validation?.std.toFixed(3)}`}
               tooltip={
                 "Percentage-based balance between precision and recall.\nCV shows average and variation across folds."
               }
@@ -96,7 +96,7 @@ const ModelDetails = ({
           ) : (
             <StatCard
               label="F1 score"
-              value={metadata.metrics.f1.toFixed(2)}
+              value={metadata.metrics.f1.toFixed(3)}
               tooltip="Percentage-based balance between precision and recall."
             />
           )}

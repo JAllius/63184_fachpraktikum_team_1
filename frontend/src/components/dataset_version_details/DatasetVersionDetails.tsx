@@ -39,7 +39,7 @@ const DatasetVersionDetails = ({ profile }: Props) => {
         <TabsContent value="summary">
           <section>
             <h3 className="mt-8 mb-4 text-sm font-medium text-muted-foreground">
-              Dataset Summary
+              Dataset Version Summary
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <StatCard label="Columns" value={nCols} />

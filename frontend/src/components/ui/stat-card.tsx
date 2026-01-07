@@ -6,6 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./tooltip";
+import { useState } from "react";
 
 type Props = {
   label: string;
@@ -24,15 +25,22 @@ const StatCard = ({
   tooltip,
   className,
 }: Props) => {
+  const [open, setOpen] = useState(false);
   return (
     <div className={cn("rounded-lg border bg-card p-4", className)}>
       <div className="text-xs text-muted-foreground flex items-center gap-2">
         {label}
         {tooltip && (
           <TooltipProvider>
-            <Tooltip>
+            <Tooltip open={open} onOpenChange={setOpen}>
               <TooltipTrigger asChild>
-                <Info className="w-4 h-4" />
+                <button
+                  type="button"
+                  onClick={() => setOpen((v) => !v)}
+                  className="inline-flex items-center"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
               </TooltipTrigger>
               <TooltipContent className="whitespace-pre-line">
                 {tooltip}
