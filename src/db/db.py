@@ -9,6 +9,9 @@ from typing import Any, Optional, Tuple, List, Dict, Literal
 import pymysql
 from pymysql.cursors import DictCursor
 
+import pandas as pd
+import base64
+
 # -------------------------------------------------------------------
 # MODEL PATH CONFIG
 # -------------------------------------------------------------------
@@ -91,17 +94,18 @@ def create_dataset(name: str, owner_id: Optional[str] = None) -> str:
     return dataset_id
 
 
-def db_get_dataset(dataset_id: str) -> Optional[dict]:
+def get_dataset(dataset_id: str) -> Optional[dict]:
     sql = "SELECT * FROM datasets WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (dataset_id,))
         return cur.fetchone()
-    
+
 
 ALLOWED_DATASET_SORT_FIELDS = {
     "name": "name",
     "created_at": "created_at",
 }
+
 
 def get_datasets(
     page: int,
@@ -117,26 +121,28 @@ def get_datasets(
     '''
     ### SORTING ###
     sort_column = ALLOWED_DATASET_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
     ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"  # Search anything that contains q
+        # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        where_clauses.append("name LIKE %s")
+        # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        params.append(like)
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"  # Search name for anything that contains name
         where_clauses.append("name LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
@@ -152,7 +158,8 @@ def get_datasets(
     offset = (page-1)*size
     datasets_sql = f"SELECT * FROM datasets {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(datasets_sql, params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(datasets_sql, params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -161,18 +168,15 @@ def get_datasets(
 # DATASET VERSIONS
 # -------------------------------------------------------------------
 
-def create_dataset_version(
-    dataset_id: str,
-    uri: str,
-    schema_json: Optional[dict] = None,
-    profile_json: Optional[dict] = None,
-    row_count: Optional[int] = None,
-) -> str:
+
+def create_dataset_version(df: pd.DataFrame,
+                           dataset_id: str) -> str:
+    """stores DataFrame in db as dataset_version"""
     version_id = str(uuid.uuid4())
     sql = """
         INSERT INTO dataset_versions
-        (id, dataset_id, uri, schema_json, profile_json, row_count)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        (id, dataset_id, data_json)
+        VALUES (%s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -180,20 +184,25 @@ def create_dataset_version(
             (
                 version_id,
                 dataset_id,
-                uri,
-                _json_dump(schema_json),
-                _json_dump(profile_json),
-                row_count,
+                df.to_json(),
             ),
         )
     return version_id
 
 
-def db_get_dataset_version(version_id: str) -> Optional[dict]:
+def get_dataset_version_dump(version_id: str) -> Optional[dict]:
+    """returns dataset_version as stored in db"""
     sql = "SELECT * FROM dataset_versions WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (version_id,))
         return cur.fetchone()
+
+
+def get_dataset_version(version_id: str) -> pd.DataFrame:
+    """returns dataset_version as DataFrame"""
+    query = get_dataset_version_dump(version_id)
+    df = pd.DataFrame(json.loads(query["data_json"]))
+    return df
 
 
 ALLOWED_DATASET_VERSION_SORT_FIELDS = {
@@ -210,14 +219,14 @@ def get_dataset_versions(
     dir: Literal["asc", "desc"],
     q: Optional[str] = None,
     id: Optional[str] = None,
-    #name: Optional[str] = None,
+    # name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
     '''
     Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
     '''
     ### SORTING ###
     sort_column = ALLOWED_DATASET_VERSION_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
     ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
@@ -236,7 +245,7 @@ def get_dataset_versions(
     #     like = f"%{name}%" # Search name for anything that contains name
     #     where_clauses.append("name LIKE %s")
     #     params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
@@ -252,7 +261,9 @@ def get_dataset_versions(
     offset = (page-1)*size
     dataset_versions_sql = f"SELECT * FROM dataset_versions WHERE dataset_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(dataset_versions_sql, [dataset_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(dataset_versions_sql, [
+                    dataset_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -264,7 +275,6 @@ def get_dataset_versions(
 
 def create_ml_problem(
     dataset_version_id: str,
-    dataset_version_uri: Optional[str],
     task: str,
     target: str,
     feature_strategy_json: Optional[dict] = None,
@@ -275,9 +285,9 @@ def create_ml_problem(
     problem_id = str(uuid.uuid4())
     sql = """
         INSERT INTO ml_problems
-        (id, dataset_version_id, dataset_version_uri, task, target,
+        (id, dataset_version_id, task, target,
         feature_strategy_json, schema_snapshot, semantic_types, current_model_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
@@ -285,7 +295,6 @@ def create_ml_problem(
             (
                 problem_id,
                 dataset_version_id,
-                dataset_version_uri,
                 task,
                 target,
                 _json_dump(feature_strategy_json),
@@ -302,7 +311,7 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (problem_id,))
         return cur.fetchone()
-    
+
 
 ALLOWED_ML_PROBLEM_SORT_FIELDS = {
     "name": "name",
@@ -322,38 +331,40 @@ def get_ml_problems(
     id: Optional[str] = None,
     task: Optional[str] = None,
     target: Optional[str] = None,
-    #name: Optional[str] = None,
+    # name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
     '''
     Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
     '''
     ### SORTING ###
     sort_column = ALLOWED_ML_PROBLEM_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
     ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("task LIKE %s OR target LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.extend([like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"  # Search anything that contains q
+        # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        where_clauses.append("task LIKE %s OR target LIKE %s")
+        # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        params.extend([like, like])
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if task:
-        like = f"%{task}%" # Search target for anything that contains target
+        like = f"%{task}%"  # Search target for anything that contains target
         where_clauses.append("task LIKE %s")
         params.append(like)
 
     if target:
-        like = f"%{target}%" # Search target for anything that contains target
+        like = f"%{target}%"  # Search target for anything that contains target
         where_clauses.append("target LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
@@ -369,7 +380,9 @@ def get_ml_problems(
     offset = (page-1)*size
     ml_problems_sql = f"SELECT * FROM ml_problems WHERE dataset_version_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(ml_problems_sql, [dataset_version_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(ml_problems_sql, [
+                    dataset_version_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -379,40 +392,34 @@ def get_ml_problems(
 # MODELS
 # -------------------------------------------------------------------
 
-def build_model_uri(problem_id: str, model_id: str) -> str:
-    # storage-agnostic default
-    return f"{MODEL_DIR}/{problem_id}/{model_id}/model.joblib"
-
 def create_model(
+    model,
     problem_id: str,
     algorithm: str,
     status: str,
     train_mode: Optional[str] = None,
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
-    uri: Optional[str] = None,         
     metadata_json: Optional[dict] = None,
-    explanation_uri: Optional[str] = None,
+    # explanation_uri: Optional[str] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
-) -> Tuple[str, str]:
+) -> str:
+    """stores model as base64 encoded byte object in db"""
     model_id = str(uuid.uuid4())
-
-    # Default URI derived from IDs
-    if uri is None:
-        uri = build_model_uri(problem_id, model_id)
-
+    data = base64.b64encode(model)
     sql = """
         INSERT INTO models
-        (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-         metrics_json, uri, metadata_json, explanation_uri, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id, data, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
+         metrics_json, metadata_uri, created_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
         cur.execute(
             sql,
             (
                 model_id,
+                data,
                 problem_id,
                 name,
                 algorithm,
@@ -420,20 +427,26 @@ def create_model(
                 evaluation_strategy,
                 status,
                 _json_dump(metrics_json),
-                uri,
                 _json_dump(metadata_json),
-                explanation_uri,
                 created_by,
             ),
         )
-    return model_id, uri
+    return model_id
 
 
-def get_model(model_id: str) -> Optional[dict]:
+def get_model_dump(model_id: str) -> Optional[dict]:
+    """returns model as stored in db"""
     sql = "SELECT * FROM models WHERE id = %s"
     with cursor() as cur:
         cur.execute(sql, (model_id,))
         return cur.fetchone()
+
+
+def get_model(model_id: str):
+    """returns model as base64 decoded object"""
+    query = get_model_dump(model_id)
+    model = base64.b64decode(query["data"])
+    return model
 
 
 ALLOWED_MODEL_SORT_FIELDS = {
@@ -462,23 +475,26 @@ def get_models(
     '''
     ### SORTING ###
     sort_column = ALLOWED_MODEL_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
     ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.extend([like, like, like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"  # Search anything that contains q
+        # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        where_clauses.append(
+            "name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s")
+        # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        params.extend([like, like, like, like, like])
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"  # Search name for anything that contains name
         where_clauses.append("name LIKE %s")
         params.append(like)
 
@@ -491,7 +507,7 @@ def get_models(
         like = f"%{train_mode}%"
         where_clauses.append("train_mode LIKE %s")
         params.append(like)
-    
+
     if evaluation_strategy:
         like = f"%{evaluation_strategy}%"
         where_clauses.append("evaluation_strategy LIKE %s")
@@ -501,7 +517,7 @@ def get_models(
         like = f"%{status}%"
         where_clauses.append("status LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
@@ -517,7 +533,8 @@ def get_models(
     offset = (page-1)*size
     models_sql = f"SELECT * FROM models WHERE problem_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(models_sql, [problem_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(models_sql, [problem_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -616,7 +633,7 @@ def get_prediction(prediction_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (prediction_id,))
         return cur.fetchone()
-    
+
 
 ALLOWED_PREDICTION_SORT_FIELDS = {
     "name": "name",
@@ -639,7 +656,7 @@ def get_predictions(
     '''
     ### SORTING ###
     sort_column = ALLOWED_PREDICTION_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
     ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
@@ -658,7 +675,7 @@ def get_predictions(
     #     like = f"%{name}%" # Search name for anything that contains name
     #     where_clauses.append("name LIKE %s")
     #     params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
@@ -674,7 +691,8 @@ def get_predictions(
     offset = (page-1)*size
     dataset_versions_sql = f"SELECT * FROM predictions WHERE model_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(dataset_versions_sql, [model_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(dataset_versions_sql, [model_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total

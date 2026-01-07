@@ -165,7 +165,8 @@ def seed_db(input_path: str, reset: bool) -> None:
         current_model_id=None,
     )
 
-    model_id, model_uri = create_model(
+    model_id = create_model(
+        model=None,
         problem_id=problem_id,
         name="test_model",
         algorithm="dummy_algorithm",

@@ -1,6 +1,6 @@
 from ..celery_handler import celery_app
-from fastapi import FastAPI, HTTPException, Request, Query
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, HTTPException, Request, Query, File, UploadFile
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import starlette.status as status
 from typing import Literal, Optional
@@ -9,7 +9,10 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from ..db.db import create_dataset, get_dataset, get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from io import StringIO
+from ..db import db
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -107,10 +110,10 @@ def check_task(id: str):
 
 
 @app.post("/dataset")  # /dataset?name=test&user_id=1
-async def post_dataset(name: str,): # user_id: int):
+async def post_dataset(name: str,):  # user_id: int):
     """create a stub for a new dataset and return the id"""
-    dataset_id = create_dataset(name)
-    return {dataset_id}
+    dataset_id = db.create_dataset(name=name)
+    return {"dataset_id": dataset_id}
 
 
 @app.get("/datasets")  # /datasets
@@ -133,7 +136,7 @@ async def get_list_datasets(
         id=id,
         name=name,
     )
-    total_pages = int((total + size -1)/size) if size > 0 else 1
+    total_pages = int((total + size - 1)/size) if size > 0 else 1
 
     return {
         "items": items,
@@ -150,9 +153,9 @@ async def get_list_datasets(
 
 
 @app.get("/dataset/{dataset_id}")
-async def get_dataset(dataset_id: str): #, user_id: int):
+async def get_dataset(dataset_id: str):  # , user_id: int):
     """return the specified dataset if user has permission"""
-    dataset = db_get_dataset(dataset_id)
+    dataset = get_dataset(dataset_id)
     return dataset
 
 
@@ -173,22 +176,29 @@ async def delete_dataset(dataset_id: int, user_id: int):
 
 
 @app.post("/dataset/{dataset_id}")
-async def post_dataset_version(dataset_id: int, user_id: int):
+async def post_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     """create a stub for a new dataset version and return the version"""
-    return {}
+    contents = await file.read()
+    decoded_contents = contents.decode('utf-8')
+    buffer = StringIO(decoded_contents)
+
+    df: pd.DataFrame = pd.read_csv(buffer)
+    db.create_dataset_version(df=df, dataset_id=dataset_id)
+    return JSONResponse(content=df.to_json())
 
 
 @app.get("/datasetVersion/{version}")
-async def get_dataset_version(version: str): #, user_id: int):
+async def get_dataset_version(version: str):  # , user_id: int):
     """return the specified dataset version if user has permission"""
     dataset_version = db_get_dataset_version(version)
     return dataset_version
 
 
 @app.put("/dataset/{dataset_id}/{version}")
-async def put_dataset_version(dataset_id: int, user_id: int):
+async def put_dataset_version(dataset_id: int, user_id: int, file: UploadFile):
     """update the specified dataset version if user has permission"""
-    return {}
+    delete_dataset_version(dataset_id, user_id)
+    return post_dataset_version(dataset_id, user_id, file)
 
 
 @app.delete("/dataset/{dataset_id}/{version}")
@@ -206,7 +216,7 @@ async def get_list_dataset_versions(
     dir: Literal["asc", "desc"] = Query("desc"),
     q: Optional[str] = Query(None),
     id: Optional[str] = Query(None),
-    #name: Optional[str] = Query(None),
+    # name: Optional[str] = Query(None),
 ):
     """get all dataset_versions"""
     items, total = get_dataset_versions(
@@ -219,7 +229,7 @@ async def get_list_dataset_versions(
         id=id,
         # name=name,
     )
-    total_pages = int((total + size -1)/size) if size > 0 else 1
+    total_pages = int((total + size - 1)/size) if size > 0 else 1
 
     return {
         "items": items,
@@ -246,7 +256,7 @@ async def get_list_problems(
     id: Optional[str] = Query(None),
     task: Optional[str] = Query(None),
     target: Optional[str] = Query(None),
-    #name: Optional[str] = Query(None),):   
+    # name: Optional[str] = Query(None),):
 ):
     """get all ml_problems"""
     items, total = get_ml_problems(
@@ -261,7 +271,7 @@ async def get_list_problems(
         target=target,
         # name=name,
     )
-    total_pages = int((total + size -1)/size) if size > 0 else 1
+    total_pages = int((total + size - 1)/size) if size > 0 else 1
 
     return {
         "items": items,
@@ -367,12 +377,14 @@ async def post_predict(
     problem_id: str | None = None,
     model_id: str = "production",
 ):
-    if model_id=="production" and not problem_id:
+    if model_id == "production" and not problem_id:
         # no problem or model given for the prediction
-        raise HTTPException(status_code=400, detail="problem_id is required when model_id is not defined")
+        raise HTTPException(
+            status_code=400, detail="problem_id is required when model_id is not defined")
     if not input_json and not input_uri:
         # no input given for the prediction
-        raise HTTPException(status_code=400, detail="Provide input or input_uri")
+        raise HTTPException(
+            status_code=400, detail="Provide input or input_uri")
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
     logger.info("Sending celery task 'predict.task'")
 
@@ -415,7 +427,7 @@ async def get_list_models(
         evaluation_strategy=evaluation_strategy,
         status=status,
     )
-    total_pages = int((total + size -1)/size) if size > 0 else 1
+    total_pages = int((total + size - 1)/size) if size > 0 else 1
 
     return {
         "items": items,
@@ -427,16 +439,16 @@ async def get_list_models(
         "dir": dir,
         "q": q,
         "id": id,
-        "name":name,
-        "algorithm":algorithm,
-        "train_mode":train_mode,
-        "evaluation_strategy":evaluation_strategy,
-        "status":status,
+        "name": name,
+        "algorithm": algorithm,
+        "train_mode": train_mode,
+        "evaluation_strategy": evaluation_strategy,
+        "status": status,
     }
 
 
 @app.get("/model/{model_id}")
-async def get_model_info(model_id: str): #, user_id: int):
+async def get_model_info(model_id: str):  # , user_id: int):
     """return the specified model if user has permission"""
     model = get_model(model_id)
     return model
@@ -467,7 +479,7 @@ async def get_list_predictions(
         id=id,
         name=name,
     )
-    total_pages = int((total + size -1)/size) if size > 0 else 1
+    total_pages = int((total + size - 1)/size) if size > 0 else 1
 
     return {
         "items": items,
@@ -479,12 +491,12 @@ async def get_list_predictions(
         "dir": dir,
         "q": q,
         "id": id,
-        "name":name,
+        "name": name,
     }
 
 
 @app.get("/prediction/{prediction_id}")
-async def get_prediction_info(prediction_id: str): #, user_id: int):
+async def get_prediction_info(prediction_id: str):  # , user_id: int):
     """return the specified model if user has permission"""
     prediction = get_prediction(prediction_id)
     return prediction

@@ -6,17 +6,21 @@ from ..db.db import (
     create_model,
     create_job,
     create_prediction,
-    db_get_dataset,
+    get_dataset,
     get_model,
+    get_model_dump,
     get_prediction,
     get_job,
     get_ml_problem,
-    db_get_dataset_version,
+    get_dataset_version_dump,
+    get_dataset_version
 )
 from ..db import init_db
 import os
 import pytest
 import pymysql
+import pandas as pd
+import base64
 
 # ---------------------------------------------------------
 # Skip in CI (no DB there)
@@ -82,20 +86,21 @@ def test_smoke_full_flow():
     ds_id = create_dataset("smoke_dataset", owner_id=user_id)
     assert isinstance(ds_id, str)
 
-    # 3) create dataset version
+    # 3a) create dataset version
+    df_in = pd.read_csv("./testdata/test_dataset.csv", sep=" ")
     dv_id = create_dataset_version(
-        ds_id,
-        uri="/data/smoke.csv",
-        schema_json={"columns": ["x", "y"]},
-        profile_json={"row_count": 10},
-        row_count=10,
+        df=df_in,
+        dataset_id=ds_id
     )
     assert isinstance(dv_id, str)
+
+    # 3b) return dataset version
+    df_out = get_dataset_version(dv_id)
+    assert isinstance(df_out, pd.DataFrame)
 
     # 4) create ml_problem (validation_strategy moved off this table)
     prob_id = create_ml_problem(
         dataset_version_id=dv_id,
-        dataset_version_uri="/data/smoke.csv",
         task="timeseries",
         target="y",
         feature_strategy_json={"method": "basic"},
@@ -105,22 +110,25 @@ def test_smoke_full_flow():
     )
     assert isinstance(prob_id, str)
 
-    # 5) create model (evaluation_strategy now lives here)
-    model_id, uri = create_model(
+    # 5a) create model (evaluation_strategy now lives here)
+    model_in = open("./testdata/models/model.joblib", "rb").read()
+    model_id = create_model(
+        model=model_in,
         problem_id=prob_id,
         algorithm="prophet",
         status="staging",
         train_mode="auto",
         evaluation_strategy="train_test_split",
         metrics_json={"MAE": 1.23},
-        uri=None,
-        metadata_uri=None,
-        explanation_uri=None,
+        metadata_json={"any_metadata_key": "any_metadata_value"},
         created_by=user_id,
         name="smoke_model",
     )
     assert isinstance(model_id, str)
-    assert isinstance(uri, str)
+
+    # 5b) get model
+    model_out = get_model(model_id=model_id)
+    assert model_in == model_out
 
     # 6) create job for training
     job_id = create_job(
@@ -145,11 +153,11 @@ def test_smoke_full_flow():
     assert isinstance(pred_id, str)
 
     # 8) read a few things back to ensure they exist
-    ds = db_get_dataset(ds_id)
+    ds = get_dataset(ds_id)
     assert ds is not None
     assert ds["id"] == ds_id
 
-    dv = db_get_dataset_version(dv_id)
+    dv = get_dataset_version_dump(dv_id)
     assert dv is not None
     assert dv["id"] == dv_id
 
@@ -157,7 +165,7 @@ def test_smoke_full_flow():
     assert prob is not None
     assert prob["id"] == prob_id
 
-    model = get_model(model_id)
+    model = get_model_dump(model_id)
     assert model is not None
     assert model["id"] == model_id
 

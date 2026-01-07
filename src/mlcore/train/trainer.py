@@ -1,7 +1,8 @@
+import json
+from db.db import get_dataset_version, get_ml_problem, create_model
+from db.db import get_dataset_version_dump, get_ml_problem, create_model
 from mlcore.io.preset_loader import loader
 from mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
-from mlcore.io.model_saver import save_model
-from mlcore.io.metadata_saver import save_metadata
 from mlcore.profile.profiler import suggest_profile
 from mlcore.explain.explanator import explain_model
 from mlcore.metrics.metrics_calculator import calculate_metrics
@@ -9,15 +10,11 @@ from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
 from typing import Literal, Tuple
 import pandas as pd
-from db.db import db_get_dataset_version, get_ml_problem, create_model
-import json
-from pathlib import Path
-import logging
-logger = logging.getLogger(__name__)
 
 BASE_DIR = "./testdata/models"
 PRESET_DIR = "/code/mlcore/presets"
 NAME = None
+
 
 def train(
     name: str,
@@ -34,7 +31,7 @@ def train(
     problem = get_ml_problem(problem_id)
     dataset_version_id = problem.get("dataset_version_id", False)
     target = problem.get("target", False)
-    dataset_version = db_get_dataset_version(dataset_version_id)
+    dataset_version = get_dataset_version(dataset_version_id)
 
     df = get_dataframe_from_csv(
         dataset_version.get("uri", False))
@@ -93,7 +90,9 @@ def train(
     if explanation:
         metadata["explanation"] = explanation
 
-    model_id, model_uri = create_model(
+    # save model to db
+    model_id = create_model(
+        model=model,
         problem_id=problem_id,
         algorithm=algorithm.lower(),
         status="staging",
@@ -106,20 +105,3 @@ def train(
         created_by=NAME,
         name=name,
     )
-
-    metadata["model_id"] = model_id
-
-    parent_path = Path(model_uri).parent
-
-    if save_model(model, parent_path):
-        logger.info(f"[SAVE_MODEL] Model saved at: {model_uri}")
-        if save_metadata(metadata, parent_path):
-            logger.info(f"[SAVE_MODEL_METADATA] Model's metadata saved at: {model_uri}")
-            return model_id, model_uri
-        else:
-            logger.error(f"[SAVE_MODEL_METADATA] Failed to save model's metadata at: {model_uri}")
-            raise RuntimeError(
-                f"Failed to save the model's metadata at {parent_path}")
-    else:
-        logger.error(f"[SAVE_MODEL] Failed to save model at: {model_uri}")
-        raise RuntimeError(f"Failed to save the model at {parent_path}")
