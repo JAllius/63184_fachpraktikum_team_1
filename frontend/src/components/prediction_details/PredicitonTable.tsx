@@ -8,9 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Link } from "react-router-dom";
-import { RowActions, SortableHeader } from "../table";
-import type { Prediction } from "@/lib/actions/predictions";
 
 type Props = {
   columnNames: string[];
@@ -38,7 +35,7 @@ const PredictionTable = ({ columnNames, rows }: Props) => {
         <TableHeader>
           <TableRow>
             {columnNames.map((name) => (
-              <TableHead>{name}</TableHead>
+              <TableHead key={name}>{name}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
@@ -46,7 +43,7 @@ const PredictionTable = ({ columnNames, rows }: Props) => {
           {rows.map((row, i) => (
             <TableRow key={i}>
               {columnNames.map((col) => (
-                <TableCell>{renderCell(row[col])}</TableCell>
+                <TableCell key={col}>{renderCell(row[col])}</TableCell>
               ))}
             </TableRow>
           ))}

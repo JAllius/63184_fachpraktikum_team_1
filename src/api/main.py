@@ -1,5 +1,6 @@
+import shutil
 from ..celery_handler import celery_app
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, File, Form, HTTPException, Request, Query, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import starlette.status as status
@@ -9,7 +10,10 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, db_get_dataset, db_get_dataset_version, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from ..db.db import create_dataset, create_dataset_version, create_ml_problem, db_get_dataset, db_get_dataset_version, get_dashboard_stats, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from ..mlcore.profile.profiler import suggest_profile, suggest_schema
+from ..mlcore.io.data_reader import get_dataframe_from_csv
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +114,7 @@ def check_task(id: str):
 async def post_dataset(name: str,): # user_id: int):
     """create a stub for a new dataset and return the id"""
     dataset_id = create_dataset(name)
-    return {dataset_id}
+    return dataset_id
 
 
 @app.get("/datasets")  # /datasets
@@ -171,11 +175,43 @@ async def delete_dataset(dataset_id: int, user_id: int):
 
 # TODO: allow .csv upload on Write-Paths
 
+UPLOAD_DIR = Path("/code/worker/testdata/")
+def save_file(file: UploadFile):
+    if file.filename == "":
+        raise HTTPException(status_code=400, detail="No file selected")
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be a CSV")
+    filename = file.filename
+    file_path = UPLOAD_DIR / filename
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return str(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
-@app.post("/dataset/{dataset_id}")
-async def post_dataset_version(dataset_id: int, user_id: int):
+@app.post("/datasetVersion")
+async def post_dataset_version(
+    dataset_id: str = Form(...),
+    name: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    file_id: Optional[str] = Form(None),): #, user_id: int):
     """create a stub for a new dataset version and return the version"""
-    return {}
+    if not file and not file_id:
+        return {}
+    if file:
+        uri = save_file(file)
+        if not uri:
+            return {}
+    if file_id:
+        return {}
+    
+    df = get_dataframe_from_csv(uri)
+    profile_json = suggest_profile(df)
+    schema_json = suggest_schema(df)
+    
+    dataset_version_id = create_dataset_version(dataset_id=dataset_id, uri=uri, name=name, schema_json=schema_json, profile_json=profile_json)
+    return dataset_version_id
 
 
 @app.get("/datasetVersion/{version}")
@@ -281,7 +317,10 @@ async def get_list_problems(
 
 # ========== Profile specification ==========
 
-# TODO: get known algorithms from database and check if specified algorithm is available
+@app.post("/profile/{dataset_version_id}")
+async def post_profile(dataset_version_id: str): #, user_id: int):
+    """run the profile of dataset_version and save to the database"""
+    return {}
 
 # ========== Jobs ==========
 
@@ -317,17 +356,16 @@ async def delete_job(user_id: int):
 
 @app.post("/problem")  # or ml_problems for clarity
 async def post_problem(
-    user_id: int,
-    dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
+    # user_id: int,
+    # dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
     target: str,
     task: Literal["classification", "regression"],
     dataset_version_id: int | str = "latest",
-    # we will see later how we will impliment this exactly
-    feature_strategy: dict | str = "auto",
-    validation_strategy: Literal["CV", "holdout"] = "CV",  # for now only CV
+    name: str | None = None,
 ):  # maybe later we will also add "anomaly_detection" and "timeseries"
     """create a new ml_problem and return problem_id"""
-    return {}
+    ml_problem_id = create_ml_problem(target=target, task=task, dataset_version_id=dataset_version_id, name=name)
+    return ml_problem_id
 
 
 @app.get("/problem/{problem_id}")
@@ -493,3 +531,42 @@ async def get_prediction_info(prediction_id: str): #, user_id: int):
 # I am not sure how this works with the storage and if we need an endpoint.
 # get model (probably by id) -> return joblib object.
 # For now we will have it locally (./testdata/models/{model_id}).
+
+
+# ========== Dashboard Stats ==========
+
+
+@app.get("/dashboard/stats")
+async def get_dashboard_stats_info(): #, user_id: int):
+    """return the dashboard stats if user has permission"""
+    stats = get_dashboard_stats()
+    return stats
+
+
+# ========== Presets ==========
+
+def list_presets(task: Literal["classification", "regression"], base_dir: str = "/code/mlcore/presets") -> list[str]:
+    task_dir = os.path.join(base_dir, task)
+    if not os.path.isdir(task_dir):
+        raise ValueError(
+            f"Failed to find a directory for this task {task}.")
+    
+    presets = set()
+    
+    for file in os.listdir(task_dir):
+        # read only python files
+        if not file.endswith(".py"):
+            continue
+        # skip private / init files
+        if file == "__init__.py" or file.startswith("_"):
+            continue
+        preset_name = os.path.splitext(file)[0]
+        presets.add(preset_name)
+    
+    return sorted(presets)
+
+@app.get("/presets/{task}")
+async def get_presets_list(task): #, user_id: int):
+    """return the preset_list"""
+    presets = list_presets(task)
+    return presets

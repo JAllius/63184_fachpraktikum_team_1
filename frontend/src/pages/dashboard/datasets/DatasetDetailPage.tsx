@@ -21,6 +21,7 @@ import {
 import { PageSize, Pagination } from "@/components/table";
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
+import { Fox } from "@/components/watermark/Fox";
 // import { Edit } from "lucide-react";
 
 const DatasetIdPage = () => {
@@ -148,53 +149,80 @@ const DatasetIdPage = () => {
         <div className="flex flex-inline items-center gap-2">
           <h1>Dataset details: {dataset?.name ?? "Unknown Dataset"}</h1>
         </div>
-
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all dataset versions of {dataset?.name ?? "Unknown Dataset"}.
         </p>
-        <div className="flex justify-between">
-          <div className="relative">
-            <DatasetVersionsFilterbar />
-          </div>
-          <DatasetVersionCreate
-            onCreate={loadDatasetVersions}
-            datasetId={datasetId}
-          />
-        </div>
-        <DatasetVersionsTable
-          datasetVersions={datasetVersions}
-          askDelete={askDelete}
-          askUpdate={askUpdate}
-        />
-        <div className="mt-2 grid grid-cols-3 items-center">
-          <div />
-          {totalPages > 1 ? (
-            <div className="flex justify-center">
-              <Pagination totalPages={totalPages} />
+        {datasetVersions.length > 0 ? (
+          <div>
+            <div className="flex justify-between">
+              <div className="relative">
+                <DatasetVersionsFilterbar />
+              </div>
+              <DatasetVersionCreate
+                onCreate={loadDatasetVersions}
+                datasetId={datasetId}
+              />
             </div>
-          ) : (
-            <div />
-          )}
-          <div className="flex justify-end">
-            <PageSize size={size} />
+            <DatasetVersionsTable
+              datasetVersions={datasetVersions}
+              askDelete={askDelete}
+              askUpdate={askUpdate}
+            />
+            <div className="mt-2 grid grid-cols-3 items-center">
+              <div />
+              {totalPages > 1 ? (
+                <div className="flex justify-center">
+                  <Pagination totalPages={totalPages} />
+                </div>
+              ) : (
+                <div />
+              )}
+              <div className="flex justify-end">
+                <PageSize size={size} />
+              </div>
+            </div>
+            {deleteTarget && (
+              <DatasetVersionDelete
+                target={deleteTarget}
+                open={openDelete}
+                onConfirm={onDelete}
+                onCancel={cancelDelete}
+                deleting={deleting}
+              />
+            )}
+            {updateTarget && (
+              <DatasetVersionUpdate
+                target={updateTarget}
+                open={openUpdate}
+                onConfirm={onUpdate}
+                onCancel={cancelUpdate}
+              />
+            )}
           </div>
-        </div>
-        {deleteTarget && (
-          <DatasetVersionDelete
-            target={deleteTarget}
-            open={openDelete}
-            onConfirm={onDelete}
-            onCancel={cancelDelete}
-            deleting={deleting}
-          />
-        )}
-        {updateTarget && (
-          <DatasetVersionUpdate
-            target={updateTarget}
-            open={openUpdate}
-            onConfirm={onUpdate}
-            onCancel={cancelUpdate}
-          />
+        ) : (
+          <div className="relative min-h-[80vh] bg-background">
+            <div className="flex items-center">
+              <Fox
+                aria-hidden
+                size="80%"
+                className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                style={{ color: "hsl(var(--sidebar-foreground))" }}
+                nodeFill="hsl(var(--sidebar-foreground))"
+              />
+            </div>
+            <div>
+              <p className="text-base font-semibold">No Dataset Versions yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create a dataset version to activate this tab.
+              </p>
+              <div className="mt-5">
+                <DatasetVersionCreate
+                  onCreate={loadDatasetVersions}
+                  datasetId={datasetId}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

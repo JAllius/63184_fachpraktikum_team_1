@@ -16,6 +16,7 @@ import {
 } from "@/components/datasets";
 import { PageSize, Pagination } from "@/components/table";
 import Loading from "@/components/loading/Loading";
+import { Fox } from "@/components/watermark/Fox";
 
 const DatasetsPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -119,46 +120,71 @@ const DatasetsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all datasets.
         </p>
-        <div className="flex justify-between">
-          <div className="relative">
-            <DatasetsFilterbar />
-          </div>
-          <DatasetCreate onCreate={loadDatasets} />
-        </div>
-        <DatasetsTable
-          datasets={datasets}
-          askDelete={askDelete}
-          askUpdate={askUpdate}
-        />
-        <div className="mt-2 grid grid-cols-3 items-center">
-          <div />
-          {totalPages > 1 ? (
-            <div className="flex justify-center">
-              <Pagination totalPages={totalPages} />
+        {datasets.length > 0 ? (
+          <div>
+            <div className="flex justify-between">
+              <div className="relative">
+                <DatasetsFilterbar />
+              </div>
+              <DatasetCreate onCreate={loadDatasets} />
             </div>
-          ) : (
-            <div />
-          )}
-          <div className="flex justify-end">
-            <PageSize size={size} />
+            <DatasetsTable
+              datasets={datasets}
+              askDelete={askDelete}
+              askUpdate={askUpdate}
+            />
+            <div className="mt-2 grid grid-cols-3 items-center">
+              <div />
+              {totalPages > 1 ? (
+                <div className="flex justify-center">
+                  <Pagination totalPages={totalPages} />
+                </div>
+              ) : (
+                <div />
+              )}
+              <div className="flex justify-end">
+                <PageSize size={size} />
+              </div>
+            </div>
+            {deleteTarget && (
+              <DatasetDelete
+                target={deleteTarget}
+                open={openDelete}
+                onConfirm={onDelete}
+                onCancel={cancelDelete}
+                deleting={deleting}
+              />
+            )}
+            {updateTarget && (
+              <DatasetUpdate
+                target={updateTarget}
+                open={openUpdate}
+                onConfirm={onUpdate}
+                onCancel={cancelUpdate}
+              />
+            )}
           </div>
-        </div>
-        {deleteTarget && (
-          <DatasetDelete
-            target={deleteTarget}
-            open={openDelete}
-            onConfirm={onDelete}
-            onCancel={cancelDelete}
-            deleting={deleting}
-          />
-        )}
-        {updateTarget && (
-          <DatasetUpdate
-            target={updateTarget}
-            open={openUpdate}
-            onConfirm={onUpdate}
-            onCancel={cancelUpdate}
-          />
+        ) : (
+          <div className="relative min-h-[80vh] bg-background">
+            <div className="flex items-center">
+              <Fox
+                aria-hidden
+                size="80%"
+                className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                style={{ color: "hsl(var(--sidebar-foreground))" }}
+                nodeFill="hsl(var(--sidebar-foreground))"
+              />
+            </div>
+            <div>
+              <p className="text-base font-semibold">No Datasets yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create a dataset to activate this tab.
+              </p>
+              <div className="mt-5">
+                <DatasetCreate onCreate={loadDatasets} />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

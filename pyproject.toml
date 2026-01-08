@@ -17,6 +17,8 @@ dependencies = [
   "mysql-connector-python",
   "pymysql>=1.1",
   "cryptography",
+  "pandas==2.2.3",
+  "numpy==2.1.2",
 ]
 
 [project.optional-dependencies]

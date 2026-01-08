@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: DockerfileApi
+    volumes:
+      - testdata:/code/worker/testdata
     environment:
       REDISSERVER: redis://redis_server:6379
       # Misspelling with DELAY_DB_CONN_ON_StARTUP -> DELAY_DB_CONN_ON_STARTUP
@@ -32,6 +34,7 @@ services:
       dockerfile: DockerfileWorker
     volumes:
       - model-data:/models
+      - testdata:/code/worker/testdata
     environment:
       REDISSERVER: redis://redis_server:6379
       DB_HOST: db
@@ -75,3 +78,4 @@ services:
 volumes:
   db-data:
   model-data:
+  testdata:

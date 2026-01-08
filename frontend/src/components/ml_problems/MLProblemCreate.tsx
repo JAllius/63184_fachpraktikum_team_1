@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -29,7 +29,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import type { ColumnDetails } from "@/pages/dashboard/dataset_versions/DatasetVersionDetailPage";
+import type {
+  ColumnDetails,
+  Profile,
+} from "@/pages/dashboard/dataset_versions/DatasetVersionDetailPage";
+import { create_ml_problem } from "@/lib/actions/mlProblems/mlProblem.action";
+import {
+  get_dataset_version,
+  type DatasetVersion,
+} from "@/lib/actions/dataset_versions";
 
 type Props = {
   onCreate: () => Promise<void> | void;
@@ -44,9 +52,48 @@ const MLProblemCreate = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [id, setId] = useState(datasetVersionId ?? "");
-  const [details, setDetails] = useState<ColumnDetails[]>(columnsDetails ?? []);
   const [columnsFilter, setColumnsFilter] = useState("");
   const [suggestedAnalysis, setSuggestedAnalysis] = useState("");
+  const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
+    null
+  );
+
+  useEffect(() => {
+    async function loadDatasetVersion() {
+      try {
+        const data: DatasetVersion = await get_dataset_version(id);
+        setDatasetVersion(data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    loadDatasetVersion();
+  }, [id]);
+
+  const profileDetails: ColumnDetails[] = useMemo(() => {
+    if (!datasetVersion?.profile_json) return [];
+    try {
+      const profile: Profile = JSON.parse(datasetVersion.profile_json);
+      const details = Object.entries(profile.columns).map(
+        ([name, metadata]) => ({
+          name: name,
+          analysis: metadata.suggested_analysis,
+        })
+      );
+      return details;
+    } catch (error) {
+      console.log(error);
+      return [];
+    }
+  }, [datasetVersion]);
+
+  const details = useMemo(() => {
+    if (columnsDetails) {
+      return columnsDetails;
+    } else {
+      return profileDetails;
+    }
+  }, [columnsDetails, profileDetails]);
 
   const filteredColumns = details.filter((v) =>
     v.name.toLowerCase().includes(columnsFilter.toLowerCase())
@@ -59,7 +106,6 @@ const MLProblemCreate = ({
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    getValues,
   } = useForm<MLProblemInput>({
     resolver: zodResolver(MLProblemSchema),
     defaultValues: {
@@ -71,17 +117,17 @@ const MLProblemCreate = ({
   });
 
   async function onSubmit(data: MLProblemInput) {
-    // const res = await create_ml_problem(data);
-    // if (!res.ok) {
-    //   toast.error(res.error);
-    //   return;
-    // }
-    // toast.success("Dataset created");
-    // await onCreate();
-    // setOpen(false);
-    // reset({
-    //   name: "",
-    // });
+    const res = await create_ml_problem(data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("ML Problem created");
+    await onCreate();
+    setOpen(false);
+    reset({
+      name: "",
+    });
   }
 
   return (
@@ -115,7 +161,11 @@ const MLProblemCreate = ({
                   aria-invalid={!!errors.dataset_version_id}
                   readOnly={!!datasetVersionId}
                   defaultValue={datasetVersionId ?? ""}
-                  {...register("dataset_version_id")}
+                  {...register("dataset_version_id", {
+                    onChange: (e) => {
+                      setId(e.target.value);
+                    },
+                  })}
                 />
                 <FieldError
                   errors={
@@ -176,7 +226,9 @@ const MLProblemCreate = ({
                               />
                             </div>
                             {filteredColumns.map((c) => (
-                              <SelectItem value={c.name}>{c.name}</SelectItem>
+                              <SelectItem key={c.name} value={c.name}>
+                                {c.name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

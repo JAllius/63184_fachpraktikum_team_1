@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TrainFormSchema, type TrainFormInput } from "./trainForm.schema";
@@ -26,13 +26,42 @@ import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { SelectTrigger, SelectValue } from "@radix-ui/react-select";
 import { Switch } from "@/components/ui/switch";
 import { post_train } from "@/lib/actions/ml/train.action";
+import {
+  get_ml_problem,
+  type MLProblem,
+} from "@/lib/actions/mlProblems/mlProblem.action";
+import { get_presets_list } from "@/lib/actions/presets";
 
 type Props = {
   problemId?: string;
+  task?: string;
 };
 
-const Train = ({ problemId }: Props) => {
+const Train = ({ problemId, task }: Props) => {
   const [open, setOpen] = useState(false);
+  const [presets, setPresets] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadMLProblem() {
+      if (!task && problemId) {
+        try {
+          const mlProblem: MLProblem = await get_ml_problem(problemId);
+          const data: string[] = await get_presets_list(mlProblem.task);
+          setPresets(data);
+        } catch (error) {
+          console.log(error);
+        }
+      } else if (task) {
+        try {
+          const data: string[] = await get_presets_list(task);
+          setPresets(data);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    }
+    loadMLProblem();
+  }, [problemId, task]);
 
   const {
     register,
@@ -116,18 +145,40 @@ const Train = ({ problemId }: Props) => {
                 <FieldError errors={errors.name ? [errors.name] : undefined} />
               </Field>
               {/* Algorithm */}
-              <Field data-invalid={!!errors.algorithm}>
-                <FieldLabel htmlFor="algorithm">Algorithm</FieldLabel>
-                <Input
-                  id="algorithm"
-                  aria-invalid={!!errors.algorithm}
-                  {...register("algorithm")}
-                />
-                <FieldError
-                  errors={errors.algorithm ? [errors.algorithm] : undefined}
-                />
-                <FieldDescription>Use "auto" for the default.</FieldDescription>
-              </Field>
+              <Controller
+                name="algorithm"
+                control={control}
+                render={({ field }) => (
+                  <Field data-invalid={!!errors.algorithm}>
+                    <FieldLabel htmlFor="algorithm">Algorithm</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        aria-invalid={!!errors.algorithm}
+                        className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3 capitalize"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {presets.map((preset: string) => (
+                          <SelectItem
+                            key={preset}
+                            value={preset}
+                            className="capitalize"
+                          >
+                            {preset.replaceAll("_", " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldError
+                      errors={errors.algorithm ? [errors.algorithm] : undefined}
+                    />
+                    <FieldDescription>
+                      Use "Auto" for the default.
+                    </FieldDescription>
+                  </Field>
+                )}
+              />
               {/* Train Mode */}
               <Controller
                 name="train_mode"

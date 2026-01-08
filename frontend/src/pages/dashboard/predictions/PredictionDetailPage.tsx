@@ -6,7 +6,7 @@ import { get_prediction, type Prediction } from "@/lib/actions/predictions";
 import PredictionTable from "@/components/prediction_details/PredicitonTable";
 import NotFound from "@/components/errors/not_found/NotFound";
 
-const PredictionPage = () => {
+const PredictionDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [prediction, setPrediction] = useState<Prediction | null>(null);
@@ -45,9 +45,6 @@ const PredictionPage = () => {
   const target = outputs_json?.model_metadata.target ?? "y_pred";
   const X = outputs_json?.X as Array<Record<string, unknown>>;
   const featureColumnNames = X?.length > 0 ? Object.keys(X[0]) : [];
-  console.log("X:", X);
-  console.log("target", target);
-  console.log("featCols", featureColumnNames);
   const columnNames = [...featureColumnNames, target];
   const rows =
     X?.length > 0
@@ -90,4 +87,4 @@ const PredictionPage = () => {
   );
 };
 
-export default PredictionPage;
+export default PredictionDetailPage;

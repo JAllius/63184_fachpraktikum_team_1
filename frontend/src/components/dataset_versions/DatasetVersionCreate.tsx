@@ -61,6 +61,7 @@ const DatasetVersionCreate = ({ datasetId, onCreate }: Props) => {
     resolver: zodResolver(DatasetVersionSchema),
     defaultValues: {
       dataset_id: datasetId ?? "",
+      name: "",
       file: undefined,
       file_id: "",
     },
@@ -73,19 +74,20 @@ const DatasetVersionCreate = ({ datasetId, onCreate }: Props) => {
   }
 
   async function onSubmit(data: DatasetVersionInput) {
-    // const res = await create_dataset_version(data);
-    // if (!res.ok) {
-    //   toast.error(res.error);
-    //   return;
-    // }
-    // toast.success("Dataset Version created");
-    // await onCreate();
-    // setOpen(false);
-    // reset({
-    //   dataset_id: datasetId ?? "",
-    //   file: undefined,
-    //   file_id: "",
-    // });
+    const res = await create_dataset_version(data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Dataset Version created");
+    await onCreate();
+    setOpen(false);
+    reset({
+      dataset_id: datasetId ?? "",
+      name: "",
+      file: undefined,
+      file_id: "",
+    });
   }
 
   return (

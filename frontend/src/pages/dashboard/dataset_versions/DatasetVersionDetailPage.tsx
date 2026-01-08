@@ -23,6 +23,7 @@ import { PageSize, Pagination } from "@/components/table";
 import DatasetVersionDetails from "@/components/dataset_version_details/DatasetVersionDetails";
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
+import { Fox } from "@/components/watermark/Fox";
 
 export type ColumnDetails = { name: string; analysis: string };
 export type Metadata = {
@@ -318,13 +319,29 @@ const DatasetVersionDetailPage = () => {
                 )}
               </div>
             ) : (
-              <div>
-                <div>Create an ML Problem to activate this Tab.</div>
-                <MLProblemCreate
-                  onCreate={loadMLProblems}
-                  datasetVersionId={datasetVersionId}
-                  columnsDetails={columnsDetails}
-                />
+              <div className="relative min-h-[80vh] bg-background">
+                <div className="flex items-center">
+                  <Fox
+                    aria-hidden
+                    size="80%"
+                    className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                    style={{ color: "hsl(var(--sidebar-foreground))" }}
+                    nodeFill="hsl(var(--sidebar-foreground))"
+                  />
+                </div>
+                <div>
+                  <p className="text-base font-semibold">No ML Problems yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Create an ML problem to activate this tab.
+                  </p>
+                  <div className="mt-5">
+                    <MLProblemCreate
+                      onCreate={loadMLProblems}
+                      datasetVersionId={datasetVersionId}
+                      columnsDetails={columnsDetails}
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>

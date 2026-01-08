@@ -26,6 +26,7 @@ import {
 import type { Profile } from "../dataset_versions/DatasetVersionDetailPage";
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
+import { Fox } from "@/components/watermark/Fox";
 
 export type FeatureStrategy = {
   include: [string, string][];
@@ -306,9 +307,25 @@ const MLProblemDetailPage = () => {
                 )}
               </div>
             ) : (
-              <div>
-                <div>Train a model to activate this Tab.</div>
-                <Train problemId={problemId} />
+              <div className="relative min-h-[80vh] bg-background">
+                <div className="flex items-center">
+                  <Fox
+                    aria-hidden
+                    size="80%"
+                    className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                    style={{ color: "hsl(var(--sidebar-foreground))" }}
+                    nodeFill="hsl(var(--sidebar-foreground))"
+                  />
+                </div>
+                <div>
+                  <p className="text-base font-semibold">No Models yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Train a model to activate this Tab.
+                  </p>
+                  <div className="mt-5">
+                    <Train problemId={problemId} task={mlProblem.task} />
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>

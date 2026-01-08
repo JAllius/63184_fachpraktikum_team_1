@@ -164,6 +164,7 @@ def get_datasets(
 def create_dataset_version(
     dataset_id: str,
     uri: str,
+    name: str | None = None,
     schema_json: Optional[dict] = None,
     profile_json: Optional[dict] = None,
     row_count: Optional[int] = None,
@@ -264,10 +265,11 @@ def get_dataset_versions(
 
 def create_ml_problem(
     dataset_version_id: str,
-    dataset_version_uri: Optional[str],
     task: str,
     target: str,
-    feature_strategy_json: Optional[dict] = None,
+    name: str = None,
+    dataset_version_uri: Optional[str] = None,
+    feature_strategy_json: Optional[dict] = "auto",
     schema_snapshot: Optional[dict] = None,
     semantic_types: Optional[dict] = None,
     current_model_id: Optional[str] = None,
@@ -678,3 +680,22 @@ def get_predictions(
         items = cur.fetchall()
 
     return items, total
+
+# -------------------------------------------------------------------
+# DASHBOARD STATS
+# -------------------------------------------------------------------
+
+def get_dashboard_stats() -> Optional[dict]:
+    sql = """
+    SELECT
+      (SELECT COUNT(*) FROM users)            AS users,
+      (SELECT COUNT(*) FROM datasets)         AS datasets,
+      (SELECT COUNT(*) FROM dataset_versions) AS dataset_versions,
+      (SELECT COUNT(*) FROM ml_problems)      AS ml_problems,
+      (SELECT COUNT(*) FROM models)           AS models,
+      (SELECT COUNT(*) FROM jobs)             AS jobs,
+      (SELECT COUNT(*) FROM predictions)      AS predictions
+    """
+    with cursor() as cur:
+        cur.execute(sql)
+        return cur.fetchone()

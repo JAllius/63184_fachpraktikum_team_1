@@ -68,7 +68,7 @@ export async function get_dataset(dataset_id: string): Promise<Dataset> {
     throw new Error(`Failed to fetch dataset: ${res.status}`);
   }
   const data = await res.json();
-  console.log("dataset:", data);
+  // console.log("dataset:", data);
   return data;
 }
 

@@ -34,6 +34,9 @@ const DatasetVersionsTable = ({
             </TableHead>
             <TableHead>id</TableHead>
             <TableHead>
+              <SortableHeader field="uri" label="URI" />
+            </TableHead>
+            <TableHead>
               <SortableHeader field="created_at" label="Created" />
             </TableHead>
             <TableHead>Actions</TableHead>
@@ -48,6 +51,7 @@ const DatasetVersionsTable = ({
                 </Link>
               </TableCell>
               <TableCell className="text-muted-foreground">{dsv.id}</TableCell>
+              <TableCell>{dsv.uri}</TableCell>
               <TableCell>{dsv.created_at}</TableCell>
               <TableCell>
                 <RowActions
@@ -62,7 +66,7 @@ const DatasetVersionsTable = ({
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={3}>Total</TableCell>
+            <TableCell colSpan={4}>Total</TableCell>
             <TableCell className="text-right">
               {datasetVersions.length}
             </TableCell>

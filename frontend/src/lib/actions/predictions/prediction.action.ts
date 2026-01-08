@@ -55,7 +55,7 @@ export async function get_predictions(
     throw new Error(`Failed to fetch predictions: ${res.status}`);
   }
   const data = await res.json();
-  console.log(`predictions of ${model_id}:`, data);
+  // console.log(`predictions of ${model_id}:`, data);
   return data;
 }
 
@@ -67,6 +67,6 @@ export async function get_prediction(
     throw new Error(`Failed to fetch prediction: ${res.status}`);
   }
   const data = await res.json();
-  console.log("prediction:", data);
+  // console.log("prediction:", data);
   return data;
 }

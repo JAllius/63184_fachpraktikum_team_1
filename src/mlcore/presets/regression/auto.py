@@ -5,7 +5,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from autosklearn.regression import AutoSklearnRegressor
-from ..metadata_presets import metadata_preset
+from mlcore.presets.metadata_presets import metadata_preset
 
 VERSION = "1.0"
 

@@ -7,8 +7,12 @@ import JobsPage from "../pages/dashboard/jobs/JobsPage";
 import DatasetDetailPage from "../pages/dashboard/datasets/DatasetDetailPage";
 import DatasetVersionDetailPage from "../pages/dashboard/dataset_versions/DatasetVersionDetailPage";
 import MLProblemDetailPage from "../pages/dashboard/ml_problems/MLProblemDetailPage";
-import ModelDetailPage from "@/pages/dashboard/modelDetails/ModelDetailPage";
-import PredictionPage from "@/pages/predictions/PredictionPage";
+import ModelDetailPage from "@/pages/dashboard/models/ModelDetailPage";
+import PredictionDetailPage from "@/pages/dashboard/predictions/PredictionDetailPage";
+import DatasetVersionsPage from "@/pages/dashboard/dataset_versions/DatasetVersionsPage";
+import MLProblemsPage from "@/pages/dashboard/ml_problems/MLProblemsPage";
+import ModelsPage from "@/pages/dashboard/models/ModelsPage";
+import PredictionsPage from "@/pages/dashboard/predictions/PredictionsPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <AppPage /> },
@@ -33,8 +37,12 @@ export const router = createBrowserRouter([
       },
       {
         path: "datasets/:datasetId/:datasetVersionId/:problemId/:modelId/:predictionId",
-        element: <PredictionPage />,
+        element: <PredictionDetailPage />,
       },
+      { path: "dataset-versions", element: <DatasetVersionsPage /> },
+      { path: "ml-problems", element: <MLProblemsPage /> },
+      { path: "models", element: <ModelsPage /> },
+      { path: "predictions", element: <PredictionsPage /> },
       { path: "jobs", element: <JobsPage /> },
     ],
   },

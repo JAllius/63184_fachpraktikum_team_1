@@ -1,3 +1,5 @@
+import { MLProblemSchema, type MLProblemInput } from "@/components/ml_problems";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type MLProblem = {
@@ -64,7 +66,7 @@ export async function get_ml_problems(
     throw new Error(`Failed to fetch ml_problems: ${res.status}`);
   }
   const data = await res.json();
-  console.log(`ml_problems of ${dataset_version_id}:`, data);
+  // console.log(`ml_problems of ${dataset_version_id}:`, data);
   return data;
 }
 
@@ -74,6 +76,46 @@ export async function get_ml_problem(problem_id: string): Promise<MLProblem> {
     throw new Error(`Failed to fetch ml_problem: ${res.status}`);
   }
   const data = await res.json();
-  console.log("ml_problem:", data);
+  // console.log("ml_problem:", data);
   return data;
+}
+
+type CreateMLProblem = { ok: true } | { ok: false; error: string };
+
+export async function create_ml_problem(
+  req: unknown
+): Promise<CreateMLProblem> {
+  const parsed = MLProblemSchema.safeParse(req);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Invalid parameters to create an ML problem.",
+    };
+  }
+
+  const data: MLProblemInput = parsed.data;
+
+  const qs = new URLSearchParams({
+    name: data.name ?? "unknown name",
+    dataset_version_id: data.dataset_version_id,
+    task: data.task,
+    target: data.target,
+  });
+
+  const url = `${API_URL}/problem?${qs}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Create ML problem request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error while creating ML Problem." };
+  }
 }
