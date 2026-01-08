@@ -211,18 +211,6 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
                         </span>
                         {pct_string(selected.metadata?.top_freq_ratio, 0)}
                       </div>
-                      {/* <div>
-                        <span className="text-muted-foreground">
-                          Top value count:{" "}
-                        </span>
-                        {selected.metadata?.top_count}
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">
-                          Top 3 values coverage:{" "}
-                        </span>
-                        {selected.metadata?.coverage_top3?.toFixed(2)}
-                      </div> */}
                     </div>
                   )}
                   {selected.metadata.semantic_type === "boolean" && (
@@ -245,7 +233,25 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
                   )}
                 </section>
                 <section className="border-b-2 pb-4">
-                  {selected.metadata?.exclusion_reason ? (
+                  {selected.metadata?.warning ? (
+                    <div>
+                      <div className="font-semibold text-lg pb-4">Warning</div>
+                      {selected.metadata?.warning === "high_cardinality" && (
+                        <div className="text-muted-foreground text-sm">
+                          Column contains many distinct values and may require
+                          special handling when used in a model.
+                        </div>
+                      )}
+                      <div className="border-b-2 pb-4" />
+                      <div className="font-semibold text-lg pt-3 pb-4">
+                        Suggested Analysis
+                      </div>
+                      <div className="text-muted-foreground text-sm">
+                        Not recommended as a prediction target due to high
+                        cardinality.
+                      </div>
+                    </div>
+                  ) : selected.metadata?.exclusion_reason ? (
                     <div>
                       <div className="font-semibold text-lg pb-4">
                         Exclusion Reason

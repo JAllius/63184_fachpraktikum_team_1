@@ -12,7 +12,7 @@ import os
 from ..db.init_db import main
 from ..db.db import create_dataset, create_dataset_version, create_ml_problem, db_get_dataset, db_get_dataset_version, get_dashboard_stats, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
-from ..mlcore.io.data_reader import get_dataframe_from_csv
+from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -206,9 +206,11 @@ async def post_dataset_version(
     if file_id:
         return {}
     
+    # TO BE ADDED TO TASK AND UPDATE WHEN READY
     df = get_dataframe_from_csv(uri)
     profile_json = suggest_profile(df)
     schema_json = suggest_schema(df)
+    # END OF COMMENT
     
     dataset_version_id = create_dataset_version(dataset_id=dataset_id, uri=uri, name=name, schema_json=schema_json, profile_json=profile_json)
     return dataset_version_id
@@ -364,7 +366,18 @@ async def post_problem(
     name: str | None = None,
 ):  # maybe later we will also add "anomaly_detection" and "timeseries"
     """create a new ml_problem and return problem_id"""
-    ml_problem_id = create_ml_problem(target=target, task=task, dataset_version_id=dataset_version_id, name=name)
+    # TO BE ADDED TO TASK AND UPDATE WHEN READY
+    dataset_version = await get_dataset_version(dataset_version_id)
+    raw_profile = dataset_version.get("profile_json")
+    profile = json.loads(raw_profile) if isinstance(raw_profile, str) and raw_profile else {}
+    uri = dataset_version.get("uri")
+    if not uri:
+        raise HTTPException(status_code=400, detail="Dataset version has no URI")
+    df = get_dataframe_from_csv(uri)
+    X, y = preprocess_dataframe(df, target, profile)
+    semantic_types = get_semantic_types(X, profile)
+    # END OF COMMENT
+    ml_problem_id = create_ml_problem(target=target, task=task, dataset_version_id=dataset_version_id, name=name, semantic_types=semantic_types)
     return ml_problem_id
 
 

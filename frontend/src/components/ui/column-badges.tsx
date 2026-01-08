@@ -1,8 +1,10 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "./badge";
 
+type Item = string | [string, string];
+
 type Props = {
-  items: [string, string][];
+  items: Item[];
   className?: string;
 };
 
@@ -10,6 +12,10 @@ const ColumnBadges = ({ items, className }: Props) => {
   if (items.length === 0) {
     return <div className="mt-auto text-sm text-muted-foreground">None</div>;
   }
+  const normalizedItems: [string, string][] = items.map((item) =>
+    typeof item === "string" ? [item, item] : item
+  );
+
   return (
     <div
       className={cn(
@@ -17,13 +23,13 @@ const ColumnBadges = ({ items, className }: Props) => {
         className
       )}
     >
-      {items.map(([id, v]) => (
+      {normalizedItems.map(([id, label]) => (
         <Badge
           className="flex items-center justify-center w-full min-w-0"
           key={id}
           variant={"secondary"}
         >
-          <span className="truncate">{v}</span>
+          <span className="truncate">{label}</span>
         </Badge>
       ))}
     </div>

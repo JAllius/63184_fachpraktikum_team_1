@@ -38,6 +38,7 @@ export type Metadata = {
   exclude_for_analysis: boolean;
   suggested_analysis: string;
   exclusion_reason?: string;
+  warning?: string;
   min?: number;
   max?: number;
   mean?: number;

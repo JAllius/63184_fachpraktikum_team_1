@@ -13,6 +13,21 @@ import { Badge } from "../ui/badge";
 import { useState } from "react";
 import ColumnBadges from "../ui/column-badges";
 
+type ClassificationMetrics = {
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1: number;
+};
+
+type RegressionMetrics = {
+  mae: number;
+  mse: number;
+  rmse: number;
+  r2: number;
+  mape: number;
+};
+
 type Props = {
   status: string;
   datasetId: string;
@@ -20,25 +35,35 @@ type Props = {
   mlProblemId: string;
   mlProblemName?: string;
   created_at: string;
-  metadata: {
-    model_name?: string;
-    task: string; // Regression
-    target: string;
-    preset: string;
-    version: string;
-    framework: string;
-    algorithm: string;
-    train_mode: string;
-    random_seed: number;
-    metrics: {
-      accuracy: number;
-      precision: number;
-      recall: number;
-      f1: number;
-    };
-    semantic_types: Record<string, string[]>;
-    cross_validation?: { mean: number; std: number };
-  };
+  metadata:
+    | {
+        model_name?: string;
+        task: "classification";
+        target: string;
+        preset: string;
+        version: string;
+        framework: string;
+        algorithm: string;
+        train_mode: string;
+        random_seed: number;
+        metrics: ClassificationMetrics;
+        semantic_types: Record<string, string[]>;
+        cross_validation?: { mean: number; std: number };
+      }
+    | {
+        model_name?: string;
+        task: "regression";
+        target: string;
+        preset: string;
+        version: string;
+        framework: string;
+        algorithm: string;
+        train_mode: string;
+        random_seed: number;
+        metrics: RegressionMetrics;
+        semantic_types: Record<string, string[]>;
+        cross_validation?: { mean: number; std: number };
+      };
 };
 
 const ModelDetails = ({
@@ -52,13 +77,7 @@ const ModelDetails = ({
 }: Props) => {
   const [openTechnical, setOpenTechnical] = useState(false);
 
-  const semanticTypes = metadata.semantic_types;
-
-  const groupedSemanticTypes = Object.fromEntries(
-    Object.entries(semanticTypes)
-      .filter(([, cols]) => cols.length > 0)
-      .map(([type, cols]) => [type, cols.map((c) => [c, c])])
-  ) as Record<string, [string, string][]>;
+  const semanticTypes = Object.entries(metadata.semantic_types);
 
   return (
     <div>
@@ -66,41 +85,84 @@ const ModelDetails = ({
         <h3 className="mt-8 mb-4 text-sm font-medium text-muted-foreground">
           Metrics
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Accuracy"
-            value={metadata.metrics.accuracy.toFixed(3)}
-            tooltip="Percentage of correct predictions overall."
-          />
-          <StatCard
-            label="Precision"
-            value={metadata.metrics.precision.toFixed(3)}
-            tooltip="Percentage of positive predictions that are correct."
-          />
-          <StatCard
-            label="Recall"
-            value={metadata.metrics.recall.toFixed(3)}
-            tooltip="Percentage of actual positives that are correctly identified."
-          />
-          {metadata?.cross_validation ? (
+        {metadata.task === "classification" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              label="F1 score"
-              value={metadata.metrics.f1.toFixed(3)}
-              secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
-                3
-              )}±${metadata?.cross_validation?.std.toFixed(3)}`}
-              tooltip={
-                "Percentage-based balance between precision and recall.\nCV shows average and variation across folds."
-              }
+              label="Accuracy"
+              value={metadata.metrics.accuracy.toFixed(3)}
+              tooltip="Percentage of correct predictions overall."
             />
-          ) : (
             <StatCard
-              label="F1 score"
-              value={metadata.metrics.f1.toFixed(3)}
-              tooltip="Percentage-based balance between precision and recall."
+              label="Precision"
+              value={metadata.metrics.precision.toFixed(3)}
+              tooltip="Percentage of positive predictions that are correct."
             />
-          )}
-        </div>
+            <StatCard
+              label="Recall"
+              value={metadata.metrics.recall.toFixed(3)}
+              tooltip="Percentage of actual positives that are correctly identified."
+            />
+            {metadata?.cross_validation ? (
+              <StatCard
+                label="F1 score"
+                value={metadata.metrics.f1.toFixed(3)}
+                secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
+                  3
+                )}±${metadata?.cross_validation?.std.toFixed(3)}`}
+                tooltip={
+                  "Percentage-based balance between precision and recall.\nCV shows average and variation across folds."
+                }
+              />
+            ) : (
+              <StatCard
+                label="F1 score"
+                value={metadata.metrics.f1.toFixed(3)}
+                tooltip="Percentage-based balance between precision and recall."
+              />
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <StatCard
+              label="MAE"
+              value={metadata.metrics.mae.toFixed(3)}
+              tooltip="Average absolute difference between predicted and actual values."
+            />
+            <StatCard
+              label="MSE"
+              value={metadata.metrics.mse.toFixed(3)}
+              tooltip="Average squared difference between predicted and actual values."
+            />
+            <StatCard
+              label="RMSE"
+              value={metadata.metrics.rmse.toFixed(3)}
+              tooltip="Square root of the average squared prediction error."
+            />
+            <StatCard
+              label="MAPE"
+              value={metadata.metrics.mape.toFixed(3)}
+              tooltip="Average percentage difference between predicted and actual values."
+            />
+            {metadata?.cross_validation ? (
+              <StatCard
+                label="R² score"
+                value={metadata.metrics.r2.toFixed(3)}
+                secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
+                  3
+                )}±${metadata?.cross_validation?.std.toFixed(3)}`}
+                tooltip={
+                  "Proportion of variation in the target explained by the model.\nCV shows average and variation across folds."
+                }
+              />
+            ) : (
+              <StatCard
+                label="R² score"
+                value={metadata.metrics.r2.toFixed(3)}
+                tooltip="Proportion of variation in the target explained by the model."
+              />
+            )}
+          </div>
+        )}
       </section>
       <section>
         <h3 className="mt-8 mb-4 text-sm font-medium text-muted-foreground">
@@ -205,7 +267,7 @@ const ModelDetails = ({
             </CardHeader>
             <CardDescription />
             <CardContent className="flex flex-1 flex-col text-sm space-y-4">
-              {Object.entries(groupedSemanticTypes).map(([group, items]) => (
+              {semanticTypes.map(([group, items]) => (
                 <div key={group} className="space-y-2">
                   <div className="capitalize text-muted-foreground font-semibold">
                     {group} features ({items.length})

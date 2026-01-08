@@ -35,13 +35,7 @@ const MLProblemDetails = ({
   const [openTechnical, setOpenTechnical] = useState(false);
 
   const semanticTypesJSON = JSON.parse(mlProblem.semantic_types);
-  const semanticTypes: [string, string][] = Object.entries(semanticTypesJSON);
-  const groupedSemanticTypes = semanticTypes.reduce((acc, [col, type]) => {
-    if (col === mlProblem?.target) return acc; // skip "target" column
-
-    (acc[type] ??= []).push([col, col]);
-    return acc;
-  }, {} as Record<string, [string, string][]>);
+  const semanticTypes: [string, string[]][] = Object.entries(semanticTypesJSON);
 
   return (
     <div>
@@ -167,7 +161,7 @@ const MLProblemDetails = ({
             </CardHeader>
             <CardDescription />
             <CardContent className="flex flex-1 flex-col text-sm space-y-4">
-              {Object.entries(groupedSemanticTypes).map(([group, items]) => (
+              {semanticTypes.map(([group, items]) => (
                 <div key={group} className="space-y-2">
                   <div className="capitalize text-muted-foreground font-semibold text-sm">
                     {group} features ({items.length})

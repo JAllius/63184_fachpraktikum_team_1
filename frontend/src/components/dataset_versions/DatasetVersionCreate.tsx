@@ -229,7 +229,7 @@ const DatasetVersionCreate = ({ datasetId, onCreate }: Props) => {
                             <SelectValue placeholder="Choose an existing file" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="aaa">
+                            <SelectItem value="aaa" disabled={true}>
                               Unavailable Feature!
                             </SelectItem>
                           </SelectContent>

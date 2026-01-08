@@ -30,9 +30,6 @@ export async function post_predict(req: unknown): Promise<PredictResponse> {
   const url = `${API_URL}/predict?${queryString}`;
 
   try {
-    // const res = await fetch(url, {
-    //   method: "POST",
-    // });
     const res = await fetch(url, { method: "POST" });
     if (!res.ok) {
       return {

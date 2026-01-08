@@ -54,10 +54,16 @@ def train(
     numeric = semantic_types["numeric"]
     boolean = semantic_types["boolean"]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        # stratify to keep class proportions
-        X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
-    )
+    if task == "classification":
+        X_train, X_test, y_train, y_test = train_test_split(
+            # stratify to keep class proportions
+            X, y, test_size=test_size_ratio, stratify=y, random_state=random_seed
+        )
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            # no stratify for regression
+            X, y, test_size=test_size_ratio, random_state=random_seed
+        )
 
     build_model = loader(task, algorithm.lower(), preset_dir)
 
