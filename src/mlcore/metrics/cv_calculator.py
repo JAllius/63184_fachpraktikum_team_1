@@ -7,13 +7,13 @@ def calculate_cv(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     task: str,
-    multi_class: bool | None = False,
+    #multi_class: bool | None = False,
     n_splits: int = 5,
     random_seed: int = 42,
 )-> dict:
     
     if task == "classification":
-        metrics = classification_cv(model=model, X_train=X_train, y_train=y_train, multi_class=multi_class, n_splits=n_splits, random_seed=random_seed)
+        metrics = classification_cv(model=model, X_train=X_train, y_train=y_train, n_splits=n_splits, random_seed=random_seed) #, multi_class=multi_class
     elif task == "regression":
         metrics = regression_cv(model=model, X_train=X_train, y_train=y_train, n_splits=n_splits, random_seed=random_seed)
     else:
@@ -24,7 +24,7 @@ def classification_cv(
     model: Pipeline,
     X_train: pd.DataFrame,
     y_train: pd.Series,
-    multi_class: bool | None = False,
+    #multi_class: bool | None = False,
     n_splits: int = 5,
     random_seed: int = 42,
 )-> dict:
@@ -34,7 +34,7 @@ def classification_cv(
         random_state = random_seed,
     )
 
-    score = "f1_macro" if multi_class else "f1"
+    score = "f1_macro" # if multi_class else "f1"
     cv_scores = cross_val_score(
         model,
         X_train,

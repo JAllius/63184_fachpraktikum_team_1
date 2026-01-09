@@ -48,10 +48,19 @@ const PredictionDetailPage = () => {
   const columnNames = [...featureColumnNames, target];
   const rows =
     X?.length > 0
-      ? X.map((row, i) => ({
-          ...row,
-          [target]: outputs_json.y_pred[i],
-        }))
+      ? X.map((row, i) => {
+          const raw = outputs_json.y_pred[i];
+
+          const pred =
+            outputs_json?.model_metadata.task === "regression" &&
+            typeof raw === "number"
+              ? raw.toFixed(2)
+              : raw;
+          return {
+            ...row,
+            [target]: pred,
+          };
+        })
       : null;
 
   if (loading) {

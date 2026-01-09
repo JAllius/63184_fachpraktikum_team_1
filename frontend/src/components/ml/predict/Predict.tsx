@@ -21,7 +21,6 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { post_predict } from "@/lib/actions/ml/prediction.action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -43,7 +42,6 @@ type Mode = "new" | "existing" | "json";
 
 const Predict = ({ problemId, modelId }: Props) => {
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState(true);
   const [mode, setMode] = useState<Mode>("new");
   const [hasFile, setHasFile] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -59,24 +57,14 @@ const Predict = ({ problemId, modelId }: Props) => {
   } = useForm<PredictFormInput>({
     resolver: zodResolver(PredictFormSchema),
     defaultValues: {
+      name: "",
       input_csv: undefined,
       input_json: "",
-      input_uri: "",
+      input_uri: undefined,
       problem_id: problemId ?? "",
       model_id: modelId ?? "production",
     },
   });
-
-  function handleInputToggle(checked: boolean) {
-    setInput(checked);
-    if (checked) {
-      setValue("input_json", "");
-      unregister("input_json");
-    } else {
-      setValue("input_uri", "");
-      unregister("input_uri");
-    }
-  }
 
   function clearInputFile() {
     setValue("input_csv", undefined);
@@ -93,8 +81,10 @@ const Predict = ({ problemId, modelId }: Props) => {
     toast.success("Prediction started");
     setOpen(false);
     reset({
+      name: "",
+      input_csv: undefined,
       input_json: "",
-      input_uri: "",
+      input_uri: undefined,
       problem_id: problemId ?? "",
       model_id: modelId ?? "production",
     });
@@ -120,6 +110,46 @@ const Predict = ({ problemId, modelId }: Props) => {
         >
           <FieldSet>
             <FieldGroup>
+              {/* Problem id */}
+              <Field data-invalid={!!errors.problem_id}>
+                <FieldLabel htmlFor="problem_id">Problem id</FieldLabel>
+                <Input
+                  id="problem_id"
+                  disabled={!!problemId}
+                  aria-invalid={!!errors.problem_id}
+                  readOnly={!!problemId}
+                  defaultValue={problemId ?? ""}
+                  {...register("problem_id")}
+                />
+                <FieldError
+                  errors={errors.problem_id ? [errors.problem_id] : undefined}
+                />
+              </Field>
+              {/* Model id */}
+              <Field data-invalid={!!errors.model_id}>
+                <FieldLabel htmlFor="problem_id">Model id</FieldLabel>
+                <Input
+                  id="model_id"
+                  disabled={!!modelId}
+                  aria-invalid={!!errors.model_id}
+                  readOnly={!!modelId}
+                  defaultValue={modelId ?? ""}
+                  {...register("model_id")}
+                />
+                <FieldError
+                  errors={errors.model_id ? [errors.model_id] : undefined}
+                />
+              </Field>
+              {/* Prediction name */}
+              <Field data-invalid={!!errors.name}>
+                <FieldLabel htmlFor="name">Prediction name</FieldLabel>
+                <Input
+                  id="name"
+                  aria-invalid={!!errors.name}
+                  {...register("name")}
+                />
+                <FieldError errors={errors.name ? [errors.name] : undefined} />
+              </Field>
               {/* Data File */}
               <FieldLabel>Data File</FieldLabel>
               <Tabs
@@ -127,16 +157,10 @@ const Predict = ({ problemId, modelId }: Props) => {
                 onValueChange={(v) => {
                   const next = v as Mode;
                   setMode(next);
-                  if (next === "new") {
-                    setValue("input_json", "");
-                    setValue("input_uri", "");
-                  } else if (next === "existing") {
-                    clearInputFile();
-                    setValue("input_json", "");
-                  } else {
-                    clearInputFile();
-                    setValue("input_uri", "");
-                  }
+                  clearInputFile();
+                  unregister("input_json");
+                  unregister("input_uri");
+                  unregister("input_csv");
                 }}
                 className="-mt-4"
               >
@@ -235,6 +259,7 @@ const Predict = ({ problemId, modelId }: Props) => {
                   <Field data-invalid={!!errors.input_json}>
                     <Input
                       id="input_json"
+                      placeholder="Provide a prediction JSON"
                       aria-invalid={!!errors.input_json}
                       {...register("input_json")}
                     />
@@ -246,73 +271,6 @@ const Predict = ({ problemId, modelId }: Props) => {
                   </Field>
                 </TabsContent>
               </Tabs>
-              <div className="flex gap-2">
-                <span>Json</span>
-                <Switch
-                  checked={input}
-                  onCheckedChange={handleInputToggle}
-                  className="shrink-0 w-9"
-                />
-                <span>Uri</span>
-              </div>
-              {/* JSON Input */}
-              {!input && (
-                <Field data-invalid={!!errors.input_json}>
-                  <FieldLabel htmlFor="input_json">Json Input</FieldLabel>
-                  <Input
-                    id="input_json"
-                    aria-invalid={!!errors.input_json}
-                    {...register("input_json")}
-                  />
-                  <FieldError
-                    errors={errors.input_json ? [errors.input_json] : undefined}
-                  />
-                </Field>
-              )}
-              {/* URI Input */}
-              {input && (
-                <Field data-invalid={!!errors.input_uri}>
-                  <FieldLabel htmlFor="input_uri">Uri Input</FieldLabel>
-                  <Input
-                    id="input_uri"
-                    aria-invalid={!!errors.input_uri}
-                    {...register("input_uri")}
-                  />
-                  <FieldError
-                    errors={errors.input_uri ? [errors.input_uri] : undefined}
-                  />
-                </Field>
-              )}
-              {/* Problem id */}
-              <Field data-invalid={!!errors.problem_id}>
-                <FieldLabel htmlFor="problem_id">Problem id</FieldLabel>
-                <Input
-                  id="problem_id"
-                  disabled={!!problemId}
-                  aria-invalid={!!errors.problem_id}
-                  readOnly={!!problemId}
-                  defaultValue={problemId ?? ""}
-                  {...register("problem_id")}
-                />
-                <FieldError
-                  errors={errors.problem_id ? [errors.problem_id] : undefined}
-                />
-              </Field>
-              {/* Model id */}
-              <Field data-invalid={!!errors.model_id}>
-                <FieldLabel htmlFor="problem_id">Model id</FieldLabel>
-                <Input
-                  id="model_id"
-                  disabled={!!modelId}
-                  aria-invalid={!!errors.model_id}
-                  readOnly={!!modelId}
-                  defaultValue={modelId ?? ""}
-                  {...register("model_id")}
-                />
-                <FieldError
-                  errors={errors.model_id ? [errors.model_id] : undefined}
-                />
-              </Field>
             </FieldGroup>
           </FieldSet>
         </form>

@@ -43,8 +43,8 @@ def train(
         raw_profile, str) else raw_profile
     if not profile:
         profile = suggest_profile(pd.DataFrame(df))
-    multi_class = profile.get("columns", {}).get(
-        target, {}).get("cardinality", 0) > 2
+    # multi_class = profile.get("columns", {}).get(
+    #     target, {}).get("cardinality", 0) > 2
 
     X, y = preprocess_dataframe(df, target, profile)
     semantic_types = get_semantic_types(X, profile)
@@ -72,9 +72,9 @@ def train(
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    metrics = calculate_metrics(y_test, y_pred, task, multi_class)
+    metrics = calculate_metrics(y_test, y_pred, task) #, multi_class)
     if evaluation_strategy == "cv":
-        cv = calculate_cv(model, X_train, y_train, task, multi_class)
+        cv = calculate_cv(model, X_train, y_train, task) #, multi_class)
         metadata["cross_validation"] = cv
 
     explanation = {}

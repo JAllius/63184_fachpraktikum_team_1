@@ -134,7 +134,7 @@ const Train = ({ problemId, task }: Props) => {
                   errors={errors.problem_id ? [errors.problem_id] : undefined}
                 />
               </Field>
-              {/* Problem id */}
+              {/* Model name */}
               <Field data-invalid={!!errors.name}>
                 <FieldLabel htmlFor="name">Model name</FieldLabel>
                 <Input

@@ -21,7 +21,7 @@ const PredictionTable = ({ columnNames, rows }: Props) => {
   // helper function for stability
   function renderCell(value: unknown): React.ReactNode {
     if (value === null || value === undefined) return "—";
-    if (typeof value === "number") return value.toFixed(2);
+    if (typeof value === "number") return value;
     if (typeof value === "boolean") return value ? "true" : "false";
     if (typeof value === "string") return value;
     // fallback in case everything else fails

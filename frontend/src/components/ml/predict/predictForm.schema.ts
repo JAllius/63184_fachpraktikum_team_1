@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const PredictFormSchema = z
   .object({
-    input_csv: z.string().trim().optional(),
+    name: z.string().trim().optional(),
+    input_csv: z.instanceof(File).optional(),
     input_json: z.string().trim().optional(),
     input_uri: z.string().trim().optional(),
     problem_id: z.string().trim().optional(),

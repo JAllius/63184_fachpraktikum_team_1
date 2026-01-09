@@ -18,19 +18,21 @@ export async function post_predict(req: unknown): Promise<PredictResponse> {
 
   const data: PredictFormInput = parsed.data;
 
-  const qs = new URLSearchParams();
+  const form = new FormData();
+  if (data.problem_id) form.append("problem_id", data.problem_id);
+  if (data.model_id) form.append("model_id", data.model_id);
+  form.append("name", data.name ?? "unknown name");
+  if (data.input_csv) form.append("input_csv", data.input_csv);
+  if (data.input_json) form.append("input_json", data.input_json);
+  if (data.input_uri) form.append("input_uri", data.input_uri);
 
-  if (data.input_json) qs.set("input_json", data.input_json);
-  if (data.input_uri) qs.set("input_uri", data.input_uri);
-  if (data.problem_id) qs.set("problem_id", data.problem_id);
-  if (data.model_id) qs.set("model_id", data.model_id);
-
-  const queryString = qs.toString();
-
-  const url = `${API_URL}/predict?${queryString}`;
+  const url = `${API_URL}/predict`;
 
   try {
-    const res = await fetch(url, { method: "POST" });
+    const res = await fetch(url, {
+      method: "POST",
+      body: form,
+    });
     if (!res.ok) {
       return {
         ok: false,

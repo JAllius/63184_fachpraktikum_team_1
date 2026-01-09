@@ -14,6 +14,8 @@ from ..db.db import create_dataset, create_dataset_version, create_ml_problem, d
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
 from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
+import pandas as pd
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -413,19 +415,33 @@ async def post_train(
 
 @app.post("/predict")
 async def post_predict(
-    input_json: str | None = None,
-    input_uri: str | None = None,
-    problem_id: str | None = None,
-    model_id: str = "production",
+    name: Optional[str] = Form(None),
+    input_csv: Optional[UploadFile] = File(None),
+    input_json: Optional[str] = Form(None),
+    input_uri: Optional[str] = Form(None),
+    problem_id: Optional[str] = Form(None),
+    model_id: str = Form("production"),
 ):
     if model_id=="production" and not problem_id:
         # no problem or model given for the prediction
-        raise HTTPException(status_code=400, detail="problem_id is required when model_id is not defined")
-    if not input_json and not input_uri:
+        raise HTTPException(status_code=400, detail="problem_id is required when using the default model_id (production)")
+    if not input_json and not input_uri and not input_csv:
         # no input given for the prediction
         raise HTTPException(status_code=400, detail="Provide input or input_uri")
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
     logger.info("Sending celery task 'predict.task'")
+
+    if input_csv:
+        if input_csv.filename == "":
+            raise HTTPException(status_code=400, detail="No file selected")
+        if not input_csv.filename.lower().endswith(".csv"):
+            raise HTTPException(status_code=400, detail="File must be a CSV")
+        # Read CSV
+        content = await input_csv.read()
+        #  CSV to DataFrame with pandas
+        df = pd.read_csv(BytesIO(content))
+        # DataFrame to JSON
+        input_json = df.to_json(orient='records')
 
     task = celery_app.send_task(
         "predict.task", args=[input_json, input_uri, problem_id, model_id])
