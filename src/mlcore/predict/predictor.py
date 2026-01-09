@@ -5,6 +5,7 @@ from mlcore.io.data_reader import get_dataframe_from_csv
 from mlcore.io.model_loader import load_model
 from mlcore.io.metadata_loader import load_metadata
 from db.db import get_ml_problem, get_model, create_prediction
+import numpy as np
 
 def predict(
     input_df: pd.DataFrame | None = None,
@@ -59,6 +60,11 @@ def predict(
     ### END MISSING ###
 
     y_pred = model.predict(X)
+
+    label_classes = metadata.get("label_classes", None)
+    if label_classes is not None:
+        classes = np.array(label_classes, dtype=object) # dtype=object is not "needed", it is just for safety
+        y_pred = classes[y_pred]
 
     prediction_summary = {
         "X": X.to_dict(orient="records"),

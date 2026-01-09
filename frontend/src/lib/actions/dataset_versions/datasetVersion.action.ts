@@ -123,3 +123,16 @@ export async function create_dataset_version(
     };
   }
 }
+
+export async function get_dataset_version_csv(uri: string): Promise<{
+  column_names: string[];
+  rows: Record<string, unknown>[];
+}> {
+  const res = await fetch(`${API_URL}/csv/${encodeURIComponent(uri)}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch csv: ${res.status}`);
+  }
+  const data = await res.json();
+  // console.log("csv:", data);
+  return data;
+}

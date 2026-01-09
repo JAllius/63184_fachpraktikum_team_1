@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Metadata } from "@/pages/dashboard/dataset_versions/DatasetVersionDetailPage";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -34,6 +34,10 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
     metadata: Metadata;
   } | null>(null);
   const [openTechnical, setOpenTechnical] = useState(false);
+
+  const warnings: string[] = columns
+    .filter(([, meta]) => meta?.warning)
+    .map(([col]) => col);
 
   function pct_string(value?: number, decimals: number = 2) {
     if (!value) return;
@@ -69,7 +73,13 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
               }}
               className="cursor-pointer"
             >
-              <TableCell className="font-medium">{name}</TableCell>
+              {warnings.includes(name) ? (
+                <TableCell className="font-medium text-muted-foreground inline-flex items-center gap-1">
+                  {name} <AlertTriangle className="h-4 w-4" />
+                </TableCell>
+              ) : (
+                <TableCell className="font-medium">{name}</TableCell>
+              )}
               <TableCell className="capitalize">
                 {metadata.semantic_type}
               </TableCell>
@@ -235,7 +245,9 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
                 <section className="border-b-2 pb-4">
                   {selected.metadata?.warning ? (
                     <div>
-                      <div className="font-semibold text-lg pb-4">Warning</div>
+                      <div className="font-semibold text-lg pb-4 inline-flex items-center gap-2">
+                        Warning <AlertTriangle className="h-5 w-5" />
+                      </div>
                       {selected.metadata?.warning === "high_cardinality" && (
                         <div className="text-muted-foreground text-sm">
                           Column contains many distinct values and may require

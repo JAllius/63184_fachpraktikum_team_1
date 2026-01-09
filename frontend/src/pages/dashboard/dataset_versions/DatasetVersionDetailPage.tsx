@@ -24,6 +24,7 @@ import DatasetVersionDetails from "@/components/dataset_version_details/DatasetV
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
+import DatasetVersionDataTable from "@/components/dataset_version_data/DatasetVersionDataTable";
 
 export type ColumnDetails = { name: string; analysis: string };
 export type Metadata = {
@@ -240,8 +241,8 @@ const DatasetVersionDetailPage = () => {
   if (!datasetVersion) return <NotFound name="Dataset Version" />;
 
   return (
-    <div className="w-full pl-4 pt-8">
-      <div className="mx-auto w-full px-6">
+    <div className="w-full pl-4 pt-8 h-screen overflow-hidden flex flex-col">
+      <div className="mx-auto w-full px-6 flex flex-col flex-1 min-h-0">
         <h1>
           Dataset version details:{" "}
           {datasetVersion?.name ?? "Unknown Dataset Version"}
@@ -264,13 +265,17 @@ const DatasetVersionDetailPage = () => {
             .
           </p>
         )}
-        <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
+        <Tabs
+          className="flex flex-col flex-1 min-h-0 w-full"
+          value={tabValue}
+          onValueChange={setTabValue}
+        >
           <TabsList className="w-full items-center justify-start gap-2">
             <TabsTrigger value="ml_problems">ML Problems</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
-          <TabsContent value="ml_problems">
+          <TabsContent value="ml_problems" className="flex-1 min-h-0">
             {mlProblems.length > 0 ? (
               <div>
                 <div className="flex justify-between">
@@ -346,7 +351,7 @@ const DatasetVersionDetailPage = () => {
               </div>
             )}
           </TabsContent>
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="flex-1 min-h-0">
             <div>
               {profile ? (
                 <DatasetVersionDetails profile={profile} />
@@ -357,13 +362,8 @@ const DatasetVersionDetailPage = () => {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="data">
-            {csvLoading && (
-              <div>
-                <Loading />
-              </div>
-            )}
-            {!csvLoading && csv && <div>{csv}</div>}
+          <TabsContent value="data" className="w-full flex-1 min-h-0">
+            <DatasetVersionDataTable uri={datasetVersion.uri} />
           </TabsContent>
         </Tabs>
       </div>

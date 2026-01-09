@@ -1,15 +1,25 @@
 import { Fox } from "@/components/watermark/Fox";
 import { TypewriterText } from "../app/Typewriter";
 import { useCallback, useState } from "react";
+import { cn } from "@/lib/utils";
 
-const Loading = () => {
+type Props = {
+  className?: string;
+};
+
+const Loading = ({ className }: Props) => {
   const [reverse, setReverse] = useState(false);
   const handleReverse = useCallback(() => {
     setReverse((v) => !v);
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-background p-8 flex items-center justify-center">
+    <div
+      className={cn(
+        "relative min-h-screen bg-background p-8 flex items-center justify-center",
+        { className }
+      )}
+    >
       <div className="flex items-center">
         <Fox
           aria-hidden

@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, Query, UploadFi
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import starlette.status as status
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 import logging
 import json
 import time
@@ -599,3 +599,15 @@ async def get_presets_list(task): #, user_id: int):
     """return the preset_list"""
     presets = list_presets(task)
     return presets
+
+
+# ========== CSV ==========
+
+@app.get("/csv/{uri:path}")
+async def get_csv(uri: str) -> dict[str, Any]: #, user_id: int):
+    """return the csv given the uri"""
+    df = get_dataframe_from_csv(uri)
+    return {
+        "column_names": list(df.columns),
+        "rows": df.to_dict(orient="records"),
+    }

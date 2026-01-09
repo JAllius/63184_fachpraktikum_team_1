@@ -7,6 +7,7 @@ from mlcore.explain.explanator import explain_model
 from mlcore.metrics.metrics_calculator import calculate_metrics
 from mlcore.metrics.cv_calculator import calculate_cv
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from typing import Literal, Tuple
 import pandas as pd
 from db.db import db_get_dataset_version, get_ml_problem, create_model
@@ -65,6 +66,13 @@ def train(
             X, y, test_size=test_size_ratio, random_state=random_seed
         )
 
+    label_encoder = None
+    if task == "classification":
+        label_encoder = LabelEncoder()
+        label_encoder.fit(y_train)
+        y_train = label_encoder.transform(y_train)
+        y_test = label_encoder.transform(y_test)
+
     build_model = loader(task, algorithm.lower(), preset_dir)
 
     model, metadata = build_model(categorical, numeric, boolean, train_mode)
@@ -72,7 +80,15 @@ def train(
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    metrics = calculate_metrics(y_test, y_pred, task) #, multi_class)
+
+    if label_encoder is not None:
+        y_test_dec = label_encoder.inverse_transform(y_test)
+        y_pred_dec = label_encoder.inverse_transform(y_pred)
+    else:
+        y_test_dec = y_test
+        y_pred_dec = y_pred
+
+    metrics = calculate_metrics(y_test_dec, y_pred_dec, task) #, multi_class)
     if evaluation_strategy == "cv":
         cv = calculate_cv(model, X_train, y_train, task) #, multi_class)
         metadata["cross_validation"] = cv
@@ -98,6 +114,9 @@ def train(
     metadata["metrics"] = metrics
     if explanation:
         metadata["explanation"] = explanation
+    
+    if task == "classification":
+        metadata["label_classes"] = label_encoder.classes_.tolist()
 
     model_id, model_uri = create_model(
         problem_id=problem_id,

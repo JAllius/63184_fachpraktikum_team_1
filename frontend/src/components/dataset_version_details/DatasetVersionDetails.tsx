@@ -12,8 +12,8 @@ import StatCard from "../ui/stat-card";
 import ColumnBadges from "../ui/column-badges";
 import { Button } from "../ui/button";
 import ColumnsDetailsTable from "./column_details/ColumnsDetailsTable";
-import { Input } from "../ui/input";
 import Filterbar from "./column_details/Filterbar";
+import { AlertTriangle } from "lucide-react";
 
 type Props = {
   profile: Profile;
@@ -27,7 +27,10 @@ const DatasetVersionDetails = ({ profile }: Props) => {
   const missingValues = (missingPct * 100).toFixed(2).toString() + "%";
   const idCandidates = Object.entries(profile?.id_candidates) ?? [];
   const excludeSuggestions = Object.entries(profile?.exclude_suggestions) ?? [];
-  const leakageColumns = Object.entries(profile?.leakage_columns) ?? [];
+  // const leakageColumns = Object.entries(profile?.leakage_columns) ?? [];
+  const warnings: string[] = Object.entries(profile.columns)
+    .filter(([, meta]) => meta?.warning)
+    .map(([col]) => col);
 
   return (
     <div>
@@ -90,6 +93,23 @@ const DatasetVersionDetails = ({ profile }: Props) => {
               <Card className="w-full h-full flex flex-col">
                 <CardHeader>
                   <div className="flex items-center justify-between text-foreground">
+                    <CardTitle className="inline-flex items-center gap-2">
+                      Warnings <AlertTriangle className="h-5 w-5" />
+                    </CardTitle>
+                    <div className="h-6" />
+                  </div>
+                  <CardDescription className="font-normal italic text-xs">
+                    Columns that contain many distinct values and may require
+                    special handling when used in a model.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col text-sm">
+                  <ColumnBadges items={warnings} />
+                </CardContent>
+              </Card>
+              {/* <Card className="w-full h-full flex flex-col">
+                <CardHeader>
+                  <div className="flex items-center justify-between text-foreground">
                     <CardTitle>Potential Data Leakage (manual)</CardTitle>
                     <Button
                       className="h-6 px-2 py-0 text-xs"
@@ -105,7 +125,7 @@ const DatasetVersionDetails = ({ profile }: Props) => {
                 <CardContent className="flex flex-1 flex-col text-sm">
                   <ColumnBadges items={leakageColumns} />
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </section>
         </TabsContent>
