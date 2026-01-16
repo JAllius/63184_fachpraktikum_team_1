@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS models (
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
   uri TEXT,                                 -- where the model file is stored (joblib, etc.)
   metadata_json JSON,                       -- optional extra metadata file
-  explanation_uri TEXT,                     -- optional explanation/shap file
+  explanation_json JSON,                     -- optional explanation/shap file
   created_by CHAR(36),                      -- FK to users.id (who trained it)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (problem_id) REFERENCES ml_problems(id),

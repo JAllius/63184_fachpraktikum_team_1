@@ -22,6 +22,7 @@ import {
 } from "@/lib/actions/mlProblems/mlProblem.action";
 import { Fox } from "@/components/watermark/Fox";
 import NotFound from "@/components/errors/not_found/NotFound";
+import Explainability from "@/components/model_explainability/Explainability";
 
 const ModelDetailPage = () => {
   const params = useParams<{
@@ -97,6 +98,10 @@ const ModelDetailPage = () => {
 
   const metadata = model?.metadata_json
     ? JSON.parse(model?.metadata_json)
+    : null;
+
+  const explanation_summary = model?.explanation_json
+    ? JSON.parse(model?.explanation_json)
     : null;
 
   const loadPredictions = useCallback(async () => {
@@ -287,7 +292,11 @@ const ModelDetailPage = () => {
             {/* <div>{JSON.stringify(metadata)}</div> */}
           </TabsContent>
           <TabsContent value="explainability">
-            <div>Explainability</div>
+            {explanation_summary?.task ? (
+              <Explainability summary={explanation_summary} />
+            ) : (
+              <div>No explainability data available for this model.</div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

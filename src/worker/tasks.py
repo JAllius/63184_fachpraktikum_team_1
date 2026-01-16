@@ -1,7 +1,9 @@
 # add project root to path for celery to work inside Docker
 import sys  # nopep8
-import os  # nopep8
+import os
+import time  # nopep8
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # nopep8
+from db.db import create_model, update_model
 
 from celery_handler import celery_app
 from mlcore.profile.profiler import suggest_profile
@@ -13,6 +15,15 @@ from time import sleep
 import pandas as pd
 from typing import Literal
 import json
+import redis
+
+
+REDIS_URL = os.getenv("REDISSERVER", "redis://redis_server:6379")
+CHANNEL = "jobs:global" # f"jobs:user:{user_id}" to add later -> Channel per user
+
+def publish_job_event(event: str, payload: dict) -> None:
+    redis_con = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    redis_con.publish(CHANNEL, json.dumps({"event": event, "job": payload}))
 
 
 @celery_app.task(name="hello.task", bind=True)
@@ -52,6 +63,8 @@ def train_task(
     self,
     name: str,
     problem_id: str,
+    model_id: str,
+    model_uri: str,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     evaluation_strategy: Literal["cv", "holdout"] = "cv",
@@ -67,9 +80,11 @@ def train_task(
         self.update_state(state="STARTED", meta={"problem_id": problem_id})
 
         # Call core training logic
-        model_uri = train(
+        model_id, model_uri = train(
             name=name,
             problem_id=problem_id,
+            model_id=model_id,
+            model_uri=model_uri,
             algorithm=algorithm,
             train_mode=train_mode,
             evaluation_strategy = evaluation_strategy,
@@ -78,8 +93,18 @@ def train_task(
             random_seed=random_seed,
         )
 
+        publish_job_event("job.completed", {
+            "type": "train",
+            "status": "completed",
+            "problem_id": problem_id,
+            "model_id": model_id,
+            "model_uri": model_uri,
+            "task_id": self.request.id,
+            "ts": time.time(),
+        })
+
         # IF DB jobs table added -> update job status here
-        return {"model_uri": model_uri}
+        return {"model_id": model_id, "model_uri": model_uri}
 
     except Exception as ex:
         # update Celery state and meta to FAILURE
@@ -90,6 +115,22 @@ def train_task(
                 "exc_message": traceback.format_exc().split("\n"),
             },
         )
+        update_model(
+            model_id=model_id,
+            status="failed",
+        )
+
+        publish_job_event("job.failed", {
+            "type": "train",
+            "status": "failed",
+            "problem_id": problem_id,
+            "model_id": model_id,
+            "model_uri": model_uri,
+            "task_id": self.request.id,
+            "error": str(ex),
+            "ts": time.time(),
+        })
+
         # IF DB jobs table added -> update job status here
         raise
 

@@ -27,6 +27,9 @@ import type { Profile } from "../dataset_versions/DatasetVersionDetailPage";
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
+import { toast } from "sonner";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type FeatureStrategy = {
   include: [string, string][];
@@ -177,7 +180,30 @@ const MLProblemDetailPage = () => {
       });
     }
   }, [mlProblem, datasetVersion]);
-  console.log(mlProblem?.feature_strategy);
+
+  useEffect(() => {
+    const eventSource = new EventSource(`${API_URL}/events/stream`);
+
+    const refreshOnTrain = (e: MessageEvent) => {
+      const payload = JSON.parse(e.data);
+      if (payload.job?.type === "train") {
+        if (payload.job?.status === "completed")
+          toast.success("Training finished successfully");
+      } else if (payload.job?.status === "failed") {
+        toast.error("Training failed");
+      }
+      loadModels();
+    };
+
+    eventSource.addEventListener("job.completed", refreshOnTrain);
+    eventSource.addEventListener("job.failed", refreshOnTrain);
+
+    return () => {
+      eventSource.removeEventListener("job.completed", refreshOnTrain);
+      eventSource.removeEventListener("job.failed", refreshOnTrain);
+      eventSource.close();
+    };
+  });
 
   const prodModel = models.find((model) => model.status === "production");
   const prodModelName = prodModel?.name;
@@ -265,7 +291,11 @@ const MLProblemDetailPage = () => {
                     <ModelsFilterbar />
                   </div>
                   <div className="flex gap-2">
-                    <Train problemId={problemId} />
+                    <Train
+                      problemId={problemId}
+                      task={mlProblem.task}
+                      onCreate={loadModels}
+                    />
                     <Predict problemId={problemId} />
                   </div>
                 </div>
@@ -323,7 +353,11 @@ const MLProblemDetailPage = () => {
                     Train a model to activate this Tab.
                   </p>
                   <div className="mt-5">
-                    <Train problemId={problemId} task={mlProblem.task} />
+                    <Train
+                      problemId={problemId}
+                      task={mlProblem.task}
+                      onCreate={loadModels}
+                    />
                   </div>
                 </div>
               </div>

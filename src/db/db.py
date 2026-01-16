@@ -60,6 +60,23 @@ def cursor():
         conn.close()
 
 
+def _build_update_sql(table: str, id_col: str, id_val: str, fields: Dict[str, Any]) -> Tuple[Optional[str], Optional[List[Any]]]:
+    set_parts = []
+    params: List[Any] = []
+    for col, val in fields.items():
+        if val is None:
+            continue
+        set_parts.append(f"{col}=%s")
+        params.append(val)
+
+    if not set_parts:
+        return None, None
+
+    sql = f"UPDATE {table} SET " + ", ".join(set_parts) + f" WHERE {id_col}=%s"
+    params.append(id_val)
+    return sql, params
+
+
 # -------------------------------------------------------------------
 # USERS
 # -------------------------------------------------------------------
@@ -394,7 +411,7 @@ def create_model(
     metrics_json: Optional[dict] = None,
     uri: Optional[str] = None,         
     metadata_json: Optional[dict] = None,
-    explanation_uri: Optional[str] = None,
+    explanation_json: Optional[dict] = None,
     created_by: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Tuple[str, str]:
@@ -407,7 +424,7 @@ def create_model(
     sql = """
         INSERT INTO models
         (id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-         metrics_json, uri, metadata_json, explanation_uri, created_by)
+         metrics_json, uri, metadata_json, explanation_json, created_by)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
@@ -424,7 +441,7 @@ def create_model(
                 _json_dump(metrics_json),
                 uri,
                 _json_dump(metadata_json),
-                explanation_uri,
+                _json_dump(explanation_json),
                 created_by,
             ),
         )
@@ -523,6 +540,30 @@ def get_models(
         items = cur.fetchall()
 
     return items, total
+
+
+def update_model(
+        model_id: str,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        metrics_json: Optional[str] = None,
+        uri: Optional[str] = None,
+        metadata_json: Optional[str] = None,
+        explanation_json: Optional[str] = None,
+        ) -> bool:
+    sql, params = _build_update_sql("models", "id", model_id, {
+        "name": name,
+        "status": status,
+        "metrics_json": metrics_json,
+        "uri": uri,
+        "metadata_json": metadata_json,
+        "explanation_json": explanation_json,
+        })
+    if not sql:
+        return False
+    with cursor() as cur:
+        cur.execute(sql, params)
+        return cur.rowcount > 0
 
 
 # -------------------------------------------------------------------

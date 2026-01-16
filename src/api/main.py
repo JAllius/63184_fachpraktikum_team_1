@@ -10,12 +10,13 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, create_dataset_version, create_ml_problem, db_get_dataset, db_get_dataset_version, get_dashboard_stats, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, db_get_dataset, db_get_dataset_version, get_dashboard_stats, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
 from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
 import pandas as pd
 from io import BytesIO
+from .events import router as events_router
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(events_router, prefix="/events")
 
 def get_domain(request: Request):
     """Takes a request and returns the domain as a string"""
@@ -403,11 +405,19 @@ async def post_train(
     explanation: bool = True,
 ):
     """create a request/job to train a model for a given problem_id and return model_id"""
+    model_id, model_uri = create_model(
+            problem_id=problem_id,
+            algorithm=algorithm,
+            train_mode=train_mode,
+            evaluation_strategy=evaluation_strategy,
+            name=name,
+            status="training"
+        )
     logger.info("Sending celery task 'train.task'")
 
     # TODO: re-add user_id when we add checking for permissions
     task = celery_app.send_task(
-        "train.task", args=[name, problem_id, algorithm, train_mode, evaluation_strategy, explanation])
+        "train.task", args=[name, problem_id, model_id, model_uri, algorithm, train_mode, evaluation_strategy, explanation])
     return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 # ========== ML_Predict ==========

@@ -6,11 +6,12 @@ from mlcore.profile.profiler import suggest_profile
 from mlcore.explain.explanator import explain_model
 from mlcore.metrics.metrics_calculator import calculate_metrics
 from mlcore.metrics.cv_calculator import calculate_cv
+from mlcore.explain.get_feature_names import get_feature_names
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from typing import Literal, Tuple
 import pandas as pd
-from db.db import db_get_dataset_version, get_ml_problem, create_model
+from db.db import db_get_dataset_version, get_ml_problem, create_model, update_model
 import json
 from pathlib import Path
 import logging
@@ -23,6 +24,8 @@ NAME = None
 def train(
     name: str,
     problem_id: str,
+    model_id: str | None = None,
+    model_uri: str | None = None,
     algorithm: str = "auto",
     train_mode: Literal["fast", "balanced", "accurate"] = "balanced",
     evaluation_strategy: Literal["cv", "holdout"] = "cv",
@@ -93,14 +96,41 @@ def train(
         cv = calculate_cv(model, X_train, y_train, task) #, multi_class)
         metadata["cross_validation"] = cv
 
-    explanation = {}
+    explaination_summary = {}
+    label_classes = None
+    if task == "classification":
+        label_classes = label_encoder.classes_.tolist()
+
     if explain:
         model_shap = model.named_steps.get("est")
         preprocessor = model.named_steps.get("pre")
+
+        # Get feature names from transformed output
+        feature_info = get_feature_names(preprocessor)
+        feature_names = feature_info["feature_names"]
+        feature_parents = feature_info["feature_parents"]
+
+        # Store in metadata for UI + future use
+        metadata["feature_names"] = feature_names
+        metadata["feature_parents"] = feature_parents
+
         X_train_shap = preprocessor.transform(X_train)
         X_test_shap = preprocessor.transform(X_test)
         # explanation = explain_model(task, model_shap, X_train_shap, X_test_shap)
-        explain_model(task, model_shap, X_train_shap, X_test_shap)
+        explaination_summary = explain_model(
+            task=task,
+            model=model_shap,
+            X_train=X_train_shap,
+            X_test=X_test_shap,
+            feature_names=feature_names,
+            feature_parents=feature_parents,
+            label_classes=label_classes,
+            n_ref_max=200,
+            n_explain_max=500,
+            top_k=30,
+            include_distributions=True,
+            random_seed=random_seed,
+        )
 
     metadata["model_name"] = name
     metadata["problem_id"] = problem_id
@@ -112,27 +142,39 @@ def train(
         y.name: str(y.dtype)
     }
     metadata["metrics"] = metrics
-    if explanation:
-        metadata["explanation"] = explanation
+    if explaination_summary:
+        metadata["explanation"] = explaination_summary
     
     if task == "classification":
-        metadata["label_classes"] = label_encoder.classes_.tolist()
+        metadata["label_classes"] = label_classes
 
-    model_id, model_uri = create_model(
-        problem_id=problem_id,
-        algorithm=algorithm.lower(),
-        status="staging",
-        train_mode=train_mode,
-        evaluation_strategy=evaluation_strategy,
-        metrics_json=metrics,
-        uri=None,
-        metadata_json=metadata,
-        explanation_uri=None,
-        created_by=NAME,
-        name=name,
-    )
-
-    metadata["model_id"] = model_id
+    if not model_id and not model_uri:
+        model_id, model_uri = create_model(
+            problem_id=problem_id,
+            algorithm=algorithm.lower(),
+            status="staging",
+            train_mode=train_mode,
+            evaluation_strategy=evaluation_strategy,
+            metrics_json=metrics,
+            uri=None,
+            metadata_json=metadata,
+            explanation_json=explaination_summary,
+            created_by=NAME,
+            name=name,
+        )
+        metadata["model_id"] = model_id
+        metadata["model_uri"] = model_uri
+    else:
+        metadata["model_id"] = model_id
+        metadata["model_uri"] = model_uri
+        update_model(
+            model_id=model_id,
+            status="staging",
+            metrics_json=json.dumps(metrics),
+            uri=model_uri,
+            metadata_json=json.dumps(metadata),
+            explanation_json=json.dumps(explaination_summary),
+        )
 
     parent_path = Path(model_uri).parent
 

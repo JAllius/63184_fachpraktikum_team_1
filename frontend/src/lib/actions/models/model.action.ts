@@ -9,6 +9,7 @@ export type Model = {
   status: "staging" | "production" | "archived";
   metrics_json: string;
   metadata_json: string;
+  explanation_json: string;
   created_at: string;
 };
 
