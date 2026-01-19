@@ -1,24 +1,20 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 
-const PredictionsFilterbar = () => {
+const DatasetVersionsFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
 
   const initial = {
     q: searchParams.get("q") ?? "",
-    id: searchParams.get("id") ?? "",
-    name: searchParams.get("name") ?? "",
+    dataset_name: searchParams.get("dataset_name") ?? "",
+    dataset_version_name: searchParams.get("dataset_version_name") ?? "",
   };
 
-  const [filters, setFilters] = useState({
-    q: initial.q,
-    id: initial.id,
-    name: initial.name,
-  });
+  const [filters, setFilters] = useState(initial);
 
   useDebounce(
     () => {
@@ -26,29 +22,30 @@ const PredictionsFilterbar = () => {
 
       const current = {
         q: searchParams.get("q") ?? "",
-        id: searchParams.get("id") ?? "",
-        name: searchParams.get("name") ?? "",
+        dataset_name: searchParams.get("dataset_name") ?? "",
+        dataset_version_name: searchParams.get("dataset_version_name") ?? "",
       };
 
       const next = {
         q: filters.q.trim(),
-        id: filters.id.trim(),
-        name: filters.name.trim(),
+        dataset_name: filters.dataset_name.trim(),
+        dataset_version_name: filters.dataset_version_name.trim(),
       };
 
       const isChanged =
         current.q !== next.q ||
-        current.id !== next.id ||
-        current.name !== next.name;
+        current.dataset_name !== next.dataset_name ||
+        current.dataset_version_name !== next.dataset_version_name;
 
-      if (filters.q) params.set("q", filters.q);
+      if (next.q) params.set("q", next.q);
       else params.delete("q");
 
-      if (filters.id) params.set("id", filters.id);
-      else params.delete("id");
+      if (next.dataset_name) params.set("dataset_name", next.dataset_name);
+      else params.delete("dataset_name");
 
-      if (filters.name) params.set("name", filters.name);
-      else params.delete("name");
+      if (next.dataset_version_name)
+        params.set("dataset_version_name", next.dataset_version_name);
+      else params.delete("dataset_version_name");
 
       if (isChanged) params.delete("page");
 
@@ -61,12 +58,12 @@ const PredictionsFilterbar = () => {
   );
 
   const resetFilters = () => {
-    setFilters({ q: "", id: "", name: "" });
+    setFilters({ q: "", dataset_name: "", dataset_version_name: "" });
 
     const params = new URLSearchParams(searchParams);
     params.delete("q");
-    params.delete("id");
-    params.delete("name");
+    params.delete("dataset_name");
+    params.delete("dataset_version_name");
 
     setSearchParams(params, { replace: true });
   };
@@ -80,7 +77,6 @@ const PredictionsFilterbar = () => {
           onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
           className="shadow border rounded-md px-2 py-1 w-60"
         />
-
         <div className="flex shrink-0 items-center gap-2">
           <Button
             onClick={resetFilters}
@@ -89,7 +85,6 @@ const PredictionsFilterbar = () => {
           >
             Reset
           </Button>
-
           <Button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -105,16 +100,21 @@ const PredictionsFilterbar = () => {
       {open && (
         <div className="flex flex-row gap-2 mt-2">
           <Input
-            placeholder="id"
-            value={filters.id}
-            onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
+            placeholder="Dataset name"
+            value={filters.dataset_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
+            }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
           <Input
-            placeholder="Prediction name"
-            value={filters.name}
+            placeholder="Dataset version name"
+            value={filters.dataset_version_name}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, name: e.target.value }))
+              setFilters((f) => ({
+                ...f,
+                dataset_version_name: e.target.value,
+              }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
@@ -124,4 +124,4 @@ const PredictionsFilterbar = () => {
   );
 };
 
-export default PredictionsFilterbar;
+export default DatasetVersionsFilterbar;

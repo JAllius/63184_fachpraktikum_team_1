@@ -8,4 +8,7 @@ export {
   // default as PredictionUpdate,
   type UpdateTarget,
 } from "./PredictionUpdate";
-export { PredictionSchema, type PredictionInput } from "./prediction.schema";
+export {
+  PredictionUpdateSchema,
+  type PredictionUpdateInput,
+} from "./prediction.schema";

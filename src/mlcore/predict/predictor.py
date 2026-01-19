@@ -1,13 +1,16 @@
+import json
 from typing import Any
 import pandas as pd
 from pathlib import Path
 from mlcore.io.data_reader import get_dataframe_from_csv
 from mlcore.io.model_loader import load_model
 from mlcore.io.metadata_loader import load_metadata
-from db.db import get_ml_problem, get_model, create_prediction
+from db.db import get_ml_problem, get_model, create_prediction, update_prediction
 import numpy as np
 
 def predict(
+    name: str,
+    prediction_id: str | None = None,
     input_df: pd.DataFrame | None = None,
     input_uri: str | None = None,
     problem_id: str | None = None,
@@ -76,6 +79,28 @@ def predict(
         inputs_to_store = None
     else:
         inputs_to_store = input_df.to_dict(orient="records")
-    create_prediction(model_id, input_uri, inputs_to_store, prediction_summary, None, None)
+
+    if not prediction_id:
+        create_prediction(
+            name=name,
+            model_id=model_id,
+            input_uri=input_uri,
+            input_json=inputs_to_store,
+            output_json=prediction_summary,
+            output_uri=None,
+            status="completed",
+            requested_by=None,
+            )
+    else:
+        update_prediction(
+            prediction_id=prediction_id,
+            model_id=model_id,
+            input_uri=input_uri,
+            inputs_json=json.dumps(inputs_to_store),
+            outputs_json=json.dumps(prediction_summary),
+            outputs_uri=None,
+            status="completed",
+            requested_by=None
+            )
 
     return X, y_pred, prediction_summary

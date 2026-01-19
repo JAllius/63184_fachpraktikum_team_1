@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const PredictFormSchema = z
   .object({
-    name: z.string().trim().optional(),
+    name: z.string().trim().min(1, "Prediction name is required"),
     input_csv: z.instanceof(File).optional(),
     input_json: z.string().trim().optional(),
     input_uri: z.string().trim().optional(),

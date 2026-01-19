@@ -1,33 +1,32 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useDebounce } from "react-use";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useDebounce } from "react-use";
 
-const MLProblemsFilterbar = () => {
+const MLProblemsJoinedFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+
   const initial = {
     q: searchParams.get("q") ?? "",
-    id: searchParams.get("id") ?? "",
     name: searchParams.get("name") ?? "",
+
     task: searchParams.get("task") ?? "",
     target: searchParams.get("target") ?? "",
+
+    dataset_name: searchParams.get("dataset_name") ?? "",
+    dataset_version_name: searchParams.get("dataset_version_name") ?? "",
   };
-  const [filters, setFilters] = useState({
-    q: initial.q,
-    id: initial.id,
-    name: initial.name,
-    task: initial.task,
-    target: initial.target,
-  });
+
+  const [filters, setFilters] = useState(initial);
 
   const tasks = [
     { value: "classification", label: "Classification" },
@@ -40,31 +39,32 @@ const MLProblemsFilterbar = () => {
 
       const current = {
         q: searchParams.get("q") ?? "",
-        id: searchParams.get("id") ?? "",
         name: searchParams.get("name") ?? "",
         task: searchParams.get("task") ?? "",
         target: searchParams.get("target") ?? "",
+        dataset_name: searchParams.get("dataset_name") ?? "",
+        dataset_version_name: searchParams.get("dataset_version_name") ?? "",
       };
+
       const next = {
         q: filters.q.trim(),
-        id: filters.id.trim(),
         name: filters.name.trim(),
         task: filters.task.trim(),
         target: filters.target.trim(),
+        dataset_name: filters.dataset_name.trim(),
+        dataset_version_name: filters.dataset_version_name.trim(),
       };
 
       const isChanged =
         current.q !== next.q ||
-        current.id !== next.id ||
         current.name !== next.name ||
         current.task !== next.task ||
-        current.target !== next.target;
+        current.target !== next.target ||
+        current.dataset_name !== next.dataset_name ||
+        current.dataset_version_name !== next.dataset_version_name;
 
       if (filters.q) params.set("q", filters.q);
       else params.delete("q");
-
-      if (filters.id) params.set("id", filters.id);
-      else params.delete("id");
 
       if (filters.name) params.set("name", filters.name);
       else params.delete("name");
@@ -75,25 +75,41 @@ const MLProblemsFilterbar = () => {
       if (filters.target) params.set("target", filters.target);
       else params.delete("target");
 
+      if (filters.dataset_name)
+        params.set("dataset_name", filters.dataset_name);
+      else params.delete("dataset_name");
+
+      if (filters.dataset_version_name)
+        params.set("dataset_version_name", filters.dataset_version_name);
+      else params.delete("dataset_version_name");
+
       if (isChanged) params.delete("page");
 
       if (params.toString() !== searchParams.toString()) {
-        setSearchParams(params, { replace: true }); // replace: true -> update the URL by replacing the current history entry
+        setSearchParams(params, { replace: true });
       }
     },
     500,
-    [filters],
+    [filters]
   );
 
   const resetFilters = () => {
-    setFilters({ q: "", id: "", name: "", task: "", target: "" });
+    setFilters({
+      q: "",
+      name: "",
+      task: "",
+      target: "",
+      dataset_name: "",
+      dataset_version_name: "",
+    });
 
     const params = new URLSearchParams(searchParams);
     params.delete("q");
-    params.delete("id");
     params.delete("name");
     params.delete("task");
     params.delete("target");
+    params.delete("dataset_name");
+    params.delete("dataset_version_name");
 
     setSearchParams(params, { replace: true });
   };
@@ -128,42 +144,62 @@ const MLProblemsFilterbar = () => {
           </div>
         </div>
       </div>
+
       {open && (
-        <div className="flex flex-row gap-2 mt-2">
+        <div className="flex flex-row gap-2 mt-2 flex-wrap">
           <Input
-            placeholder="id"
-            value={filters.id}
-            onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-          <Input
-            placeholder="ML problem name"
+            placeholder="ML Problem name"
             value={filters.name}
             onChange={(e) =>
               setFilters((f) => ({ ...f, name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
+
           <Select
             value={filters.task ?? ""}
             onValueChange={(value) =>
               setFilters((f) => ({ ...f, task: value }))
             }
           >
-            <SelectTrigger className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3">
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
               <SelectValue placeholder="Task" />
             </SelectTrigger>
             <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
               {tasks.map((task) => (
-                <SelectItem value={task.value}>{task.label}</SelectItem>
+                <SelectItem key={task.value} value={task.value}>
+                  {task.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <Input
             placeholder="Target"
             value={filters.target}
             onChange={(e) =>
               setFilters((f) => ({ ...f, target: e.target.value }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+
+          <Input
+            placeholder="Dataset version name"
+            value={filters.dataset_version_name}
+            onChange={(e) =>
+              setFilters((f) => ({
+                ...f,
+                dataset_version_name: e.target.value,
+              }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+
+          <Input
+            placeholder="Dataset name"
+            value={filters.dataset_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
@@ -173,4 +209,4 @@ const MLProblemsFilterbar = () => {
   );
 };
 
-export default MLProblemsFilterbar;
+export default MLProblemsJoinedFilterbar;

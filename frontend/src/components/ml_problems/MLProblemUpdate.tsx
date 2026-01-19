@@ -20,18 +20,21 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
-import { MLProblemSchema, type MLProblemInput } from "./ml_problem.schema";
+import {
+  MLProblemUpdateSchema,
+  type MLProblemUpdateInput,
+} from "./ml_problem.schema";
 
 type Props = {
   target: { id: string; name?: string };
   open: boolean;
-  onConfirm: (id: string, data: MLProblemInput) => Promise<void>;
+  onConfirm: (id: string, data: MLProblemUpdateInput) => Promise<void>;
   onCancel: () => void;
 };
 
 export type UpdateTarget = {
   id: string;
-  name?: string;
+  name: string;
 };
 
 const MLProblemUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
@@ -40,8 +43,8 @@ const MLProblemUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<MLProblemInput>({
-    resolver: zodResolver(MLProblemSchema),
+  } = useForm<MLProblemUpdateInput>({
+    resolver: zodResolver(MLProblemUpdateSchema),
     defaultValues: {
       name: target.name,
     },

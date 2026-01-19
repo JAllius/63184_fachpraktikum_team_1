@@ -16,7 +16,7 @@ import { Label } from "../ui/label";
 type Props = {
   target: { id: string; name: string };
   open: boolean;
-  onConfirm: () => void;
+  onConfirm: (id: string) => Promise<void>;
   onCancel: () => void;
   deleting: boolean;
 };
@@ -66,7 +66,7 @@ const DatasetDelete = ({
           onSubmit={(e) => {
             e.preventDefault();
             if (!canDelete || deleting) return;
-            onConfirm();
+            onConfirm(target.id);
           }}
           className="grid gap-4"
         >

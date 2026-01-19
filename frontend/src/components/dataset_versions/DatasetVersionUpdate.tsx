@@ -18,8 +18,8 @@ import {
   FieldError,
 } from "../ui/field";
 import {
-  DatasetVersionSchema,
-  type DatasetVersionInput,
+  DatasetVersionUpdateSchema,
+  type DatasetVersionUpdateInput,
 } from "./datasetVersion.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -28,7 +28,7 @@ import { useEffect } from "react";
 type Props = {
   target: { id: string; name?: string };
   open: boolean;
-  onConfirm: (id: string, data: DatasetVersionInput) => Promise<void>;
+  onConfirm: (id: string, data: DatasetVersionUpdateInput) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -43,8 +43,8 @@ const DatasetVersionUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<DatasetVersionInput>({
-    resolver: zodResolver(DatasetVersionSchema),
+  } = useForm<DatasetVersionUpdateInput>({
+    resolver: zodResolver(DatasetVersionUpdateSchema),
     defaultValues: {
       name: target.name,
     },

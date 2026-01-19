@@ -40,9 +40,9 @@ export default function AppPage() {
           )}
         </div>
       </div>
-      <div className="w-1/4 min-h-screen flex flex-col gap-4 bg-[hsl(var(--sidebar-background))]">
+      <div className="w-1/4 min-h-screen flex flex-col gap-4 bg-[hsl(var(--sidebar-background))] min-w-[360px]">
         <div className="p-8 h-full">
-          <Card className="w-full max-w-sm flex flex-col h-full">
+          <Card className="w-full flex flex-col h-full">
             <CardHeader>
               <CardTitle>Login to your account</CardTitle>
               <CardDescription>

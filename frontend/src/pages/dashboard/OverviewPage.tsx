@@ -1,4 +1,4 @@
-import QuickStatCards from "@/components/home/QuickStatCards";
+import QuickStatCards from "@/components/overview/QuickStatCards";
 import { Fox } from "@/components/watermark/Fox";
 
 const OverviewPage = () => {

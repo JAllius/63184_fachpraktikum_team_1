@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const PredictionSchema = z.object({
-  // name: z.string().trim().min(1, "Dataset version name is required"),
+export const PredictionUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Dataset version name is required"),
 });
 
-export type PredictionInput = z.infer<typeof PredictionSchema>;
+export type PredictionUpdateInput = z.infer<typeof PredictionUpdateSchema>;

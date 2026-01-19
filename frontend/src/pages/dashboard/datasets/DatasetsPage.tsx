@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  delete_dataset,
   get_datasets,
+  update_dataset,
   type Dataset,
   type DatasetListResponse,
 } from "../../../lib/actions/datasets/dataset.action";
@@ -11,12 +13,14 @@ import {
   DatasetsFilterbar,
   DatasetsTable,
   DatasetUpdate,
+  type DatasetInput,
   type DeleteTarget,
   type UpdateTarget,
 } from "@/components/datasets";
 import { PageSize, Pagination } from "@/components/table";
 import Loading from "@/components/loading/Loading";
 import { Fox } from "@/components/watermark/Fox";
+import { toast } from "sonner";
 
 const DatasetsPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -71,19 +75,18 @@ const DatasetsPage = () => {
     setDeleteTarget(null);
   };
 
-  const onDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      console.log("Deleting");
-      await loadDatasets();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelDelete();
-      setDeleting(false);
+  const onDelete = async (dataset_id: string) => {
+    if (!dataset_id) return;
+
+    const res = await delete_dataset(dataset_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Dataset deleted");
+    await loadDatasets();
+    cancelDelete();
+    setDeleting(false);
   };
 
   const askUpdate = (id: string, name: string) => {
@@ -96,17 +99,17 @@ const DatasetsPage = () => {
     setUpdateTarget(null);
   };
 
-  const onUpdate = async () => {
-    if (!updateTarget) return;
-    try {
-      console.log("Updating");
-      await loadDatasets();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelUpdate();
+  const onUpdate = async (dataset_id: string, data: DatasetInput) => {
+    if (!dataset_id || !data) return;
+
+    const res = await update_dataset(dataset_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Dataset updated");
+    await loadDatasets();
+    cancelUpdate();
   };
 
   if (loading) {
@@ -176,9 +179,15 @@ const DatasetsPage = () => {
               />
             </div>
             <div>
+              <div className="flex justify-between">
+                <div className="relative">
+                  <DatasetsFilterbar />
+                </div>
+                <DatasetCreate onCreate={loadDatasets} />
+              </div>
               <p className="text-base font-semibold">No Datasets yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create a dataset to activate this tab.
+                Create a dataset to activate this page.
               </p>
               <div className="mt-5">
                 <DatasetCreate onCreate={loadDatasets} />

@@ -1,7 +1,9 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import {
+  delete_dataset_version,
   get_dataset_versions,
+  update_dataset_version,
   type DatasetVersion,
   type DatasetVersionListResponse,
 } from "../../../lib/actions/dataset_versions/datasetVersion.action";
@@ -22,6 +24,8 @@ import { PageSize, Pagination } from "@/components/table";
 import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
+import { toast } from "sonner";
+import type { DatasetVersionUpdateInput } from "@/components/dataset_versions/datasetVersion.schema";
 // import { Edit } from "lucide-react";
 
 const DatasetIdPage = () => {
@@ -99,19 +103,18 @@ const DatasetIdPage = () => {
     setDeleteTarget(null);
   };
 
-  const onDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      console.log("Deleting");
-      await loadDatasetVersions();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelDelete();
-      setDeleting(false);
+  const onDelete = async (dataset_version_id: string) => {
+    if (!dataset_version_id) return;
+
+    const res = await delete_dataset_version(dataset_version_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Dataset version deleted");
+    await loadDatasetVersions();
+    cancelDelete();
+    setDeleting(false);
   };
 
   const askUpdate = (id: string, name?: string) => {
@@ -124,17 +127,20 @@ const DatasetIdPage = () => {
     setUpdateTarget(null);
   };
 
-  const onUpdate = async () => {
-    if (!updateTarget) return;
-    try {
-      console.log("Updating");
-      await loadDatasetVersions();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelUpdate();
+  const onUpdate = async (
+    dataset_version_id: string,
+    data: DatasetVersionUpdateInput
+  ) => {
+    if (!dataset_version_id || !data) return;
+
+    const res = await update_dataset_version(dataset_version_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Dataset version updated");
+    await loadDatasetVersions();
+    cancelUpdate();
   };
 
   if (loading) {
@@ -208,6 +214,15 @@ const DatasetIdPage = () => {
                 className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
                 style={{ color: "hsl(var(--sidebar-foreground))" }}
                 nodeFill="hsl(var(--sidebar-foreground))"
+              />
+            </div>
+            <div className="flex justify-between">
+              <div className="relative">
+                <DatasetVersionsFilterbar />
+              </div>
+              <DatasetVersionCreate
+                onCreate={loadDatasetVersions}
+                datasetId={datasetId}
               />
             </div>
             <div>

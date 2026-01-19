@@ -1,7 +1,9 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import {
+  delete_ml_problem,
   get_ml_problems,
+  update_ml_problem,
   type MLProblem,
   type MLProblemListResponse,
 } from "../../../lib/actions/mlProblems/mlProblem.action";
@@ -25,6 +27,8 @@ import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
 import DatasetVersionDataTable from "@/components/dataset_version_data/DatasetVersionDataTable";
+import { toast } from "sonner";
+import type { MLProblemUpdateInput } from "@/components/ml_problems/ml_problem.schema";
 
 export type ColumnDetails = { name: string; analysis: string };
 export type Metadata = {
@@ -196,19 +200,18 @@ const DatasetVersionDetailPage = () => {
     setDeleteTarget(null);
   };
 
-  const onDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      console.log("Deleting");
-      await loadMLProblems();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelDelete();
-      setDeleting(false);
+  const onDelete = async (ml_problem_id: string) => {
+    if (!ml_problem_id) return;
+
+    const res = await delete_ml_problem(ml_problem_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("ML problem deleted");
+    await loadMLProblems();
+    cancelDelete();
+    setDeleting(false);
   };
 
   const askUpdate = (id: string, name?: string) => {
@@ -221,17 +224,20 @@ const DatasetVersionDetailPage = () => {
     setUpdateTarget(null);
   };
 
-  const onUpdate = async () => {
-    if (!updateTarget) return;
-    try {
-      console.log("Updating");
-      await loadMLProblems();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelUpdate();
+  const onUpdate = async (
+    ml_problem_id: string,
+    data: MLProblemUpdateInput
+  ) => {
+    if (!ml_problem_id || !data) return;
+
+    const res = await update_ml_problem(ml_problem_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("ML Problem updated");
+    await loadMLProblems();
+    cancelUpdate();
   };
 
   if (loading) {
@@ -333,6 +339,16 @@ const DatasetVersionDetailPage = () => {
                     className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
                     style={{ color: "hsl(var(--sidebar-foreground))" }}
                     nodeFill="hsl(var(--sidebar-foreground))"
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <div className="relative">
+                    <MLProblemsFilterbar />
+                  </div>
+                  <MLProblemCreate
+                    onCreate={loadMLProblems}
+                    datasetVersionId={datasetVersionId}
+                    columnsDetails={columnsDetails}
                   />
                 </div>
                 <div>

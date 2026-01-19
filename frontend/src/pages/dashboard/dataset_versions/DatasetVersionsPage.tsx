@@ -1,7 +1,214 @@
-export default function DatasetVersionsPage() {
+import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import {
+  delete_dataset_version,
+  get_dataset_versions_all,
+  update_dataset_version,
+  type DatasetVersionJoined,
+  type DatasetVersionAllListResponse,
+} from "../../../lib/actions/dataset_versions/datasetVersion.action";
+import {
+  DatasetVersionCreate,
+  DatasetVersionDelete,
+  DatasetVersionUpdate,
+  type DeleteTarget,
+  type UpdateTarget,
+} from "@/components/dataset_versions";
+import { PageSize, Pagination } from "@/components/table";
+import Loading from "@/components/loading/Loading";
+import { Fox } from "@/components/watermark/Fox";
+import { toast } from "sonner";
+import type { DatasetVersionUpdateInput } from "@/components/dataset_versions/datasetVersion.schema";
+import DatasetVersionsJoinedFilterbar from "@/components/dataset_versions/joined_table/DatasetVersionsJoinedFilterbar";
+import DatasetVersionsJoinedTable from "@/components/dataset_versions/joined_table/DatasetVersionsJoinedTable";
+
+const DatasetVersionsPage = () => {
+  const [datasetVersions, setDatasetVersions] = useState<
+    DatasetVersionJoined[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [totalPages, setTotalPages] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
+  const [openUpdate, setOpenUpdate] = useState(false);
+
+  const page = Number(searchParams.get("page") ?? 1);
+  const size = Number(searchParams.get("size") ?? 20);
+  const sort = searchParams.get("sort") ?? "created_at";
+  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+
+  const q = searchParams.get("q") || "";
+  const dataset_name = searchParams.get("dataset_name") || "";
+  const version_name = searchParams.get("version_name") || "";
+
+  const loadDatasetVersions = useCallback(async () => {
+    try {
+      const data: DatasetVersionAllListResponse =
+        await get_dataset_versions_all({
+          page,
+          size,
+          sort,
+          dir,
+          q: q || undefined,
+          dataset_name: dataset_name || undefined,
+          version_name: version_name || undefined,
+        });
+      setDatasetVersions(data.items);
+      setTotalPages(data.total_pages);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size, sort, dir, q, dataset_name, version_name]);
+
+  useEffect(() => {
+    loadDatasetVersions();
+  }, [loadDatasetVersions]);
+
+  const askDelete = (id: string, name?: string) => {
+    setDeleteTarget({ id, name });
+    setOpenDelete(true);
+  };
+
+  const cancelDelete = () => {
+    setOpenDelete(false);
+    setDeleteTarget(null);
+  };
+
+  const onDelete = async (dataset_version_id: string) => {
+    if (!dataset_version_id) return;
+
+    setDeleting(true);
+    const res = await delete_dataset_version(dataset_version_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      setDeleting(false);
+      return;
+    }
+    toast.success("Dataset version deleted");
+    await loadDatasetVersions();
+    cancelDelete();
+    setDeleting(false);
+  };
+
+  const askUpdate = (id: string, name?: string) => {
+    setUpdateTarget({ id, name });
+    setOpenUpdate(true);
+  };
+
+  const cancelUpdate = () => {
+    setOpenUpdate(false);
+    setUpdateTarget(null);
+  };
+
+  const onUpdate = async (
+    dataset_version_id: string,
+    data: DatasetVersionUpdateInput
+  ) => {
+    if (!dataset_version_id || !data) return;
+
+    const res = await update_dataset_version(dataset_version_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Dataset version updated");
+    await loadDatasetVersions();
+    cancelUpdate();
+  };
+
+  if (loading) return <Loading />;
+
   return (
-    <div className="min-w-full flex flex-col items-center justify-center">
-      <h1>DatasetVersions</h1>
+    <div className="w-full pl-4 pt-8">
+      <div className="mx-auto w-full px-6">
+        <div className="flex flex-inline items-center gap-2">
+          <h1>Dataset Versions</h1>
+        </div>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Browse and manage dataset versions across all datasets.
+        </p>
+
+        {datasetVersions.length > 0 ? (
+          <div>
+            <div className="flex justify-between">
+              <div className="relative">
+                <DatasetVersionsJoinedFilterbar />
+              </div>
+              <DatasetVersionCreate onCreate={loadDatasetVersions} />
+            </div>
+            <DatasetVersionsJoinedTable
+              datasetVersions={datasetVersions}
+              askDelete={askDelete}
+              askUpdate={askUpdate}
+            />
+
+            <div className="mt-2 grid grid-cols-3 items-center">
+              <div />
+              {totalPages > 1 ? (
+                <div className="flex justify-center">
+                  <Pagination totalPages={totalPages} />
+                </div>
+              ) : (
+                <div />
+              )}
+              <div className="flex justify-end">
+                <PageSize size={size} />
+              </div>
+            </div>
+
+            {deleteTarget && (
+              <DatasetVersionDelete
+                target={deleteTarget}
+                open={openDelete}
+                onConfirm={onDelete}
+                onCancel={cancelDelete}
+                deleting={deleting}
+              />
+            )}
+            {updateTarget && (
+              <DatasetVersionUpdate
+                target={updateTarget}
+                open={openUpdate}
+                onConfirm={onUpdate}
+                onCancel={cancelUpdate}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="relative min-h-[80vh] bg-background">
+            <div className="flex items-center">
+              <Fox
+                aria-hidden
+                size="80%"
+                className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                style={{ color: "hsl(var(--sidebar-foreground))" }}
+                nodeFill="hsl(var(--sidebar-foreground))"
+              />
+            </div>
+            <div className="flex justify-between">
+              <div className="relative">
+                <DatasetVersionsJoinedFilterbar />
+              </div>
+              <DatasetVersionCreate onCreate={loadDatasetVersions} />
+            </div>
+            <div>
+              <p className="text-base font-semibold">
+                No Dataset Versions found
+              </p>
+              <div className="mt-5">
+                <DatasetVersionCreate onCreate={loadDatasetVersions} />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default DatasetVersionsPage;

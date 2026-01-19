@@ -5,7 +5,7 @@ import {
   Brain,
   Settings,
   CalendarCheck,
-  CalendarDays,
+  // CalendarDays,
 } from "lucide-react";
 
 export const navItems = [
@@ -40,10 +40,10 @@ export const navItems = [
     href: "/dashboard/predictions",
     icon: CalendarCheck,
   },
-  {
-    key: "jobs",
-    label: "Jobs",
-    href: "/dashboard/jobs",
-    icon: CalendarDays,
-  },
+  // {
+  //   key: "jobs",
+  //   label: "Jobs",
+  //   href: "/dashboard/jobs",
+  //   icon: CalendarDays,
+  // },
 ];

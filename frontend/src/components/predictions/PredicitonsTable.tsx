@@ -14,8 +14,8 @@ import type { Prediction } from "@/lib/actions/predictions";
 
 type Props = {
   predictions: Prediction[];
-  askDelete: (id: string) => void;
-  askUpdate: (id: string) => void;
+  askDelete: (id: string, name: string) => void;
+  askUpdate: (id: string, name: string) => void;
 };
 
 const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
@@ -29,6 +29,9 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
               <SortableHeader field="name" label="Name" />
             </TableHead>
             <TableHead>id</TableHead>
+            <TableHead>
+              <SortableHeader field="status" label="Status" />
+            </TableHead>
             <TableHead>
               <SortableHeader field="created_at" label="Created" />
             </TableHead>
@@ -44,13 +47,14 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                 </Link>
               </TableCell>
               <TableCell className="text-muted-foreground">{pr.id}</TableCell>
+              <TableCell>{pr.status}</TableCell>
               <TableCell>{pr.created_at}</TableCell>
               <TableCell>
                 <RowActions
                   id={pr.id}
-                  parent="Dataset Version"
-                  onDelete={() => askDelete(pr.id)}
-                  onUpdate={() => askUpdate(pr.id)}
+                  parent="Prediction"
+                  onDelete={() => askDelete(pr.id, pr.name)}
+                  onUpdate={() => askUpdate(pr.id, pr.name)}
                 />
               </TableCell>
             </TableRow>
@@ -58,7 +62,7 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={3}>Total</TableCell>
+            <TableCell colSpan={4}>Total</TableCell>
             <TableCell className="text-right">{predictions.length}</TableCell>
           </TableRow>
         </TableFooter>

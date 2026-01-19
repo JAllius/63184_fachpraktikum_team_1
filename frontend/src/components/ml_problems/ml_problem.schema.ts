@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const MLProblemSchema = z.object({
-  // name: z.string().trim().min(1, "ML problem name is required"),
-  name: z.string().trim().optional(),
+  name: z.string().trim().min(1, "ML problem name is required"),
   dataset_version_id: z
     .string()
     .trim()
@@ -12,3 +11,9 @@ export const MLProblemSchema = z.object({
 });
 
 export type MLProblemInput = z.infer<typeof MLProblemSchema>;
+
+export const MLProblemUpdateSchema = z.object({
+  name: z.string().trim().min(1, "ML problem name is required"),
+});
+
+export type MLProblemUpdateInput = z.infer<typeof MLProblemUpdateSchema>;

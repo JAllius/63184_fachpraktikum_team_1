@@ -3,7 +3,7 @@ import sys  # nopep8
 import os
 import time  # nopep8
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # nopep8
-from db.db import create_model, update_model
+from db.db import create_model, update_model, update_prediction
 
 from celery_handler import celery_app
 from mlcore.profile.profiler import suggest_profile
@@ -137,6 +137,8 @@ def train_task(
 @celery_app.task(name="predict.task", bind=True)
 def predict_task(
     self,
+    name: str,
+    prediction_id: str,
     input_json: str | None = None,
     input_uri: str | None = None,
     problem_id: str | None = None,
@@ -157,11 +159,21 @@ def predict_task(
                 raise ValueError("Input string is not valid JSON.")
 
         X, y_pred, summary = predict(
+            name=name,
+            prediction_id=prediction_id,
             input_df=input_df,
             input_uri=input_uri,
             problem_id=problem_id,
             model_id=model_id,
         )
+
+        publish_job_event("job.completed", {
+            "type": "predict",
+            "status": "completed",
+            "prediction_id": prediction_id,
+            "task_id": self.request.id,
+            "ts": time.time(),
+        })
 
         return {
             "X": summary["X"],
@@ -177,6 +189,19 @@ def predict_task(
                 "exc_message": traceback.format_exc().split("\n"),
             },
         )
+        update_prediction(
+            prediction_id=prediction_id,
+            status="failed",
+        )
+
+        publish_job_event("job.completed", {
+            "type": "predict",
+            "status": "failed",
+            "prediction_id": prediction_id,
+            "task_id": self.request.id,
+            "ts": time.time(),
+        })
+
         raise
 
 

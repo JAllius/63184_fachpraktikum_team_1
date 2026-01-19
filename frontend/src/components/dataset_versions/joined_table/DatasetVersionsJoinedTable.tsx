@@ -9,16 +9,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Link } from "react-router-dom";
-import { RowActions, SortableHeader } from "../table";
-import type { DatasetVersion } from "@/lib/actions/dataset_versions";
+import { SortableHeader } from "@/components/table";
+import type { DatasetVersionJoined } from "@/lib/actions/dataset_versions/datasetVersion.action";
+import DatasetVersionActions from "./DatasetVersionActions";
 
 type Props = {
-  datasetVersions: DatasetVersion[];
+  datasetVersions: DatasetVersionJoined[];
   askDelete: (id: string, name?: string) => void;
   askUpdate: (id: string, name?: string) => void;
 };
 
-const DatasetVersionsTable = ({
+const DatasetVersionsJoinedTable = ({
   datasetVersions,
   askDelete,
   askUpdate,
@@ -30,9 +31,11 @@ const DatasetVersionsTable = ({
         <TableHeader>
           <TableRow>
             <TableHead>
-              <SortableHeader field="name" label="Name" />
+              <SortableHeader field="dataset_name" label="Dataset name" />
             </TableHead>
-            <TableHead>id</TableHead>
+            <TableHead>
+              <SortableHeader field="name" label="Dataset version name" />
+            </TableHead>
             <TableHead>
               <SortableHeader field="filename" label="Filename" />
             </TableHead>
@@ -42,20 +45,33 @@ const DatasetVersionsTable = ({
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {datasetVersions.map((dsv) => (
             <TableRow key={dsv.id}>
               <TableCell className="font-medium">
-                <Link to={`${dsv.id}`} aria-label="View dataset version">
+                <Link
+                  to={`/dashboard/datasets/${dsv.dataset_id}`}
+                  aria-label="View dataset"
+                >
+                  {dsv.dataset_name}
+                </Link>
+              </TableCell>
+              <TableCell>
+                <Link
+                  to={`/dashboard/datasets/${dsv.dataset_id}/${dsv.id}`}
+                  aria-label="View dataset version"
+                  className="font-medium"
+                >
                   {dsv.name}
                 </Link>
               </TableCell>
-              <TableCell className="text-muted-foreground">{dsv.id}</TableCell>
               <TableCell>{dsv.filename}</TableCell>
               <TableCell>{dsv.created_at}</TableCell>
               <TableCell>
-                <RowActions
-                  id={dsv.id}
+                <DatasetVersionActions
+                  datasetId={dsv.dataset_id}
+                  datasetVersionId={dsv.id}
                   parent="Dataset Version"
                   onDelete={() => askDelete(dsv.id, dsv.name)}
                   onUpdate={() => askUpdate(dsv.id, dsv.name)}
@@ -77,4 +93,4 @@ const DatasetVersionsTable = ({
   );
 };
 
-export default DatasetVersionsTable;
+export default DatasetVersionsJoinedTable;

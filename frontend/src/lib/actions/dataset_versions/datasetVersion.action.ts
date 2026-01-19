@@ -2,6 +2,10 @@ import {
   DatasetVersionSchema,
   type DatasetVersionInput,
 } from "@/components/dataset_versions";
+import {
+  DatasetVersionUpdateSchema,
+  type DatasetVersionUpdateInput,
+} from "@/components/dataset_versions/datasetVersion.schema";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
@@ -10,6 +14,7 @@ export type DatasetVersion = {
   name?: string;
   created_at: string;
   uri: string;
+  filename: string;
   profile_json: string;
 };
 
@@ -23,7 +28,7 @@ export type DatasetVersionListResponse = {
   dir: "asc" | "desc";
   q: string | null;
   id: string | null;
-  // name: string | null;
+  name: string | null;
 };
 
 export type DatasetVersionQueryParams = {
@@ -33,12 +38,12 @@ export type DatasetVersionQueryParams = {
   dir?: "asc" | "desc";
   q?: string;
   id?: string;
-  // name?: string;
+  name?: string;
 };
 
 export async function get_dataset_versions(
   dataset_id: string,
-  params: DatasetVersionQueryParams = {}
+  params: DatasetVersionQueryParams = {},
 ): Promise<DatasetVersionListResponse> {
   const search = new URLSearchParams();
 
@@ -48,7 +53,7 @@ export async function get_dataset_versions(
   if (params.dir !== undefined) search.set("dir", String(params.dir));
   if (params.q !== undefined) search.set("q", String(params.q));
   if (params.id !== undefined) search.set("id", String(params.id));
-  // if (params.name !== undefined) search.set("name", String(params.name));
+  if (params.name !== undefined) search.set("name", String(params.name));
 
   const queryString = search.toString();
 
@@ -66,7 +71,7 @@ export async function get_dataset_versions(
 }
 
 export async function get_dataset_version(
-  dataset_version_id: string
+  dataset_version_id: string,
 ): Promise<DatasetVersion> {
   const res = await fetch(`${API_URL}/datasetVersion/${dataset_version_id}`);
   if (!res.ok) {
@@ -80,7 +85,7 @@ export async function get_dataset_version(
 type CreateDatasetVersion = { ok: true } | { ok: false; error: string };
 
 export async function create_dataset_version(
-  req: unknown
+  req: unknown,
 ): Promise<CreateDatasetVersion> {
   const parsed = DatasetVersionSchema.safeParse(req);
   if (!parsed.success) {
@@ -135,4 +140,126 @@ export async function get_dataset_version_csv(uri: string): Promise<{
   const data = await res.json();
   // console.log("csv:", data);
   return data;
+}
+
+type UpdateDatasetVersionResponse = { ok: true } | { ok: false; error: string };
+
+export async function update_dataset_version(
+  dataset_version_id: string,
+  req: unknown,
+): Promise<UpdateDatasetVersionResponse> {
+  const parsed = DatasetVersionUpdateSchema.safeParse(req);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Invalid parameters to update a dataset version.",
+    };
+  }
+
+  const data: DatasetVersionUpdateInput = parsed.data;
+
+  const qs = new URLSearchParams({
+    name: data.name,
+  });
+
+  const url = `${API_URL}/datasetVersion/${dataset_version_id}?${qs}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update dataset version request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating dataset version.",
+    };
+  }
+}
+
+type DeleteDatasetVersionResponse = { ok: true } | { ok: false; error: string };
+
+export async function delete_dataset_version(
+  dataset_version_id: string,
+): Promise<DeleteDatasetVersionResponse> {
+  const url = `${API_URL}/datasetVersion/${dataset_version_id}`;
+  try {
+    const res = await fetch(url, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Delete dataset version request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while deleting dataset version.",
+    };
+  }
+}
+
+export type DatasetVersionJoined = DatasetVersion & {
+  dataset_id: string;
+  dataset_name: string;
+};
+
+export type DatasetVersionAllListResponse = {
+  items: DatasetVersionJoined[];
+  page: number;
+  size: number;
+  total: number;
+  total_pages: number;
+  sort: string;
+  dir: "asc" | "desc";
+  q: string | null;
+  dataset_name: string | null;
+  version_name: string | null;
+};
+
+export type DatasetVersionAllQueryParams = {
+  page?: number;
+  size?: number;
+  sort?: string;
+  dir?: "asc" | "desc";
+  q?: string;
+  dataset_name?: string;
+  version_name?: string;
+};
+
+export async function get_dataset_versions_all(
+  params: DatasetVersionAllQueryParams = {},
+): Promise<DatasetVersionAllListResponse> {
+  const search = new URLSearchParams();
+
+  if (params.page !== undefined) search.set("page", String(params.page));
+  if (params.size !== undefined) search.set("size", String(params.size));
+  if (params.sort !== undefined) search.set("sort", String(params.sort));
+  if (params.dir !== undefined) search.set("dir", String(params.dir));
+  if (params.q !== undefined) search.set("q", String(params.q));
+  if (params.dataset_name !== undefined)
+    search.set("dataset_name", String(params.dataset_name));
+  if (params.version_name !== undefined)
+    search.set("version_name", String(params.version_name));
+
+  const queryString = search.toString();
+
+  const url = queryString
+    ? `${API_URL}/datasetVersionsAll?${queryString}`
+    : `${API_URL}/datasetVersionsAll`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch dataset_versions_all: ${res.status}`);
+  }
+  return await res.json();
 }

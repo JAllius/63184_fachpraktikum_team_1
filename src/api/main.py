@@ -10,7 +10,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, db_get_dataset, db_get_dataset_version, get_dashboard_stats, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_model, get_models, get_prediction, get_predictions
+from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, create_prediction, db_get_dataset, db_get_dataset_version, delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_prediction, get_dashboard_stats, get_dataset_versions_all_joined, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_ml_problems_all_joined, get_model, get_models, get_models_all_joined, get_prediction, get_predictions, get_predictions_all_joined, update_dataset, update_dataset_version, update_ml_problem, update_model, update_prediction
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
 from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
@@ -164,16 +164,18 @@ async def get_dataset(dataset_id: str): #, user_id: int):
     return dataset
 
 
-@app.put("/dataset/{dataset_id}")
-async def put_dataset(dataset_id: int, user_id: int):
+@app.patch("/dataset/{dataset_id}")
+async def patch_dataset(dataset_id: str, name: str):
     """update the specified dataset if user has permission"""
-    return {}
+    res = update_dataset(dataset_id, name)
+    return res
 
 
 @app.delete("/dataset/{dataset_id}")
-async def delete_dataset(dataset_id: int, user_id: int):
+async def delete_dataset_ep(dataset_id: str):
     """delete the specified dataset if user has permission"""
-    return {}
+    res = delete_dataset(dataset_id)
+    return res
 
 # ========== Dataset version ==========
 
@@ -190,21 +192,22 @@ def save_file(file: UploadFile):
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        return str(file_path)
+        return str(file_path), filename
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
 @app.post("/datasetVersion")
 async def post_dataset_version(
     dataset_id: str = Form(...),
-    name: Optional[str] = Form(None),
+    name: str = Form(...),
     file: Optional[UploadFile] = File(None),
-    file_id: Optional[str] = Form(None),): #, user_id: int):
+    file_id: Optional[str] = Form(None),
+    ): #, user_id: int):
     """create a stub for a new dataset version and return the version"""
     if not file and not file_id:
         return {}
     if file:
-        uri = save_file(file)
+        uri, filename = save_file(file)
         if not uri:
             return {}
     if file_id:
@@ -216,7 +219,7 @@ async def post_dataset_version(
     schema_json = suggest_schema(df)
     # END OF COMMENT
     
-    dataset_version_id = create_dataset_version(dataset_id=dataset_id, uri=uri, name=name, schema_json=schema_json, profile_json=profile_json)
+    dataset_version_id = create_dataset_version(dataset_id=dataset_id, uri=uri, filename=filename, name=name, schema_json=schema_json, profile_json=profile_json)
     return dataset_version_id
 
 
@@ -227,16 +230,18 @@ async def get_dataset_version(version: str): #, user_id: int):
     return dataset_version
 
 
-@app.put("/dataset/{dataset_id}/{version}")
-async def put_dataset_version(dataset_id: int, user_id: int):
+@app.patch("/datasetVersion/{version}")
+async def patch_dataset_version(version: str, name: str):
     """update the specified dataset version if user has permission"""
-    return {}
+    res = update_dataset_version(version, name)
+    return res
 
 
-@app.delete("/dataset/{dataset_id}/{version}")
-async def delete_dataset_version(dataset_id: int, user_id: int):
+@app.delete("/datasetVersion/{version}")
+async def delete_dataset_version_ep(version: str):
     """delete the specified dataset version if user has permission"""
-    return {}
+    res = delete_dataset_version(version)
+    return res
 
 
 @app.get("/datasetVersions/{dataset_id}")  # /dataset_versions
@@ -365,10 +370,10 @@ async def post_problem(
     # user_id: int,
     # dataset_id: str,  # maybe we should concider having dataset_name UNIQUE in db so that we can replace this here with dataset_name
     target: str,
-    task: Literal["classification", "regression"],
+    name: str,
+    task: Literal["classification", "regression"],   # maybe later we will also add "anomaly_detection" and "timeseries"
     dataset_version_id: int | str = "latest",
-    name: str | None = None,
-):  # maybe later we will also add "anomaly_detection" and "timeseries"
+):
     """create a new ml_problem and return problem_id"""
     # TO BE ADDED TO TASK AND UPDATE WHEN READY
     dataset_version = await get_dataset_version(dataset_version_id)
@@ -381,7 +386,13 @@ async def post_problem(
     X, y = preprocess_dataframe(df, target, profile)
     semantic_types = get_semantic_types(X, profile)
     # END OF COMMENT
-    ml_problem_id = create_ml_problem(target=target, task=task, dataset_version_id=dataset_version_id, name=name, semantic_types=semantic_types)
+    ml_problem_id = create_ml_problem(
+        target=target,
+        task=task,
+        dataset_version_id=dataset_version_id,
+        name=name,
+        semantic_types=semantic_types
+        )
     return ml_problem_id
 
 
@@ -390,6 +401,21 @@ async def get_problem(problem_id: str):
     """return specified problem if user has permission"""
     ml_problem = get_ml_problem(problem_id)
     return ml_problem
+
+
+@app.patch("/problem/{problem_id}")
+async def patch_ml_problem(problem_id: str, name: str):
+    """update the specified ml_problem if user has permission"""
+    res = update_ml_problem(problem_id, name)
+    return res
+
+
+@app.delete("/problem/{problem_id}")
+async def delete_ml_problem_ep(problem_id: str):
+    """delete the specified ml_problem if user has permission"""
+    res = delete_ml_problem(problem_id)
+    return res
+
 
 # ========== ML_Train ==========
 
@@ -425,7 +451,7 @@ async def post_train(
 
 @app.post("/predict")
 async def post_predict(
-    name: Optional[str] = Form(None),
+    name: str = Form(...),
     input_csv: Optional[UploadFile] = File(None),
     input_json: Optional[str] = Form(None),
     input_uri: Optional[str] = Form(None),
@@ -439,7 +465,6 @@ async def post_predict(
         # no input given for the prediction
         raise HTTPException(status_code=400, detail="Provide input or input_uri")
     """create a request/job to predict given a model and an input for a given problem_id and return prediction: json | str"""
-    logger.info("Sending celery task 'predict.task'")
 
     if input_csv:
         if input_csv.filename == "":
@@ -453,8 +478,14 @@ async def post_predict(
         # DataFrame to JSON
         input_json = df.to_json(orient='records')
 
+    prediction_id = create_prediction(
+            name=name,
+            status="predicting"
+        )
+    logger.info("Sending celery task 'predict.task'")
+
     task = celery_app.send_task(
-        "predict.task", args=[input_json, input_uri, problem_id, model_id])
+        "predict.task", args=[name, prediction_id, input_json, input_uri, problem_id, model_id])
     return {"task_id": task.id, "status": f"/celery/{task.id}"}
     # return RedirectResponse(url=f"/celery/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -519,6 +550,20 @@ async def get_model_info(model_id: str): #, user_id: int):
     return model
 
 
+@app.patch("/model/{model_id}")
+async def patch_model(model_id: str, name: str):
+    """update the specified model if user has permission"""
+    res = update_model(model_id, name)
+    return res
+
+
+@app.delete("/model/{model_id}")
+async def delete_model_ep(model_id: str):
+    """delete the specified model if user has permission"""
+    res = delete_model(model_id)
+    return res
+
+
 # ========== ML_Predictions ==========
 
 
@@ -562,14 +607,23 @@ async def get_list_predictions(
 
 @app.get("/prediction/{prediction_id}")
 async def get_prediction_info(prediction_id: str): #, user_id: int):
-    """return the specified model if user has permission"""
+    """return the specified prediction if user has permission"""
     prediction = get_prediction(prediction_id)
     return prediction
 
 
-# I am not sure how this works with the storage and if we need an endpoint.
-# get model (probably by id) -> return joblib object.
-# For now we will have it locally (./testdata/models/{model_id}).
+@app.patch("/prediction/{prediction_id}")
+async def patch_model(prediction_id: str, name: str):
+    """update the specified prediction if user has permission"""
+    res = update_prediction(prediction_id, name)
+    return res
+
+
+@app.delete("/prediction/{prediction_id}")
+async def delete_prediction_ep(prediction_id: str):
+    """delete the specified prediction if user has permission"""
+    res = delete_prediction(prediction_id)
+    return res
 
 
 # ========== Dashboard Stats ==========
@@ -620,4 +674,196 @@ async def get_csv(uri: str) -> dict[str, Any]: #, user_id: int):
     return {
         "column_names": list(df.columns),
         "rows": df.to_dict(orient="records"),
+    }
+
+
+# ========== JOIN FUNCTIONS ==========
+
+
+@app.get("/datasetVersionsAll")
+async def get_list_dataset_versions_all(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    dataset_name: Optional[str] = Query(None),
+    version_name: Optional[str] = Query(None),
+):
+    """get all dataset_versions across all datasets (joined: dataset_id + dataset_name)"""
+    items, total = get_dataset_versions_all_joined(
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        dataset_name=dataset_name,
+        version_name=version_name,
+    )
+    total_pages = int((total + size - 1) / size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "dataset_name": dataset_name,
+        "version_name": version_name,
+    }
+
+@app.get("/mlProblemsAll")
+async def get_list_ml_problems_all(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    task: Optional[str] = Query(None),
+    target: Optional[str] = Query(None),
+    problem_name: Optional[str] = Query(None),
+    dataset_name: Optional[str] = Query(None),
+    dataset_version_name: Optional[str] = Query(None),
+):
+    """get all ml_problems across all dataset_versions (joined: dataset_version_name + dataset_name)"""
+    items, total = get_ml_problems_all_joined(
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        task=task,
+        target=target,
+        problem_name=problem_name,
+        dataset_name=dataset_name,
+        dataset_version_name=dataset_version_name,
+    )
+    total_pages = int((total + size - 1) / size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        "task": task,
+        "target": target,
+        "problem_name": problem_name,
+        "dataset_name": dataset_name,
+        "dataset_version_name": dataset_version_name,
+    }
+
+@app.get("/modelsAll")
+async def get_list_models_all(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+    algorithm: Optional[str] = Query(None),
+    train_mode: Optional[str] = Query(None),
+    evaluation_strategy: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    problem_name: Optional[str] = Query(None),
+    dataset_name: Optional[str] = Query(None),
+    dataset_version_name: Optional[str] = Query(None),
+):
+    """get all models across all problems (joined: problem_name + dataset_version_name + dataset_name)"""
+    items, total = get_models_all_joined(
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        name=name,
+        algorithm=algorithm,
+        train_mode=train_mode,
+        evaluation_strategy=evaluation_strategy,
+        status=status,
+        problem_name=problem_name,
+        dataset_name=dataset_name,
+        dataset_version_name=dataset_version_name,
+    )
+    total_pages = int((total + size - 1) / size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        "name": name,
+        "algorithm": algorithm,
+        "train_mode": train_mode,
+        "evaluation_strategy": evaluation_strategy,
+        "status": status,
+        "problem_name": problem_name,
+        "dataset_name": dataset_name,
+        "dataset_version_name": dataset_version_name,
+    }
+
+@app.get("/predictionsAll")
+async def get_list_predictions_all(
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    id: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    model_name: Optional[str] = Query(None),
+    problem_name: Optional[str] = Query(None),
+    dataset_name: Optional[str] = Query(None),
+    dataset_version_name: Optional[str] = Query(None),
+):
+    """get all predictions across all models (joined: model_name + problem_name + dataset_version_name + dataset_name)"""
+    items, total = get_predictions_all_joined(
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        id=id,
+        name=name,
+        status=status,
+        model_name=model_name,
+        problem_name=problem_name,
+        dataset_name=dataset_name,
+        dataset_version_name=dataset_version_name,
+    )
+    total_pages = int((total + size - 1) / size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "id": id,
+        "name": name,
+        "status": status,
+        "model_name": model_name,
+        "problem_name": problem_name,
+        "dataset_name": dataset_name,
+        "dataset_version_name": dataset_version_name,
     }

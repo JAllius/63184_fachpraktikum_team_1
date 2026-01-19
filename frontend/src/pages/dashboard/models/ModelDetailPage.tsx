@@ -1,6 +1,8 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import Predict from "@/components/ml/predict/Predict";
 import {
+  PredictionDelete,
+  PredictionsFilterbar,
   PredictionsTable,
   type DeleteTarget,
   type UpdateTarget,
@@ -23,6 +25,15 @@ import {
 import { Fox } from "@/components/watermark/Fox";
 import NotFound from "@/components/errors/not_found/NotFound";
 import Explainability from "@/components/model_explainability/Explainability";
+import { toast } from "sonner";
+import {
+  delete_prediction,
+  update_prediction,
+} from "@/lib/actions/predictions/prediction.action";
+import type { PredictionUpdateInput } from "@/components/predictions/prediction.schema";
+import PredictionUpdate from "@/components/predictions/PredictionUpdate";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 const ModelDetailPage = () => {
   const params = useParams<{
@@ -54,12 +65,9 @@ const ModelDetailPage = () => {
   const [model, setModel] = useState<Model | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [openDelete, setOpenDelete] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deleting, setDeleting] = useState(false);
   const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [openUpdate, setOpenUpdate] = useState(false);
   const [tabValue, setTabValue] = useState("predictions");
   const [mlProblem, setMLProblem] = useState<MLProblem | null>(null);
@@ -128,6 +136,30 @@ const ModelDetailPage = () => {
     loadPredictions();
   }, [loadPredictions]);
 
+  useEffect(() => {
+    const eventSource = new EventSource(`${API_URL}/events/stream`);
+
+    const refreshOnPredict = (e: MessageEvent) => {
+      const payload = JSON.parse(e.data);
+      if (payload.job?.type === "predict") {
+        if (payload.job?.status === "completed")
+          toast.success("Prediction finished successfully");
+      } else if (payload.job?.status === "failed") {
+        toast.error("Prediction failed");
+      }
+      loadPredictions();
+    };
+
+    eventSource.addEventListener("job.completed", refreshOnPredict);
+    eventSource.addEventListener("job.failed", refreshOnPredict);
+
+    return () => {
+      eventSource.removeEventListener("job.completed", refreshOnPredict);
+      eventSource.removeEventListener("job.failed", refreshOnPredict);
+      eventSource.close();
+    };
+  });
+
   const askDelete = (id: string) => {
     setDeleteTarget({ id });
     setOpenDelete(true);
@@ -138,24 +170,22 @@ const ModelDetailPage = () => {
     setDeleteTarget(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const onDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      console.log("Deleting");
-      await loadPredictions();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelDelete();
-      setDeleting(false);
+  const onDelete = async (prediction_id: string) => {
+    if (!prediction_id) return;
+
+    const res = await delete_prediction(prediction_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Prediction deleted");
+    await loadPredictions();
+    cancelDelete();
+    setDeleting(false);
   };
 
-  const askUpdate = (id: string) => {
-    setUpdateTarget({ id });
+  const askUpdate = (id: string, name: string) => {
+    setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
 
@@ -164,18 +194,20 @@ const ModelDetailPage = () => {
     setUpdateTarget(null);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const onUpdate = async () => {
-    if (!updateTarget) return;
-    try {
-      console.log("Updating");
-      await loadPredictions();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelUpdate();
+  const onUpdate = async (
+    prediction_id: string,
+    data: PredictionUpdateInput,
+  ) => {
+    if (!prediction_id || !data) return;
+
+    const res = await update_prediction(prediction_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Prediction updated");
+    await loadPredictions();
+    cancelUpdate();
   };
 
   if (loading) {
@@ -214,7 +246,7 @@ const ModelDetailPage = () => {
               <div>
                 <div className="flex justify-between">
                   <div className="relative">
-                    {/* <PredictionsFilterbar /> */}
+                    <PredictionsFilterbar />
                   </div>
                   <Predict problemId={problemId} modelId={modelId} />
                 </div>
@@ -236,7 +268,7 @@ const ModelDetailPage = () => {
                     <PageSize size={size} />
                   </div>
                 </div>
-                {/* {deleteTarget && (
+                {deleteTarget && (
                   <PredictionDelete
                     target={deleteTarget}
                     open={openDelete}
@@ -252,7 +284,7 @@ const ModelDetailPage = () => {
                     onConfirm={onUpdate}
                     onCancel={cancelUpdate}
                   />
-                )} */}
+                )}
               </div>
             ) : (
               <div className="relative min-h-[80vh] bg-background">
@@ -289,7 +321,6 @@ const ModelDetailPage = () => {
                 metadata={metadata}
               />
             )}
-            {/* <div>{JSON.stringify(metadata)}</div> */}
           </TabsContent>
           <TabsContent value="explainability">
             {explanation_summary?.task ? (

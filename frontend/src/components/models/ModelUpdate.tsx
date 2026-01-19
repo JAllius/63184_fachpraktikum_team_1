@@ -17,7 +17,7 @@ import {
   FieldLabel,
   FieldError,
 } from "../ui/field";
-import { ModelSchema, type ModelInput } from "./model.schema";
+import { ModelUpdateSchema, type ModelUpdateInput } from "./model.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
@@ -25,7 +25,7 @@ import { useEffect } from "react";
 type Props = {
   target: { id: string; name: string };
   open: boolean;
-  onConfirm: (id: string, data: ModelInput) => Promise<void>;
+  onConfirm: (id: string, data: ModelUpdateInput) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -40,8 +40,8 @@ const ModelUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<ModelInput>({
-    resolver: zodResolver(ModelSchema),
+  } = useForm<ModelUpdateInput>({
+    resolver: zodResolver(ModelUpdateSchema),
     defaultValues: {
       name: target.name,
     },
@@ -64,23 +64,23 @@ const ModelUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader>
-          <SheetTitle>Update Dataset</SheetTitle>
+          <SheetTitle>Update Model</SheetTitle>
           <SheetDescription>{target.name}</SheetDescription>
         </SheetHeader>
 
         <form
-          id="update-dataset-form"
+          id="update-model-form"
           onSubmit={handleSubmit((data) => onConfirm(target.id, data))}
           className="mt-6 space-y-6"
         >
           <FieldSet>
             <FieldGroup>
-              {/* Dataset Name */}
+              {/* Model Name */}
               <Field data-invalid={!!errors.name}>
-                <FieldLabel htmlFor="update_name">Dataset name</FieldLabel>
+                <FieldLabel htmlFor="update_name">Model name</FieldLabel>
                 <Input
                   id="update_name"
-                  placeholder="Choose a dataset name"
+                  placeholder="Choose a model name"
                   aria-invalid={!!errors.name}
                   {...register("name")}
                 />
@@ -95,7 +95,7 @@ const ModelUpdate = ({ target, open, onConfirm, onCancel }: Props) => {
           </SheetClose>
           <Button
             type="submit"
-            form="update-dataset-form"
+            form="update-model-form"
             disabled={isSubmitting}
             className="w-20 hover:scale-105 active:scale-95"
           >

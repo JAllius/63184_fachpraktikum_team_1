@@ -16,7 +16,7 @@ import { Label } from "../ui/label";
 type Props = {
   target: { id: string; name?: string };
   open: boolean;
-  onConfirm: () => void;
+  onConfirm: (id: string) => Promise<void>;
   onCancel: () => void;
   deleting: boolean;
 };
@@ -45,7 +45,7 @@ const MLProblemDelete = ({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Delete Dataset</DialogTitle>
+          <DialogTitle>Delete ML Problem</DialogTitle>
           <DialogDescription className="sr-only">
             Deleting the ML problem {target.name} will permanently deletes all
             associated models. Type delete to confirm.
@@ -62,11 +62,11 @@ const MLProblemDelete = ({
           </div>
         </DialogHeader>
         <form
-          id="delete-dataset-form"
+          id="delete-mlProblem-form"
           onSubmit={(e) => {
             e.preventDefault();
             if (!canDelete || deleting) return;
-            onConfirm();
+            onConfirm(target.id);
           }}
           className="grid gap-4"
         >
@@ -87,7 +87,7 @@ const MLProblemDelete = ({
           <Button
             variant="destructive"
             type="submit"
-            form="delete-dataset-form"
+            form="delete-mlProblem-form"
             disabled={!canDelete || deleting}
           >
             {deleting ? "Deleting…" : "Delete"}

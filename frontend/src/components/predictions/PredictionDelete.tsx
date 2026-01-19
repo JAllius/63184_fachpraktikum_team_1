@@ -14,16 +14,16 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 type Props = {
-  target: { id: string; name: string };
+  target: { id: string; name?: string };
   open: boolean;
-  onConfirm: () => void;
+  onConfirm: (id: string) => Promise<void>;
   onCancel: () => void;
   deleting: boolean;
 };
 
 export type DeleteTarget = {
   id: string;
-  // name: string;
+  name?: string;
 };
 
 const DatasetDelete = ({
@@ -45,29 +45,27 @@ const DatasetDelete = ({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Delete Dataset</DialogTitle>
+          <DialogTitle>Delete Prediction</DialogTitle>
           <DialogDescription className="sr-only">
-            Deleting the dataset with name {target.name} will permanently
-            deletes all associated versions, problems, and models. Type delete
-            to confirm.
+            Deleting the prediction with name {target.name} will permanently it.
+            Type delete to confirm.
           </DialogDescription>
           <div className="text-sm">
-            Are you sure you want to delete dataset: <b>{target.name}?</b>
+            Are you sure you want to delete prediction: <b>{target.name}?</b>
           </div>
           <div className="text-muted-foreground text-sm">
             <i>id: {target.id}</i>
           </div>
           <div className="text-sm">
-            Deleting this dataset will permanently delete all associated
-            versions, problems, and models.
+            Deleting this prediction will permanently delete it.
           </div>
         </DialogHeader>
         <form
-          id="delete-dataset-form"
+          id="delete-prediction-form"
           onSubmit={(e) => {
             e.preventDefault();
             if (!canDelete || deleting) return;
-            onConfirm();
+            onConfirm(target.id);
           }}
           className="grid gap-4"
         >
@@ -88,7 +86,7 @@ const DatasetDelete = ({
           <Button
             variant="destructive"
             type="submit"
-            form="delete-dataset-form"
+            form="delete-prediction-form"
             disabled={!canDelete || deleting}
           >
             {deleting ? "Deleting…" : "Delete"}

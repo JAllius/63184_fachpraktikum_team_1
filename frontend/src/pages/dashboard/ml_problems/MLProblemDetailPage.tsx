@@ -5,7 +5,9 @@ import {
   type MLProblem,
 } from "../../../lib/actions/mlProblems/mlProblem.action";
 import {
+  delete_model,
   get_models,
+  update_model,
   type Model,
   type ModelListResponse,
 } from "../../../lib/actions/models/model.action";
@@ -28,6 +30,7 @@ import Loading from "@/components/loading/Loading";
 import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
 import { toast } from "sonner";
+import type { ModelUpdateInput } from "@/components/models/model.schema";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
@@ -60,7 +63,7 @@ const MLProblemDetailPage = () => {
   const [searchParams] = useSearchParams();
   const [mlProblem, setMLProblem] = useState<MLProblem | null>(null);
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
-    null
+    null,
   );
   const [totalPages, setTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -101,9 +104,8 @@ const MLProblemDetailPage = () => {
   useEffect(() => {
     async function loadDatasetVersion() {
       try {
-        const data: DatasetVersion = await get_dataset_version(
-          datasetVersionId
-        );
+        const data: DatasetVersion =
+          await get_dataset_version(datasetVersionId);
         setDatasetVersion(data);
       } catch (error) {
         console.log(error);
@@ -169,10 +171,10 @@ const MLProblemDetailPage = () => {
         ? JSON.parse(mlProblem?.feature_strategy)
         : { include: [], exclude: [] };
       const include: [string, string][] = Object.entries(
-        feature_strategy?.include
+        feature_strategy?.include,
       );
       const exclude: [string, string][] = Object.entries(
-        feature_strategy?.exclude
+        feature_strategy?.exclude,
       );
       setFeatureStrategy({
         include: include,
@@ -219,23 +221,22 @@ const MLProblemDetailPage = () => {
     setDeleteTarget(null);
   };
 
-  const onDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      console.log("Deleting");
-      await loadModels();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelDelete();
-      setDeleting(false);
+  const onDelete = async (model_id: string) => {
+    if (!model_id) return;
+
+    const res = await delete_model(model_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Model deleted");
+    await loadModels();
+    cancelDelete();
+    setDeleting(false);
   };
 
-  const askUpdate = (id: string) => {
-    setUpdateTarget({ id });
+  const askUpdate = (id: string, name: string) => {
+    setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
 
@@ -244,17 +245,17 @@ const MLProblemDetailPage = () => {
     setUpdateTarget(null);
   };
 
-  const onUpdate = async () => {
-    if (!updateTarget) return;
-    try {
-      console.log("Updating");
-      await loadModels();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log("Done");
-      cancelUpdate();
+  const onUpdate = async (model_id: string, data: ModelUpdateInput) => {
+    if (!model_id || !data) return;
+
+    const res = await update_model(model_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("ML Problem updated");
+    await loadModels();
+    cancelUpdate();
   };
 
   if (loading) {
@@ -346,6 +347,19 @@ const MLProblemDetailPage = () => {
                     style={{ color: "hsl(var(--sidebar-foreground))" }}
                     nodeFill="hsl(var(--sidebar-foreground))"
                   />
+                </div>
+                <div className="flex justify-between">
+                  <div className="relative">
+                    <ModelsFilterbar />
+                  </div>
+                  <div className="flex gap-2">
+                    <Train
+                      problemId={problemId}
+                      task={mlProblem.task}
+                      onCreate={loadModels}
+                    />
+                    <Predict problemId={problemId} />
+                  </div>
                 </div>
                 <div>
                   <p className="text-base font-semibold">No Models yet</p>

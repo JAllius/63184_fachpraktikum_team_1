@@ -108,3 +108,63 @@ export async function create_dataset(
     return { ok: false, error: "Network error while creating dataset." };
   }
 }
+
+type UpdateDatasetResponse = { ok: true } | { ok: false; error: string };
+
+export async function update_dataset(
+  dataset_id: string,
+  req: unknown
+): Promise<UpdateDatasetResponse> {
+  const parsed = DatasetSchema.safeParse(req);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Invalid parameters to update a dataset.",
+    };
+  }
+
+  const data: DatasetInput = parsed.data;
+
+  const qs = new URLSearchParams({
+    name: data.name,
+  });
+
+  const url = `${API_URL}/dataset/${dataset_id}?${qs}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update dataset request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error while updating dataset." };
+  }
+}
+
+type DeleteDatasetResponse = { ok: true } | { ok: false; error: string };
+
+export async function delete_dataset(
+  dataset_id: string
+): Promise<DeleteDatasetResponse> {
+  const url = `${API_URL}/dataset/${dataset_id}`;
+  try {
+    const res = await fetch(url, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Delete dataset request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Network error while deleting dataset." };
+  }
+}
