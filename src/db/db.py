@@ -1477,3 +1477,49 @@ def get_predictions_all_joined(
         items = cur.fetchall()
 
     return items, total
+
+
+# -------------------------------------------------------------------
+# SET MODEL TO PRODUCTION
+# -------------------------------------------------------------------
+
+@contextlib.contextmanager
+def prod_cursor():
+    conn = get_conn()
+    conn.autocommit = False
+    try:
+        with conn.cursor() as cur:
+            yield cur
+            conn.commit()
+    except Exception:
+        conn.rollback()
+        raise 
+    finally:
+        conn.close()
+
+def set_model_to_production(problem_id: str, model_id: str) -> bool:
+    sql_lock = "SELECT current_model_id FROM ml_problems WHERE id = %s FOR UPDATE" # FOR UPDATE -> Locks selected row so no other transaction can modify it
+    sql_update_models = "UPDATE models SET status = %s WHERE id = %s AND problem_id = %s"
+    sql_update_ml_problems = "UPDATE ml_problems SET current_model_id = %s WHERE id = %s"
+    with prod_cursor() as cur: 
+        cur.execute(sql_lock, (problem_id,))
+
+        row = cur.fetchone()
+        # If row/ml_problem doesn't exist return False
+        if not row:
+            return False
+        
+        prev_model_id = row["current_model_id"]
+        if prev_model_id and prev_model_id != model_id:
+            cur.execute(sql_update_models, ("archived", prev_model_id, problem_id))
+        
+        cur.execute(sql_update_models, ("production", model_id, problem_id))
+        # Validation check that model belongs to this ml_problem and that it exists
+        if cur.rowcount == 0:
+            raise ValueError(f"Model with id: {model_id} was not found for the ml_problem with id: {problem_id}")
+        
+        cur.execute(sql_update_ml_problems, (model_id, problem_id))
+
+        return True
+
+

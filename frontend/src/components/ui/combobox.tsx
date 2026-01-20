@@ -257,7 +257,7 @@ function ComboboxChip({
           className="-ml-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
           render={
-            <Button variant="ghost" size="icon" className="h-7 w-7">
+            <Button variant="ghost" size="icon-xs">
               <XIcon className="pointer-events-none" />
             </Button>
           }

@@ -10,7 +10,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, create_prediction, db_get_dataset, db_get_dataset_version, delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_prediction, get_dashboard_stats, get_dataset_versions_all_joined, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_ml_problems_all_joined, get_model, get_models, get_models_all_joined, get_prediction, get_predictions, get_predictions_all_joined, update_dataset, update_dataset_version, update_ml_problem, update_model, update_prediction
+from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, create_prediction, db_get_dataset, db_get_dataset_version, delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_prediction, get_dashboard_stats, get_dataset_versions_all_joined, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_ml_problems_all_joined, get_model, get_models, get_models_all_joined, get_prediction, get_predictions, get_predictions_all_joined, set_model_to_production, update_dataset, update_dataset_version, update_ml_problem, update_model, update_prediction
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
 from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
@@ -485,8 +485,13 @@ async def post_predict(
                 status="predicting",
             )
     else:
+        problem = get_ml_problem(problem_id)
+        if not problem:
+            raise HTTPException(status_code=404, detail="ML problem was not found")
+        model_id = problem["current_model_id"]
         prediction_id = create_prediction(
                 name=name,
+                model_id=model_id,
                 status="predicting",
             )
     logger.info("Sending celery task 'predict.task'")
@@ -568,6 +573,17 @@ async def patch_model(model_id: str, name: str):
 async def delete_model_ep(model_id: str):
     """delete the specified model if user has permission"""
     res = delete_model(model_id)
+    return res
+
+
+@app.patch("/model/{model_id}/set_production")
+async def set_model_to_production_ep(model_id: str):
+    """set model to status production"""
+    model = get_model(model_id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
+    problem_id = model["problem_id"]
+    res = set_model_to_production(problem_id, model_id)
     return res
 
 

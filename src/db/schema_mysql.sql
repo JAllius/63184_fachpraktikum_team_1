@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS ml_problems (
   current_model_id CHAR(36),                -- id of current production model (no URI duplication)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dataset_version_id) REFERENCES dataset_versions(id)
-  -- current_model_id: we can add a FK to models.id later if we want
+  -- FOREIGN KEY (current_model_id) REFERENCES models(id) -- this can't work at the moment, because at the time of ml_problems table creation, models table is not yet created
+                                                          -- and it errors trying to reference a non existent table
 );
 
 -- ==========================================
@@ -69,7 +70,7 @@ CREATE TABLE IF NOT EXISTS models (
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
   uri TEXT,                                 -- where the model file is stored (joblib, etc.)
   metadata_json JSON,                       -- optional extra metadata file
-  explanation_json JSON,                     -- optional explanation/shap file
+  explanation_json JSON,                    -- optional explanation/shap file
   created_by CHAR(36),                      -- FK to users.id (who trained it)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (problem_id) REFERENCES ml_problems(id),

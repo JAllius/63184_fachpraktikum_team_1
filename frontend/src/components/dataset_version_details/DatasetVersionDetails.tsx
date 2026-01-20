@@ -132,14 +132,14 @@ const DatasetVersionDetails = ({ profile }: Props) => {
                         name="columns"
                         control={control}
                         render={({ field }) => (
-                          <Field data-invalid={!!errors.target}>
+                          <Field data-invalid={!!errors.columns}>
                             <FieldLabel />
                             <Select
                               value={field.value}
                               onValueChange={() => {}}
                             >
                               <SelectTrigger
-                                aria-invalid={!!errors.target}
+                                aria-invalid={!!errors.columns}
                                 className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3"
                               >
                                 <SelectValue />
@@ -164,7 +164,7 @@ const DatasetVersionDetails = ({ profile }: Props) => {
                             </Select>
                             <FieldError
                               errors={
-                                errors.target ? [errors.target] : undefined
+                                errors.columns ? [errors.columns] : undefined
                               }
                             />
                           </Field>
