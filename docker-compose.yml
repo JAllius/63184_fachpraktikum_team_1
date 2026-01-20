@@ -5,6 +5,8 @@ services:
       dockerfile: DockerfileFrontend
     ports:
       - "3000:3000"
+    environment:
+      VITE_API_URL: api:42000
     restart: "unless-stopped"
     depends_on:
       - api
