@@ -21,6 +21,7 @@ type Props = {
   featureStrategy: FeatureStrategy;
   prodModelName?: string;
   prodModelId?: string;
+  configured?: boolean;
 };
 
 const MLProblemDetails = ({
@@ -31,6 +32,7 @@ const MLProblemDetails = ({
   featureStrategy,
   prodModelName,
   prodModelId,
+  configured = false,
 }: Props) => {
   const [openTechnical, setOpenTechnical] = useState(false);
 
@@ -99,18 +101,26 @@ const MLProblemDetails = ({
           <h3 className="text-sm font-medium text-muted-foreground">
             Feature Strategy
           </h3>
-          <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
-            Reset to default
-          </Button>
+          {!configured ? (
+            <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
+              Reset to default
+            </Button>
+          ) : (
+            <div className="text-muted-foreground text-sm">
+              <i>(Feature strategy can only be changed when no model exists)</i>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-between gap-6">
           <Card className="w-full h-full flex flex-col text-foreground">
             <CardHeader>
               <div className="flex items-center justify-between text-foreground">
                 <CardTitle>Include</CardTitle>
-                <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
-                  Edit
-                </Button>
+                {!configured && (
+                  <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
+                    Edit
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardDescription />
@@ -118,6 +128,7 @@ const MLProblemDetails = ({
               <ColumnBadges
                 items={featureStrategy.include}
                 className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                empty="Auto"
               />
             </CardContent>
           </Card>
@@ -125,9 +136,11 @@ const MLProblemDetails = ({
             <CardHeader>
               <div className="flex items-center justify-between text-foreground">
                 <CardTitle>Exclude</CardTitle>
-                <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
-                  Edit
-                </Button>
+                {!configured && (
+                  <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
+                    Edit
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardDescription />
@@ -135,6 +148,7 @@ const MLProblemDetails = ({
               <ColumnBadges
                 items={featureStrategy.exclude}
                 className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                empty="Auto"
               />
             </CardContent>
           </Card>

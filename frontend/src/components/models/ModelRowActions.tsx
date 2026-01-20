@@ -1,4 +1,12 @@
-import { Check, Copy, Ellipsis, FileText, Edit, Trash2 } from "lucide-react"; // X
+import {
+  Check,
+  Copy,
+  Ellipsis,
+  FileText,
+  Edit,
+  Trash2,
+  UploadCloud,
+} from "lucide-react"; // X
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -20,14 +28,16 @@ type Props = {
   parent: string;
   onDelete: () => void;
   onUpdate: () => void;
+  onSetProd: () => void;
   disabled?: boolean;
 };
 
-const RowActions = ({
+const ModelRowActions = ({
   id,
   parent,
   onDelete,
   onUpdate,
+  onSetProd,
   disabled = false,
 }: Props) => {
   const [copied, setCopied] = useState(false);
@@ -113,6 +123,20 @@ const RowActions = ({
               <Copy className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Copy id
             </DropdownMenuItem>
+            {!disabled ? (
+              <DropdownMenuItem
+                onClick={onSetProd}
+                className="group text-muted-foreground"
+              >
+                <UploadCloud className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                Set to Production
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem className="group text-muted-foreground">
+                <UploadCloud className="w-4 h-4" />
+                Set to Production
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={onUpdate}
               className="group text-muted-foreground"
@@ -134,4 +158,4 @@ const RowActions = ({
   );
 };
 
-export default RowActions;
+export default ModelRowActions;
