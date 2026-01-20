@@ -1,4 +1,13 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: DockerfileFrontend
+    ports:
+      - "3000:3000"
+    restart: "unless-stopped"
+    depends_on:
+      - api
   api:
     # image: jallius/fachpraktikum-app
     build:
@@ -44,7 +53,7 @@ services:
       - "db:db"
     deploy:
       mode: replicated
-      replicas: 3
+      replicas: 1
     restart: "unless-stopped"
     depends_on:
       - redis_server

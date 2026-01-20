@@ -22,6 +22,7 @@ build: clean
 docker: build
 	docker build -t jallius/fachpraktikum-app -f DockerfileApi .
 	docker build -t jallius/fachpraktikum-worker -f DockerfileWorker .
+	docker build -t jallius/fachpraktikum-worker -f DockerfileFrontend .
 
 deploy_local: docker
 	docker compose down -v
