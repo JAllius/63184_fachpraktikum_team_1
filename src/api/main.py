@@ -478,10 +478,17 @@ async def post_predict(
         # DataFrame to JSON
         input_json = df.to_json(orient='records')
 
-    prediction_id = create_prediction(
-            name=name,
-            status="predicting"
-        )
+    if model_id != "production":
+        prediction_id = create_prediction(
+                name=name,
+                model_id=model_id,
+                status="predicting",
+            )
+    else:
+        prediction_id = create_prediction(
+                name=name,
+                status="predicting",
+            )
     logger.info("Sending celery task 'predict.task'")
 
     task = celery_app.send_task(

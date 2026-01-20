@@ -20,22 +20,33 @@ type Props = {
   parent: string;
   onDelete: () => void;
   onUpdate: () => void;
+  disabled?: boolean;
 };
 
-const RowActions = ({ id, parent, onDelete, onUpdate }: Props) => {
+const RowActions = ({
+  id,
+  parent,
+  onDelete,
+  onUpdate,
+  disabled = false,
+}: Props) => {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-center justify-start gap-1.5">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to={`${id}`}
-              aria-label={"View " + parent}
-              className="inline-flex items-center justify-center text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
-            >
+            {!disabled ? (
+              <Link
+                to={`${id}`}
+                aria-label={"View " + parent}
+                className="inline-flex items-center justify-center text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
+              >
+                <FileText className="w-4 h-4" />
+              </Link>
+            ) : (
               <FileText className="w-4 h-4" />
-            </Link>
+            )}
           </TooltipTrigger>
           <TooltipContent>View {parent}</TooltipContent>
         </Tooltip>
@@ -77,12 +88,19 @@ const RowActions = ({ id, parent, onDelete, onUpdate }: Props) => {
             </Tooltip>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <Link to={`${id}`}>
+            {!disabled ? (
+              <Link to={`${id}`}>
+                <DropdownMenuItem className="group text-muted-foreground">
+                  <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                  View
+                </DropdownMenuItem>
+              </Link>
+            ) : (
               <DropdownMenuItem className="group text-muted-foreground">
-                <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                <FileText className="w-4 h-4" />
                 View
               </DropdownMenuItem>
-            </Link>
+            )}
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(id);

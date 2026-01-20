@@ -11,7 +11,7 @@ export type Model = {
   algorithm: string;
   train_mode: string;
   evaluation_strategy: string;
-  status: "staging" | "production" | "archived";
+  status: "staging" | "production" | "archived" | "training" | "failed";
   metrics_json: string;
   metadata_json: string;
   explanation_json: string;
@@ -51,7 +51,7 @@ export type ModelQueryParams = {
 
 export async function get_models(
   problem_id: string,
-  params: ModelQueryParams = {}
+  params: ModelQueryParams = {},
 ): Promise<ModelListResponse> {
   const search = new URLSearchParams();
 
@@ -99,7 +99,7 @@ type UpdateModelResponse = { ok: true } | { ok: false; error: string };
 
 export async function update_model(
   model_id: string,
-  req: unknown
+  req: unknown,
 ): Promise<UpdateModelResponse> {
   const parsed = ModelUpdateSchema.safeParse(req);
   if (!parsed.success) {
@@ -139,7 +139,7 @@ export async function update_model(
 type DeleteModelResponse = { ok: true } | { ok: false; error: string };
 
 export async function delete_model(
-  model_id: string
+  model_id: string,
 ): Promise<DeleteModelResponse> {
   const url = `${API_URL}/model/${model_id}`;
   try {
@@ -209,7 +209,7 @@ export type ModelAllQueryParams = {
 };
 
 export async function get_models_all(
-  params: ModelAllQueryParams = {}
+  params: ModelAllQueryParams = {},
 ): Promise<ModelAllListResponse> {
   const search = new URLSearchParams();
 

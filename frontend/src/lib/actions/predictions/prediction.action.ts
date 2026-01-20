@@ -160,12 +160,11 @@ export type PredictionAllListResponse = {
   sort: string;
   dir: "asc" | "desc";
   q: string | null;
-
+  name: string | null;
   dataset_name: string | null;
   dataset_version_name: string | null;
   problem_name: string | null;
   model_name: string | null;
-
   id: string | null;
 };
 
@@ -175,7 +174,7 @@ export type PredictionAllQueryParams = {
   sort?: string;
   dir?: "asc" | "desc";
   q?: string;
-
+  name?: string;
   dataset_name?: string;
   dataset_version_name?: string;
   problem_name?: string;
@@ -194,7 +193,7 @@ export async function get_predictions_all(
   if (params.sort !== undefined) search.set("sort", String(params.sort));
   if (params.dir !== undefined) search.set("dir", String(params.dir));
   if (params.q !== undefined) search.set("q", String(params.q));
-
+  if (params.name !== undefined) search.set("name", String(params.name));
   if (params.dataset_name !== undefined)
     search.set("dataset_name", String(params.dataset_name));
   if (params.dataset_version_name !== undefined)

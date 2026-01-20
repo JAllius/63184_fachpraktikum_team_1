@@ -8,15 +8,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHeader } from "../table";
 
 type Props = {
   columnNames: string[];
   rows: Record<string, unknown>[];
+  totalRows: number;
 };
 
-const PredictionTable = ({ columnNames, rows }: Props) => {
+const PredictionTable = ({ columnNames, rows, totalRows }: Props) => {
   const colSpan = columnNames.length - 1;
-  const total = rows.length;
 
   // helper function for stability
   function renderCell(value: unknown): React.ReactNode {
@@ -35,7 +36,9 @@ const PredictionTable = ({ columnNames, rows }: Props) => {
         <TableHeader>
           <TableRow>
             {columnNames.map((name) => (
-              <TableHead key={name}>{name}</TableHead>
+              <TableHead key={name}>
+                <SortableHeader field={name} label={name} />
+              </TableHead>
             ))}
           </TableRow>
         </TableHeader>
@@ -51,7 +54,7 @@ const PredictionTable = ({ columnNames, rows }: Props) => {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={colSpan}>Total</TableCell>
-            <TableCell className="text-right">{total}</TableCell>
+            <TableCell className="text-right">{totalRows}</TableCell>
           </TableRow>
         </TableFooter>
       </Table>

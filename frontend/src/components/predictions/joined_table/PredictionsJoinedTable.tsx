@@ -15,8 +15,8 @@ import type { PredictionJoined } from "@/lib/actions/predictions/prediction.acti
 
 type Props = {
   predictions: PredictionJoined[];
-  askDelete: (id: string) => void;
-  askUpdate: (id: string) => void;
+  askDelete: (id: string, name: string) => void;
+  askUpdate: (id: string, name: string) => void;
 };
 
 const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
@@ -54,26 +54,55 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
 
         <TableBody>
           {predictions.map((pr) => {
-            const viewUrl = `/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}/${pr.id}`;
-
             return (
               <TableRow key={pr.id}>
                 <TableCell className="text-muted-foreground">
-                  {pr.dataset_name}
+                  <Link
+                    to={`/dashboard/datasets/${pr.dataset_id}`}
+                    aria-label="View dataset"
+                    className="font-medium"
+                  >
+                    {pr.dataset_name}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {pr.dataset_version_name}
+                  <Link
+                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}`}
+                    aria-label="View dataset version"
+                    className="font-medium"
+                  >
+                    {pr.dataset_version_name}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {pr.problem_name}
+                  <Link
+                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}`}
+                    aria-label="View ML problem"
+                    className="font-medium"
+                  >
+                    {pr.problem_name}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {pr.model_name}
+                  <Link
+                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}`}
+                    aria-label="View model"
+                    className="font-medium"
+                  >
+                    {pr.model_name}
+                  </Link>
                 </TableCell>
                 <TableCell className="font-medium">
-                  <Link to={viewUrl} aria-label="View prediction">
-                    {pr.name}
-                  </Link>
+                  {pr.status === "predicting" || pr.status === "failed" ? (
+                    <div>{pr.name}</div>
+                  ) : (
+                    <Link
+                      to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}/${pr.id}`}
+                      aria-label="View prediction"
+                    >
+                      {pr.name}
+                    </Link>
+                  )}
                 </TableCell>
                 <TableCell>{pr.created_at}</TableCell>
                 <TableCell>
@@ -84,8 +113,11 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                     modelId={pr.model_id}
                     predictionId={pr.id}
                     parent="Prediction"
-                    onDelete={() => askDelete(pr.id)}
-                    onUpdate={() => askUpdate(pr.id)}
+                    onDelete={() => askDelete(pr.id, pr.name)}
+                    onUpdate={() => askUpdate(pr.id, pr.name)}
+                    disabled={
+                      pr.status === "predicting" || pr.status === "failed"
+                    }
                   />
                 </TableCell>
               </TableRow>

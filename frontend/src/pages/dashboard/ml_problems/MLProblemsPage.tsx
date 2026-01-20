@@ -36,15 +36,23 @@ const MLProblemsPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
 
   const q = searchParams.get("q") || "";
   const task = searchParams.get("task") || "";
   const target = searchParams.get("target") || "";
-
-  const problem_name = searchParams.get("problem_name") || "";
+  const name = searchParams.get("name") || "";
   const dataset_name = searchParams.get("dataset_name") || "";
   const dataset_version_name = searchParams.get("dataset_version_name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(task?.trim()) ||
+    Boolean(target?.trim()) ||
+    Boolean(name?.trim()) ||
+    Boolean(dataset_name?.trim()) ||
+    Boolean(dataset_version_name?.trim());
 
   const loadMLProblems = useCallback(async () => {
     try {
@@ -56,7 +64,7 @@ const MLProblemsPage = () => {
         q: q || undefined,
         task: task || undefined,
         target: target || undefined,
-        problem_name: problem_name || undefined,
+        name: name || undefined,
         dataset_name: dataset_name || undefined,
         dataset_version_name: dataset_version_name || undefined,
       });
@@ -75,7 +83,7 @@ const MLProblemsPage = () => {
     q,
     task,
     target,
-    problem_name,
+    name,
     dataset_name,
     dataset_version_name,
   ]);
@@ -146,7 +154,7 @@ const MLProblemsPage = () => {
           Browse and manage ML problems across all dataset versions.
         </p>
 
-        {mlProblems.length > 0 ? (
+        {mlProblems.length > 0 || hasActiveFilters ? (
           <div>
             <div className="flex justify-between">
               <div className="relative">
@@ -203,14 +211,11 @@ const MLProblemsPage = () => {
                 nodeFill="hsl(var(--sidebar-foreground))"
               />
             </div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <MLProblemsJoinedFilterbar />
-              </div>
-              <MLProblemCreate onCreate={loadMLProblems} />
-            </div>
             <div>
               <p className="text-base font-semibold">No ML Problems found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create an ML problem to activate this page.
+              </p>
             </div>
           </div>
         )}

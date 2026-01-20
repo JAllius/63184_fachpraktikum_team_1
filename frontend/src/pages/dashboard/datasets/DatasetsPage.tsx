@@ -36,10 +36,14 @@ const DatasetsPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
   const q = searchParams.get("q") || "";
   const id = searchParams.get("id") || "";
   const name = searchParams.get("name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) || Boolean(id?.trim()) || Boolean(name?.trim());
 
   const loadDatasets = useCallback(async () => {
     try {
@@ -123,7 +127,7 @@ const DatasetsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all datasets.
         </p>
-        {datasets.length > 0 ? (
+        {datasets.length > 0 || hasActiveFilters ? (
           <div>
             <div className="flex justify-between">
               <div className="relative">
@@ -179,12 +183,6 @@ const DatasetsPage = () => {
               />
             </div>
             <div>
-              <div className="flex justify-between">
-                <div className="relative">
-                  <DatasetsFilterbar />
-                </div>
-                <DatasetCreate onCreate={loadDatasets} />
-              </div>
               <p className="text-base font-semibold">No Datasets yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Create a dataset to activate this page.

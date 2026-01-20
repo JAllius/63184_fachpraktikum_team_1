@@ -10,7 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Ellipsis, FileText, Edit, Trash2, Copy } from "lucide-react";
+import { Ellipsis, FileText, Edit, Trash2, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -31,12 +32,13 @@ const MLProblemActions = ({
   onDelete,
   onUpdate,
 }: Props) => {
+  const [copied, setCopied] = useState(false);
+
   const viewUrl = `/dashboard/datasets/${datasetId}/${datasetVersionId}/${problemId}`;
 
   return (
     <div className="flex items-center justify-start gap-1.5">
       <TooltipProvider>
-        {/* View */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
@@ -49,26 +51,33 @@ const MLProblemActions = ({
           </TooltipTrigger>
           <TooltipContent>View {parent}</TooltipContent>
         </Tooltip>
-
-        {/* Copy problem id*/}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(problemId);
-                toast.success("ML problem id copied to clipboard");
-              }}
-              className="text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
-              aria-label="Copy ML problem id"
-              type="button"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>Copy ML problem id</TooltipContent>
-        </Tooltip>
-
-        {/* Dropdown */}
+        {!copied ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(problemId);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                  toast.success(`${parent} id copied to clipboard`);
+                }}
+                className="text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Copy {parent} id</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button>
+                <Check className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Copied</TooltipContent>
+          </Tooltip>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger className="text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95 focus-visible:outline-none">
             <Tooltip>
@@ -78,7 +87,6 @@ const MLProblemActions = ({
               <TooltipContent>More Actions</TooltipContent>
             </Tooltip>
           </DropdownMenuTrigger>
-
           <DropdownMenuContent>
             <Link to={viewUrl}>
               <DropdownMenuItem className="group text-muted-foreground">
@@ -86,7 +94,6 @@ const MLProblemActions = ({
                 View
               </DropdownMenuItem>
             </Link>
-
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(datasetId);
@@ -97,7 +104,6 @@ const MLProblemActions = ({
               <Copy className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Copy dataset id
             </DropdownMenuItem>
-
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(datasetVersionId);
@@ -108,7 +114,6 @@ const MLProblemActions = ({
               <Copy className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Copy dataset version id
             </DropdownMenuItem>
-
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(problemId);
@@ -119,7 +124,6 @@ const MLProblemActions = ({
               <Copy className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Copy ML problem id
             </DropdownMenuItem>
-
             <DropdownMenuItem
               onClick={onUpdate}
               className="group text-muted-foreground"
@@ -127,7 +131,6 @@ const MLProblemActions = ({
               <Edit className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
               Edit
             </DropdownMenuItem>
-
             <DropdownMenuItem
               onClick={onDelete}
               className="group text-muted-foreground"

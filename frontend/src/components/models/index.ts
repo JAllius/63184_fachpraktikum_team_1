@@ -1,6 +1,5 @@
-export { default as DatasetsFilterbar } from "./DatasetsFilterbar";
-export { default as DatasetsTable } from "./DatasetsTable";
-export { default as DatasetDelete, type DeleteTarget } from "./DatasetDelete";
-export { default as DatasetUpdate, type UpdateTarget } from "./DatasetUpdate";
-export { default as DatasetCreate } from "./DatasetCreate";
-export { DatasetSchema, type DatasetInput } from "./dataset.schema";
+export { default as ModelsFilterbar } from "./ModelsFilterbar";
+export { default as ModelsTable } from "./ModelsTable";
+export { default as ModelDelete, type DeleteTarget } from "./ModelDelete";
+export { default as ModelUpdate, type UpdateTarget } from "./ModelUpdate";
+export { ModelUpdateSchema, type ModelUpdateInput } from "./model.schema";

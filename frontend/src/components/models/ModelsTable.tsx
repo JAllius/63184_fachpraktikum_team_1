@@ -70,20 +70,28 @@ const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
           {models.map((m) => (
             <TableRow key={m.id}>
               <TableCell className="font-medium">
-                <Link to={`${m.id}`} aria-label="View Model">
-                  {m.name}
-                </Link>
+                {m.status === "training" || m.status === "failed" ? (
+                  <div>{m.name}</div>
+                ) : (
+                  <Link to={`${m.id}`} aria-label="View Model">
+                    {m.name}
+                  </Link>
+                )}
               </TableCell>
               <TableCell className="text-muted-foreground">{m.id}</TableCell>
               <TableCell>{m.status}</TableCell>
               <TableCell>{m.algorithm}</TableCell>
               <TableCell>
                 {task === "classification"
-                  ? round(JSON.parse(m.metrics_json)?.f1, 3) ?? ""
-                  : JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? ""}
+                  ? (round(JSON.parse(m.metrics_json)?.f1, 3) ?? "")
+                  : (JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? "")}
               </TableCell>
               <TableCell>{m.train_mode}</TableCell>
-              <TableCell>{m.evaluation_strategy}</TableCell>
+              <TableCell>
+                {m.evaluation_strategy === "cv"
+                  ? "cross validation"
+                  : "holdout"}
+              </TableCell>
               <TableCell>{m.created_at}</TableCell>
               <TableCell>
                 <RowActions
@@ -91,6 +99,7 @@ const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
                   parent="Model"
                   onDelete={() => askDelete(m.id, m.name)}
                   onUpdate={() => askUpdate(m.id, m.name)}
+                  disabled={m.status === "training" || m.status === "failed"}
                 />
               </TableCell>
             </TableRow>

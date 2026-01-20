@@ -22,6 +22,8 @@ import type { ModelUpdateInput } from "@/components/models/model.schema";
 import ModelsJoinedFilterbar from "@/components/models/joined_table/ModelsJoinedFilterbar";
 import ModelsJoinedTable from "@/components/models/joined_table/ModelsJoinedTable";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
+
 const ModelsPage = () => {
   const [models, setModels] = useState<ModelJoined[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,8 @@ const ModelsPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
 
   const q = searchParams.get("q") || "";
   const name = searchParams.get("name") || "";
@@ -46,10 +49,20 @@ const ModelsPage = () => {
   const train_mode = searchParams.get("train_mode") || "";
   const evaluation_strategy = searchParams.get("evaluation_strategy") || "";
   const status = searchParams.get("status") || "";
-
   const dataset_name = searchParams.get("dataset_name") || "";
   const dataset_version_name = searchParams.get("dataset_version_name") || "";
   const problem_name = searchParams.get("problem_name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(name?.trim()) ||
+    Boolean(algorithm?.trim()) ||
+    Boolean(train_mode?.trim()) ||
+    Boolean(evaluation_strategy?.trim()) ||
+    Boolean(status?.trim()) ||
+    Boolean(dataset_name?.trim()) ||
+    Boolean(dataset_version_name?.trim()) ||
+    Boolean(problem_name?.trim());
 
   const loadModels = useCallback(async () => {
     try {
@@ -96,8 +109,32 @@ const ModelsPage = () => {
     loadModels();
   }, [loadModels]);
 
-  const askDelete = (id: string) => {
-    setDeleteTarget({ id });
+  useEffect(() => {
+    const eventSource = new EventSource(`${API_URL}/events/stream`);
+
+    const refreshOnTrain = (e: MessageEvent) => {
+      const payload = JSON.parse(e.data);
+      if (payload.job?.type === "train") {
+        if (payload.job?.status === "completed")
+          toast.success("Training finished successfully");
+      } else if (payload.job?.status === "failed") {
+        toast.error("Training failed");
+      }
+      loadModels();
+    };
+
+    eventSource.addEventListener("job.completed", refreshOnTrain);
+    eventSource.addEventListener("job.failed", refreshOnTrain);
+
+    return () => {
+      eventSource.removeEventListener("job.completed", refreshOnTrain);
+      eventSource.removeEventListener("job.failed", refreshOnTrain);
+      eventSource.close();
+    };
+  });
+
+  const askDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
     setOpenDelete(true);
   };
 
@@ -119,8 +156,8 @@ const ModelsPage = () => {
     setDeleting(false);
   };
 
-  const askUpdate = (id: string) => {
-    setUpdateTarget({ id });
+  const askUpdate = (id: string, name: string) => {
+    setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
 
@@ -151,7 +188,7 @@ const ModelsPage = () => {
           Browse and manage models across all datasets.
         </p>
 
-        {models.length > 0 ? (
+        {models.length > 0 || hasActiveFilters ? (
           <div>
             <div className="flex justify-between">
               <div className="relative">
@@ -159,7 +196,7 @@ const ModelsPage = () => {
               </div>
               <div className="flex gap-2">
                 <Train onCreate={loadModels} />
-                <Predict />
+                <Predict onCreate={() => {}} />
               </div>
             </div>
             <ModelsJoinedTable
@@ -212,17 +249,11 @@ const ModelsPage = () => {
                 nodeFill="hsl(var(--sidebar-foreground))"
               />
             </div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <ModelsJoinedFilterbar />
-              </div>
-              <div className="flex gap-2">
-                <Train onCreate={loadModels} />
-                <Predict />
-              </div>
-            </div>
             <div>
               <p className="text-base font-semibold">No Models found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Train a model to activate this page.
+              </p>
               <div className="mt-5">
                 <Train onCreate={loadModels} />
               </div>

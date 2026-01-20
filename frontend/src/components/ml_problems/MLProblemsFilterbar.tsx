@@ -150,12 +150,14 @@ const MLProblemsFilterbar = () => {
               setFilters((f) => ({ ...f, task: value }))
             }
           >
-            <SelectTrigger className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3">
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
               <SelectValue placeholder="Task" />
             </SelectTrigger>
             <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
               {tasks.map((task) => (
-                <SelectItem value={task.value}>{task.label}</SelectItem>
+                <SelectItem key={task.value} value={task.value}>
+                  {task.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

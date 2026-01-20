@@ -11,26 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import ModelActions from "./ModelActions";
 import { SortableHeader } from "@/components/table";
-
-export type ModelJoined = {
-  id: string;
-  name: string;
-  algorithm: string;
-  train_mode: string;
-  evaluation_strategy: string;
-  status: "staging" | "production" | "archived";
-  metrics_json: string;
-  created_at: string;
-
-  problem_id: string;
-  problem_name?: string | null;
-
-  dataset_version_id: string;
-  dataset_version_name?: string | null;
-
-  dataset_id: string;
-  dataset_name: string;
-};
+import type { ModelJoined } from "@/lib/actions/models/model.action";
 
 type Props = {
   models: ModelJoined[];
@@ -117,6 +98,7 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
                   <Link
                     to={`/dashboard/datasets/${m.dataset_id}`}
                     aria-label="View dataset"
+                    className="font-medium"
                   >
                     {m.dataset_name}
                   </Link>
@@ -134,23 +116,32 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
                   <Link
                     to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}`}
                     aria-label="View ML problem"
+                    className="font-medium"
                   >
                     {m.problem_name}
                   </Link>
                 </TableCell>
                 <TableCell className="font-medium">
-                  <Link
-                    to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}/${m.id}`}
-                    aria-label="View model"
-                  >
-                    {m.name}
-                  </Link>
+                  {m.status === "training" || m.status === "failed" ? (
+                    <div>{m.name}</div>
+                  ) : (
+                    <Link
+                      to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}/${m.id}`}
+                      aria-label="View Model"
+                    >
+                      {m.name}
+                    </Link>
+                  )}
                 </TableCell>
                 <TableCell>{m.status}</TableCell>
                 <TableCell>{m.algorithm}</TableCell>
                 <TableCell>{safeMetric(m.metrics_json)}</TableCell>
                 <TableCell>{m.train_mode}</TableCell>
-                <TableCell>{m.evaluation_strategy}</TableCell>
+                <TableCell>
+                  {m.evaluation_strategy === "cv"
+                    ? "cross validation"
+                    : "holdout"}
+                </TableCell>
                 <TableCell>{m.created_at}</TableCell>
 
                 <TableCell>
@@ -162,6 +153,7 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
                     parent="Model"
                     onDelete={() => askDelete(m.id, m.name)}
                     onUpdate={() => askUpdate(m.id, m.name)}
+                    disabled={m.status === "training" || m.status === "failed"}
                   />
                 </TableCell>
               </TableRow>

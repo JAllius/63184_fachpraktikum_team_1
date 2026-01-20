@@ -58,6 +58,7 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
                   <Link
                     to={`/dashboard/datasets/${mlp.dataset_id}`}
                     aria-label="View dataset"
+                    className="font-medium"
                   >
                     {mlp.dataset_name}
                   </Link>
@@ -71,10 +72,11 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
                     {mlp.dataset_version_name}
                   </Link>
                 </TableCell>
-                <TableCell className="font-medium">
+                <TableCell>
                   <Link
                     to={`/dashboard/datasets/${mlp.dataset_id}/${mlp.dataset_version_id}/${mlp.id}`}
                     aria-label="View ML problem"
+                    className="font-medium"
                   >
                     {mlp.name}
                   </Link>

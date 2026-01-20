@@ -223,7 +223,7 @@ export type DatasetVersionAllListResponse = {
   dir: "asc" | "desc";
   q: string | null;
   dataset_name: string | null;
-  version_name: string | null;
+  name: string | null;
 };
 
 export type DatasetVersionAllQueryParams = {
@@ -233,7 +233,7 @@ export type DatasetVersionAllQueryParams = {
   dir?: "asc" | "desc";
   q?: string;
   dataset_name?: string;
-  version_name?: string;
+  name?: string;
 };
 
 export async function get_dataset_versions_all(
@@ -248,8 +248,7 @@ export async function get_dataset_versions_all(
   if (params.q !== undefined) search.set("q", String(params.q));
   if (params.dataset_name !== undefined)
     search.set("dataset_name", String(params.dataset_name));
-  if (params.version_name !== undefined)
-    search.set("version_name", String(params.version_name));
+  if (params.name !== undefined) search.set("name", String(params.name));
 
   const queryString = search.toString();
 

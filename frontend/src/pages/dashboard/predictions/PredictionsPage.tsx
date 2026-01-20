@@ -24,6 +24,8 @@ import PredictionUpdate from "@/components/predictions/PredictionUpdate";
 import PredictionsJoinedFilterbar from "@/components/predictions/joined_table/PredictionsJoinedFilterbar";
 import PredictionsJoinedTable from "@/components/predictions/joined_table/PredictionsJoinedTable";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
+
 const PredictionsPage = () => {
   const [predictions, setPredictions] = useState<PredictionJoined[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,13 +42,23 @@ const PredictionsPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
 
   const q = searchParams.get("q") || "";
+  const name = searchParams.get("name") || "";
   const dataset_name = searchParams.get("dataset_name") || "";
   const dataset_version_name = searchParams.get("dataset_version_name") || "";
   const problem_name = searchParams.get("problem_name") || "";
   const model_name = searchParams.get("model_name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(name?.trim()) ||
+    Boolean(dataset_name?.trim()) ||
+    Boolean(dataset_version_name?.trim()) ||
+    Boolean(problem_name?.trim()) ||
+    Boolean(model_name?.trim());
 
   const loadPredictions = useCallback(async () => {
     try {
@@ -56,6 +68,7 @@ const PredictionsPage = () => {
         sort,
         dir,
         q: q || undefined,
+        name: name || undefined,
         dataset_name: dataset_name || undefined,
         dataset_version_name: dataset_version_name || undefined,
         problem_name: problem_name || undefined,
@@ -75,6 +88,7 @@ const PredictionsPage = () => {
     sort,
     dir,
     q,
+    name,
     dataset_name,
     dataset_version_name,
     problem_name,
@@ -84,6 +98,30 @@ const PredictionsPage = () => {
   useEffect(() => {
     loadPredictions();
   }, [loadPredictions]);
+
+  useEffect(() => {
+    const eventSource = new EventSource(`${API_URL}/events/stream`);
+
+    const refreshOnPredict = (e: MessageEvent) => {
+      const payload = JSON.parse(e.data);
+      if (payload.job?.type === "predict") {
+        if (payload.job?.status === "completed")
+          toast.success("Prediction finished successfully");
+      } else if (payload.job?.status === "failed") {
+        toast.error("Prediction failed");
+      }
+      loadPredictions();
+    };
+
+    eventSource.addEventListener("job.completed", refreshOnPredict);
+    eventSource.addEventListener("job.failed", refreshOnPredict);
+
+    return () => {
+      eventSource.removeEventListener("job.completed", refreshOnPredict);
+      eventSource.removeEventListener("job.failed", refreshOnPredict);
+      eventSource.close();
+    };
+  });
 
   const askDelete = (id: string) => {
     setDeleteTarget({ id });
@@ -109,8 +147,8 @@ const PredictionsPage = () => {
     setDeleting(false);
   };
 
-  const askUpdate = (id: string) => {
-    setUpdateTarget({ id });
+  const askUpdate = (id: string, name: string) => {
+    setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
 
@@ -121,7 +159,7 @@ const PredictionsPage = () => {
 
   const onUpdate = async (
     prediction_id: string,
-    data: PredictionUpdateInput
+    data: PredictionUpdateInput,
   ) => {
     if (!prediction_id || !data) return;
 
@@ -145,13 +183,13 @@ const PredictionsPage = () => {
           Browse and manage predictions across all datasets.
         </p>
 
-        {predictions.length > 0 ? (
+        {predictions.length > 0 || hasActiveFilters ? (
           <div>
             <div className="flex justify-between">
               <div className="relative">
                 <PredictionsJoinedFilterbar />
               </div>
-              <Predict />
+              <Predict onCreate={loadPredictions} />
             </div>
             <PredictionsJoinedTable
               predictions={predictions}
@@ -203,16 +241,10 @@ const PredictionsPage = () => {
                 nodeFill="hsl(var(--sidebar-foreground))"
               />
             </div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <PredictionsJoinedFilterbar />
-              </div>
-              <Predict />
-            </div>
             <div>
               <p className="text-base font-semibold">No predictions found</p>
               <div className="mt-5">
-                <Predict />
+                <Predict onCreate={loadPredictions} />
               </div>
             </div>
           </div>

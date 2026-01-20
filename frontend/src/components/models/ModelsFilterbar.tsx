@@ -11,28 +11,46 @@ import {
   SelectValue,
 } from "../ui/select";
 
-const MLProblemsFilterbar = () => {
+const TRAIN_MODES = [
+  { value: "fast", label: "Fast" },
+  { value: "balanced", label: "Balanced" },
+  { value: "accurate", label: "Accurate" },
+];
+
+const EVALUATION_STRATEGIES = [
+  { value: "cv", label: "Cross Validation" },
+  { value: "holdout", label: "Holdout" },
+];
+
+const STATUSES = [
+  { value: "staging", label: "Staging" },
+  { value: "production", label: "Production" },
+  { value: "archived", label: "Archived" },
+];
+
+const ModelsFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+
   const initial = {
     q: searchParams.get("q") ?? "",
     id: searchParams.get("id") ?? "",
     name: searchParams.get("name") ?? "",
-    task: searchParams.get("task") ?? "",
-    target: searchParams.get("target") ?? "",
+    algorithm: searchParams.get("algorithm") ?? "",
+    train_mode: searchParams.get("train_mode") ?? "",
+    evaluation_strategy: searchParams.get("evaluation_strategy") ?? "",
+    status: searchParams.get("status") ?? "",
   };
+
   const [filters, setFilters] = useState({
     q: initial.q,
     id: initial.id,
     name: initial.name,
-    task: initial.task,
-    target: initial.target,
+    algorithm: initial.algorithm,
+    train_mode: initial.train_mode,
+    evaluation_strategy: initial.evaluation_strategy,
+    status: initial.status,
   });
-
-  const tasks = [
-    { value: "classification", label: "Classification" },
-    { value: "regression", label: "Regression" },
-  ];
 
   useDebounce(
     () => {
@@ -42,23 +60,30 @@ const MLProblemsFilterbar = () => {
         q: searchParams.get("q") ?? "",
         id: searchParams.get("id") ?? "",
         name: searchParams.get("name") ?? "",
-        task: searchParams.get("task") ?? "",
-        target: searchParams.get("target") ?? "",
+        algorithm: searchParams.get("algorithm") ?? "",
+        train_mode: searchParams.get("train_mode") ?? "",
+        evaluation_strategy: searchParams.get("evaluation_strategy") ?? "",
+        status: searchParams.get("status") ?? "",
       };
+
       const next = {
         q: filters.q.trim(),
         id: filters.id.trim(),
         name: filters.name.trim(),
-        task: filters.task.trim(),
-        target: filters.target.trim(),
+        algorithm: filters.algorithm.trim(),
+        train_mode: filters.train_mode.trim(),
+        evaluation_strategy: filters.evaluation_strategy.trim(),
+        status: filters.status.trim(),
       };
 
       const isChanged =
         current.q !== next.q ||
         current.id !== next.id ||
         current.name !== next.name ||
-        current.task !== next.task ||
-        current.target !== next.target;
+        current.algorithm !== next.algorithm ||
+        current.train_mode !== next.train_mode ||
+        current.evaluation_strategy !== next.evaluation_strategy ||
+        current.status !== next.status;
 
       if (filters.q) params.set("q", filters.q);
       else params.delete("q");
@@ -69,31 +94,49 @@ const MLProblemsFilterbar = () => {
       if (filters.name) params.set("name", filters.name);
       else params.delete("name");
 
-      if (filters.task) params.set("task", filters.task);
-      else params.delete("task");
+      if (filters.algorithm) params.set("algorithm", filters.algorithm);
+      else params.delete("algorithm");
 
-      if (filters.target) params.set("target", filters.target);
-      else params.delete("task");
+      if (filters.train_mode) params.set("train_mode", filters.train_mode);
+      else params.delete("train_mode");
+
+      if (filters.evaluation_strategy)
+        params.set("evaluation_strategy", filters.evaluation_strategy);
+      else params.delete("evaluation_strategy");
+
+      if (filters.status) params.set("status", filters.status);
+      else params.delete("status");
 
       if (isChanged) params.delete("page");
 
       if (params.toString() !== searchParams.toString()) {
-        setSearchParams(params, { replace: true }); // replace: true -> update the URL by replacing the current history entry
+        setSearchParams(params, { replace: true });
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
-    setFilters({ q: "", id: "", name: "", task: "", target: "" });
+    setFilters({
+      q: "",
+      id: "",
+      name: "",
+      algorithm: "",
+      train_mode: "",
+      evaluation_strategy: "",
+      status: "",
+    });
 
     const params = new URLSearchParams(searchParams);
     params.delete("q");
     params.delete("id");
     params.delete("name");
-    params.delete("task");
-    params.delete("target");
+    params.delete("algorithm");
+    params.delete("train_mode");
+    params.delete("evaluation_strategy");
+    params.delete("status");
+    params.delete("page");
 
     setSearchParams(params, { replace: true });
   };
@@ -128,49 +171,94 @@ const MLProblemsFilterbar = () => {
           </div>
         </div>
       </div>
+
       {open && (
-        <div className="flex flex-row gap-2 mt-2">
+        <div className="flex flex-row gap-2 mt-2 flex-wrap">
           <Input
             placeholder="id"
             value={filters.id}
             onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
             className="shadow border rounded-md px-2 py-1 w-60"
           />
+
           <Input
-            placeholder="ML Problem name"
+            placeholder="Model name"
             value={filters.name}
             onChange={(e) =>
               setFilters((f) => ({ ...f, name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-          <Select
-            value={filters.task ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, task: value }))
-            }
-          >
-            <SelectTrigger className="h-9 w-full justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Task" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {tasks.map((task) => (
-                <SelectItem value={task.value}>{task.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
           <Input
-            placeholder="Target"
-            value={filters.target}
+            placeholder="Algorithm"
+            value={filters.algorithm}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, target: e.target.value }))
+              setFilters((f) => ({ ...f, algorithm: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
+
+          <Select
+            value={filters.train_mode}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, train_mode: value }))
+            }
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Train mode" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {TRAIN_MODES.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.evaluation_strategy}
+            onValueChange={(value) =>
+              setFilters((f) => ({
+                ...f,
+                evaluation_strategy: value,
+              }))
+            }
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Evaluation strategy" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {EVALUATION_STRATEGIES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.status}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, status: value }))
+            }
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
     </div>
   );
 };
 
-export default MLProblemsFilterbar;
+export default ModelsFilterbar;

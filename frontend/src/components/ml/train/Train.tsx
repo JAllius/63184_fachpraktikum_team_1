@@ -40,29 +40,31 @@ type Props = {
 
 const Train = ({ problemId, task, onCreate }: Props) => {
   const [open, setOpen] = useState(false);
+  const [id, setId] = useState(problemId ?? "");
   const [presets, setPresets] = useState<string[]>([]);
 
   useEffect(() => {
-    async function loadMLProblem() {
-      if (!task && problemId) {
-        try {
-          const mlProblem: MLProblem = await get_ml_problem(problemId);
-          const data: string[] = await get_presets_list(mlProblem.task);
-          setPresets(data);
-        } catch (error) {
-          console.log(error);
-        }
-      } else if (task) {
-        try {
+    async function loadPresets() {
+      try {
+        if (task) {
           const data: string[] = await get_presets_list(task);
           setPresets(data);
-        } catch (error) {
-          console.log(error);
+          return;
         }
+        if (!id) {
+          setPresets([]);
+          return;
+        }
+        const mlProblem: MLProblem = await get_ml_problem(id);
+        const data: string[] = await get_presets_list(mlProblem.task);
+        setPresets(data);
+      } catch (error) {
+        console.log(error);
+        setPresets([]);
       }
     }
-    loadMLProblem();
-  }, [problemId, task]);
+    loadPresets();
+  }, [id, task]);
 
   const {
     register,
@@ -130,7 +132,11 @@ const Train = ({ problemId, task, onCreate }: Props) => {
                   aria-invalid={!!errors.problem_id}
                   readOnly={!!problemId}
                   defaultValue={problemId ?? ""}
-                  {...register("problem_id")}
+                  {...register("problem_id", {
+                    onChange: (e) => {
+                      setId(e.target.value);
+                    },
+                  })}
                 />
                 <FieldError
                   errors={errors.problem_id ? [errors.problem_id] : undefined}

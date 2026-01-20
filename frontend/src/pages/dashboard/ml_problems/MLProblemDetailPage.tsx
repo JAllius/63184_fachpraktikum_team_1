@@ -80,7 +80,8 @@ const MLProblemDetailPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
   const q = searchParams.get("q") || "";
   const id = searchParams.get("id") || "";
   const name = searchParams.get("name") || "";
@@ -88,6 +89,15 @@ const MLProblemDetailPage = () => {
   const train_mode = searchParams.get("train_mode") || "";
   const evaluation_strategy = searchParams.get("evaluation_strategy") || "";
   const status = searchParams.get("status") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(id?.trim()) ||
+    Boolean(name?.trim()) ||
+    Boolean(algorithm?.trim()) ||
+    Boolean(train_mode?.trim()) ||
+    Boolean(evaluation_strategy?.trim()) ||
+    Boolean(status?.trim());
 
   useEffect(() => {
     async function loadMLProblem() {
@@ -211,8 +221,8 @@ const MLProblemDetailPage = () => {
   const prodModelName = prodModel?.name;
   const prodModelId = prodModel?.id;
 
-  const askDelete = (id: string) => {
-    setDeleteTarget({ id });
+  const askDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
     setOpenDelete(true);
   };
 
@@ -285,7 +295,7 @@ const MLProblemDetailPage = () => {
             <TabsTrigger value="configuration">Configuration</TabsTrigger>
           </TabsList>
           <TabsContent value="models">
-            {models.length > 0 ? (
+            {models.length > 0 || hasActiveFilters ? (
               <div>
                 <div className="flex justify-between">
                   <div className="relative">
@@ -297,7 +307,7 @@ const MLProblemDetailPage = () => {
                       task={mlProblem.task}
                       onCreate={loadModels}
                     />
-                    <Predict problemId={problemId} />
+                    <Predict problemId={problemId} onCreate={() => {}} />
                   </div>
                 </div>
                 <ModelsTable
@@ -347,19 +357,6 @@ const MLProblemDetailPage = () => {
                     style={{ color: "hsl(var(--sidebar-foreground))" }}
                     nodeFill="hsl(var(--sidebar-foreground))"
                   />
-                </div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <ModelsFilterbar />
-                  </div>
-                  <div className="flex gap-2">
-                    <Train
-                      problemId={problemId}
-                      task={mlProblem.task}
-                      onCreate={loadModels}
-                    />
-                    <Predict problemId={problemId} />
-                  </div>
                 </div>
                 <div>
                   <p className="text-base font-semibold">No Models yet</p>

@@ -49,10 +49,11 @@ const DatasetVersionsJoinedTable = ({
         <TableBody>
           {datasetVersions.map((dsv) => (
             <TableRow key={dsv.id}>
-              <TableCell className="font-medium">
+              <TableCell className="text-muted-foreground">
                 <Link
                   to={`/dashboard/datasets/${dsv.dataset_id}`}
                   aria-label="View dataset"
+                  className="font-medium"
                 >
                   {dsv.dataset_name}
                 </Link>

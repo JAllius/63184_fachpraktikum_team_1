@@ -203,10 +203,9 @@ export type MLProblemAllListResponse = {
   sort: string;
   dir: "asc" | "desc";
   q: string | null;
-
   dataset_name: string | null;
   dataset_version_name: string | null;
-  problem_name: string | null;
+  name: string | null;
   task: string | null;
   target: string | null;
 };
@@ -217,10 +216,9 @@ export type MLProblemAllQueryParams = {
   sort?: string;
   dir?: "asc" | "desc";
   q?: string;
-
   dataset_name?: string;
   dataset_version_name?: string;
-  problem_name?: string;
+  name?: string;
   task?: string;
   target?: string;
 };
@@ -235,13 +233,11 @@ export async function get_ml_problems_all(
   if (params.sort !== undefined) search.set("sort", String(params.sort));
   if (params.dir !== undefined) search.set("dir", String(params.dir));
   if (params.q !== undefined) search.set("q", String(params.q));
-
   if (params.dataset_name !== undefined)
     search.set("dataset_name", String(params.dataset_name));
   if (params.dataset_version_name !== undefined)
     search.set("dataset_version_name", String(params.dataset_version_name));
-  if (params.problem_name !== undefined)
-    search.set("problem_name", String(params.problem_name));
+  if (params.name !== undefined) search.set("name", String(params.name));
   if (params.task !== undefined) search.set("task", String(params.task));
   if (params.target !== undefined) search.set("target", String(params.target));
 

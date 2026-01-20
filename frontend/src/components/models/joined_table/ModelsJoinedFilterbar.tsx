@@ -11,6 +11,23 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
 
+const TRAIN_MODES = [
+  { value: "fast", label: "Fast" },
+  { value: "balanced", label: "Balanced" },
+  { value: "accurate", label: "Accurate" },
+];
+
+const EVALUATION_STRATEGIES = [
+  { value: "cv", label: "Cross Validation" },
+  { value: "holdout", label: "Holdout" },
+];
+
+const STATUSES = [
+  { value: "staging", label: "Staging" },
+  { value: "production", label: "Production" },
+  { value: "archived", label: "Archived" },
+];
+
 const ModelsJoinedFilterbar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -29,12 +46,6 @@ const ModelsJoinedFilterbar = () => {
   };
 
   const [filters, setFilters] = useState(initial);
-
-  const statuses = [
-    { value: "staging", label: "Staging" },
-    { value: "production", label: "Production" },
-    { value: "archived", label: "Archived" },
-  ];
 
   useDebounce(
     () => {
@@ -113,7 +124,7 @@ const ModelsJoinedFilterbar = () => {
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
@@ -196,26 +207,41 @@ const ModelsJoinedFilterbar = () => {
             className="shadow border rounded-md px-2 py-1 w-60"
           />
 
-          <Input
-            placeholder="Train mode"
-            value={filters.train_mode}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, train_mode: e.target.value }))
+          <Select
+            value={filters.train_mode ?? ""}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, train_mode: value }))
             }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Train mode" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {TRAIN_MODES.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <Input
-            placeholder="Evaluation strategy"
-            value={filters.evaluation_strategy}
-            onChange={(e) =>
-              setFilters((f) => ({
-                ...f,
-                evaluation_strategy: e.target.value,
-              }))
+          <Select
+            value={filters.evaluation_strategy ?? ""}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, evaluation_strategy: value }))
             }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Evaluation strategy" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {EVALUATION_STRATEGIES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Select
             value={filters.status ?? ""}
@@ -227,7 +253,7 @@ const ModelsJoinedFilterbar = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {statuses.map((s) => (
+              {STATUSES.map((s) => (
                 <SelectItem key={s.value} value={s.value}>
                   {s.label}
                 </SelectItem>

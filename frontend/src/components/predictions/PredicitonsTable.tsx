@@ -42,9 +42,13 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
           {predictions.map((pr) => (
             <TableRow key={pr.id}>
               <TableCell className="font-medium">
-                <Link to={`${pr.id}`} aria-label="View prediction">
-                  {pr.name}
-                </Link>
+                {pr.status === "predicting" ? (
+                  <div>{pr.name}</div>
+                ) : (
+                  <Link to={`${pr.id}`} aria-label="View prediction">
+                    {pr.name}
+                  </Link>
+                )}
               </TableCell>
               <TableCell className="text-muted-foreground">{pr.id}</TableCell>
               <TableCell>{pr.status}</TableCell>

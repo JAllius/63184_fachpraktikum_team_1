@@ -14,8 +14,8 @@ import type { MLProblem } from "@/lib/actions/mlProblems/mlProblem.action";
 
 type Props = {
   mlProblems: MLProblem[];
-  askDelete: (id: string, name?: string) => void;
-  askUpdate: (id: string, name?: string) => void;
+  askDelete: (id: string, name: string) => void;
+  askUpdate: (id: string, name: string) => void;
 };
 
 const MLProblemsTable = ({ mlProblems, askDelete, askUpdate }: Props) => {

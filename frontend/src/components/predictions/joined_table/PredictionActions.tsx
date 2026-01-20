@@ -24,6 +24,7 @@ type Props = {
   parent: string;
   onDelete: () => void;
   onUpdate: () => void;
+  disabled?: boolean;
 };
 
 const PredictionActions = ({
@@ -35,6 +36,7 @@ const PredictionActions = ({
   parent,
   onDelete,
   onUpdate,
+  disabled = false,
 }: Props) => {
   const [copied, setCopied] = useState(false);
 
@@ -45,13 +47,17 @@ const PredictionActions = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to={viewUrl}
-              aria-label={"View " + parent}
-              className="inline-flex items-center justify-center text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
-            >
+            {!disabled ? (
+              <Link
+                to={viewUrl}
+                aria-label={"View " + parent}
+                className="inline-flex items-center justify-center text-muted-foreground hover:text-sky-400 hover:scale-105 active:scale-95"
+              >
+                <FileText className="w-4 h-4" />
+              </Link>
+            ) : (
               <FileText className="w-4 h-4" />
-            </Link>
+            )}
           </TooltipTrigger>
           <TooltipContent>View {parent}</TooltipContent>
         </Tooltip>
@@ -93,13 +99,19 @@ const PredictionActions = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent>
-            <Link to={viewUrl}>
+            {!disabled ? (
+              <Link to={viewUrl}>
+                <DropdownMenuItem className="group text-muted-foreground">
+                  <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                  View
+                </DropdownMenuItem>
+              </Link>
+            ) : (
               <DropdownMenuItem className="group text-muted-foreground">
-                <FileText className="w-4 h-4 group-data-[highlighted]:text-sky-400" />
+                <FileText className="w-4 h-4" />
                 View
               </DropdownMenuItem>
-            </Link>
-
+            )}
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(datasetId);

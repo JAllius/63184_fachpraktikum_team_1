@@ -38,11 +38,17 @@ const DatasetVersionsPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
 
   const q = searchParams.get("q") || "";
   const dataset_name = searchParams.get("dataset_name") || "";
-  const version_name = searchParams.get("version_name") || "";
+  const name = searchParams.get("name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(dataset_name?.trim()) ||
+    Boolean(name?.trim());
 
   const loadDatasetVersions = useCallback(async () => {
     try {
@@ -54,7 +60,7 @@ const DatasetVersionsPage = () => {
           dir,
           q: q || undefined,
           dataset_name: dataset_name || undefined,
-          version_name: version_name || undefined,
+          name: name || undefined,
         });
       setDatasetVersions(data.items);
       setTotalPages(data.total_pages);
@@ -63,7 +69,7 @@ const DatasetVersionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sort, dir, q, dataset_name, version_name]);
+  }, [page, size, sort, dir, q, dataset_name, name]);
 
   useEffect(() => {
     loadDatasetVersions();
@@ -107,7 +113,7 @@ const DatasetVersionsPage = () => {
 
   const onUpdate = async (
     dataset_version_id: string,
-    data: DatasetVersionUpdateInput
+    data: DatasetVersionUpdateInput,
   ) => {
     if (!dataset_version_id || !data) return;
 
@@ -133,7 +139,7 @@ const DatasetVersionsPage = () => {
           Browse and manage dataset versions across all datasets.
         </p>
 
-        {datasetVersions.length > 0 ? (
+        {datasetVersions.length > 0 || hasActiveFilters ? (
           <div>
             <div className="flex justify-between">
               <div className="relative">
@@ -189,12 +195,6 @@ const DatasetVersionsPage = () => {
                 style={{ color: "hsl(var(--sidebar-foreground))" }}
                 nodeFill="hsl(var(--sidebar-foreground))"
               />
-            </div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetVersionsJoinedFilterbar />
-              </div>
-              <DatasetVersionCreate onCreate={loadDatasetVersions} />
             </div>
             <div>
               <p className="text-base font-semibold">

@@ -13,9 +13,9 @@ const PredictionDetailPage = () => {
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
-  //   const totalRows = rows.length;
-  //   const totalPages = Math.max(1, Math.ceil(totalRows / size));
-  //   total_pages = int((total + size -1)/size) if size > 0 else 1
+  const sort = searchParams.get("sort");
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
 
   const params = useParams<{ predictionId: string }>();
   if (!params.predictionId) {
@@ -46,7 +46,7 @@ const PredictionDetailPage = () => {
   const X = outputs_json?.X as Array<Record<string, unknown>>;
   const featureColumnNames = X?.length > 0 ? Object.keys(X[0]) : [];
   const columnNames = [...featureColumnNames, target];
-  const rows =
+  const rows: Record<string, unknown>[] =
     X?.length > 0
       ? X.map((row, i) => {
           const raw = outputs_json.y_pred[i];
@@ -61,7 +61,34 @@ const PredictionDetailPage = () => {
             [target]: pred,
           };
         })
-      : null;
+      : [];
+
+  const sortedRows =
+    !sort || !columnNames.includes(sort)
+      ? rows
+      : [...rows].sort((rowa, rowb) => {
+          const a = rowa[sort];
+          const b = rowb[sort];
+
+          // numeric cell sorting
+          if (typeof a === "number" && typeof b === "number") {
+            return dir === "desc" ? b - a : a - b;
+          }
+
+          // string / mixed cell sorting
+          return (
+            String(a ?? "").localeCompare(String(b ?? ""), undefined, {
+              // undefined (no locale specified) -> needed to add "options for localeCompare otherwise function error"
+              numeric: true, // numeric option to handle numeric strings correctly
+              sensitivity: "base", // base sensitivity -> the comparison is more lenient: eg. a = A
+            }) * (dir === "desc" ? -1 : 1)
+          );
+        });
+
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / size));
+  const offset = (page - 1) * size;
+  const filteredRows = sortedRows.slice(offset, offset + size);
 
   if (loading) {
     return <Loading />;
@@ -77,16 +104,20 @@ const PredictionDetailPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Results and details for {prediction?.name ?? "Unknown Prediction"}.
         </p>
-        <PredictionTable columnNames={columnNames} rows={rows} />
+        <PredictionTable
+          columnNames={columnNames}
+          rows={filteredRows}
+          totalRows={totalRows}
+        />
         <div className="mt-2 grid grid-cols-3 items-center">
           <div />
-          {/* {totalPages > 1 ? (
+          {totalPages > 1 ? (
             <div className="flex justify-center">
               <Pagination totalPages={totalPages} />
             </div>
           ) : (
             <div />
-          )} */}
+          )}
           <div className="flex justify-end">
             <PageSize size={size} />
           </div>

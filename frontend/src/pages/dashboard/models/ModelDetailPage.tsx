@@ -75,10 +75,14 @@ const ModelDetailPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
   const q = searchParams.get("q") || "";
   const id = searchParams.get("id") || "";
-  // const name = searchParams.get("name") || "";
+  const name = searchParams.get("name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) || Boolean(id?.trim()) || Boolean(name?.trim());
 
   useEffect(() => {
     async function loadModel() {
@@ -121,7 +125,7 @@ const ModelDetailPage = () => {
         dir,
         q: q || undefined,
         id: id || undefined,
-        // name: name || undefined,
+        name: name || undefined,
       });
       setPredictions(data.items);
       setTotalPages(data.total_pages);
@@ -130,7 +134,7 @@ const ModelDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [modelId, page, size, sort, dir, q, id]); // name
+  }, [modelId, page, size, sort, dir, q, id, name]);
 
   useEffect(() => {
     loadPredictions();
@@ -242,13 +246,17 @@ const ModelDetailPage = () => {
             <TabsTrigger value="explainability">Explainability</TabsTrigger>
           </TabsList>
           <TabsContent value="predictions">
-            {predictions.length > 0 ? (
+            {predictions.length > 0 || hasActiveFilters ? (
               <div>
                 <div className="flex justify-between">
                   <div className="relative">
                     <PredictionsFilterbar />
                   </div>
-                  <Predict problemId={problemId} modelId={modelId} />
+                  <Predict
+                    problemId={problemId}
+                    modelId={modelId}
+                    onCreate={loadPredictions}
+                  />
                 </div>
                 <PredictionsTable
                   predictions={predictions}
@@ -303,7 +311,11 @@ const ModelDetailPage = () => {
                     Run a prediction to activate this tab.
                   </p>
                   <div className="mt-5">
-                    <Predict problemId={problemId} modelId={modelId} />
+                    <Predict
+                      problemId={problemId}
+                      modelId={modelId}
+                      onCreate={loadPredictions}
+                    />
                   </div>
                 </div>
               </div>

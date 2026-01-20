@@ -77,7 +77,7 @@ const DatasetVersionDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
-    null
+    null,
   );
   const [totalPages, setTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -95,19 +95,26 @@ const DatasetVersionDetailPage = () => {
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
   const sort = searchParams.get("sort") ?? "created_at";
-  const dir = ((searchParams.get("dir") as "asc") || "desc") ?? "desc";
+  const dir: "asc" | "desc" =
+    searchParams.get("dir") === "asc" ? "asc" : "desc";
   const q = searchParams.get("q") || "";
   const id = searchParams.get("id") || "";
   const task = searchParams.get("task") || "";
   const target = searchParams.get("target") || "";
-  // const name = seachParams.get("name") || "";
+  const name = searchParams.get("name") || "";
+
+  const hasActiveFilters =
+    Boolean(q?.trim()) ||
+    Boolean(id?.trim()) ||
+    Boolean(name?.trim()) ||
+    Boolean(task?.trim()) ||
+    Boolean(target?.trim());
 
   useEffect(() => {
     async function loadDatasetVersion() {
       try {
-        const data: DatasetVersion = await get_dataset_version(
-          datasetVersionId
-        );
+        const data: DatasetVersion =
+          await get_dataset_version(datasetVersionId);
         setDatasetVersion(data);
       } catch (error) {
         console.log(error);
@@ -124,7 +131,7 @@ const DatasetVersionDetailPage = () => {
         ([name, metadata]) => ({
           name: name,
           analysis: metadata.suggested_analysis,
-        })
+        }),
       );
       setColumnsDetails(details);
     } catch (error) {
@@ -150,8 +157,8 @@ const DatasetVersionDetailPage = () => {
           id: id || undefined,
           task: task || undefined,
           target: target || undefined,
-          // name: name || undefined,
-        }
+          name: name || undefined,
+        },
       );
       setMLProblems(data.items);
       setTotalPages(data.total_pages);
@@ -160,7 +167,7 @@ const DatasetVersionDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [datasetVersionId, page, size, sort, dir, q, id, task, target]); // name
+  }, [datasetVersionId, page, size, sort, dir, q, id, task, target, name]);
 
   useEffect(() => {
     loadMLProblems();
@@ -214,7 +221,7 @@ const DatasetVersionDetailPage = () => {
     setDeleting(false);
   };
 
-  const askUpdate = (id: string, name?: string) => {
+  const askUpdate = (id: string, name: string) => {
     setUpdateTarget({ id, name });
     setOpenUpdate(true);
   };
@@ -226,7 +233,7 @@ const DatasetVersionDetailPage = () => {
 
   const onUpdate = async (
     ml_problem_id: string,
-    data: MLProblemUpdateInput
+    data: MLProblemUpdateInput,
   ) => {
     if (!ml_problem_id || !data) return;
 
@@ -282,7 +289,7 @@ const DatasetVersionDetailPage = () => {
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
           <TabsContent value="ml_problems" className="flex-1 min-h-0">
-            {mlProblems.length > 0 ? (
+            {mlProblems.length > 0 || hasActiveFilters ? (
               <div>
                 <div className="flex justify-between">
                   <div className="relative">
@@ -339,16 +346,6 @@ const DatasetVersionDetailPage = () => {
                     className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
                     style={{ color: "hsl(var(--sidebar-foreground))" }}
                     nodeFill="hsl(var(--sidebar-foreground))"
-                  />
-                </div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <MLProblemsFilterbar />
-                  </div>
-                  <MLProblemCreate
-                    onCreate={loadMLProblems}
-                    datasetVersionId={datasetVersionId}
-                    columnsDetails={columnsDetails}
                   />
                 </div>
                 <div>

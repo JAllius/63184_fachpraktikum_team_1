@@ -36,11 +36,12 @@ import { cn } from "@/lib/utils";
 type Props = {
   problemId?: string;
   modelId?: string;
+  onCreate: () => Promise<void> | void;
 };
 
 type Mode = "new" | "existing" | "json";
 
-const Predict = ({ problemId, modelId }: Props) => {
+const Predict = ({ problemId, modelId, onCreate }: Props) => {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("new");
   const [hasFile, setHasFile] = useState(false);
@@ -79,6 +80,7 @@ const Predict = ({ problemId, modelId }: Props) => {
       return;
     }
     toast.success("Prediction started");
+    await onCreate();
     setOpen(false);
     reset({
       name: "",
@@ -202,7 +204,7 @@ const Predict = ({ problemId, modelId }: Props) => {
                               "file:bg-transparent",
                               "file:text-sm",
                               "file:font-medium",
-                              "file:text-muted-foreground"
+                              "file:text-muted-foreground",
                             )}
                           />
                         )}
