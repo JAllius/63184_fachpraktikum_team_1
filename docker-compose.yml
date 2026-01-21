@@ -55,7 +55,7 @@ services:
       - "db:db"
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 3
     restart: "unless-stopped"
     depends_on:
       - redis_server
