@@ -243,3 +243,29 @@ export async function get_models_all(
   if (!res.ok) throw new Error(`Failed to fetch models_all: ${res.status}`);
   return await res.json();
 }
+
+type SetProductionResponse = { ok: true } | { ok: false; error: string };
+
+export async function set_model_to_production(
+  model_id: string,
+): Promise<SetProductionResponse> {
+  const url = `${API_URL}/model/${model_id}/set_production`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Setting model to production request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating model.",
+    };
+  }
+}

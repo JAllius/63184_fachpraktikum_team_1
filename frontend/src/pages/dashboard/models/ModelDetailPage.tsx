@@ -84,17 +84,18 @@ const ModelDetailPage = () => {
   const hasActiveFilters =
     Boolean(q?.trim()) || Boolean(id?.trim()) || Boolean(name?.trim());
 
-  useEffect(() => {
-    async function loadModel() {
-      try {
-        const data: Model = await get_model(modelId);
-        setModel(data);
-      } catch (error) {
-        console.log(error);
-      }
+  const loadModel = useCallback(async () => {
+    try {
+      const data: Model = await get_model(modelId);
+      setModel(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadModel();
   }, [modelId]);
+
+  useEffect(() => {
+    loadModel();
+  }, [loadModel]);
 
   useEffect(() => {
     async function loadMLProblem() {
@@ -331,6 +332,7 @@ const ModelDetailPage = () => {
                 mlProblemName={mlProblem?.name}
                 created_at={model.created_at}
                 metadata={metadata}
+                onRefresh={loadModel}
               />
             )}
           </TabsContent>

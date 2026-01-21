@@ -7,6 +7,7 @@ import {
 import {
   delete_model,
   get_models,
+  set_model_to_production,
   update_model,
   type Model,
   type ModelListResponse,
@@ -31,6 +32,8 @@ import NotFound from "@/components/errors/not_found/NotFound";
 import { Fox } from "@/components/watermark/Fox";
 import { toast } from "sonner";
 import type { ModelUpdateInput } from "@/components/models/model.schema";
+import type { SetProdTarget } from "@/components/model_details/SetModelProduction";
+import SetModelProduction from "@/components/model_details/SetModelProduction";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
@@ -76,6 +79,11 @@ const MLProblemDetailPage = () => {
     include: [],
     exclude: [],
   });
+  const [setProdTarget, setSetProdTarget] = useState<SetProdTarget | null>(
+    null,
+  );
+  const [setting, setSetting] = useState(false);
+  const [openSetProd, setOpenSetProd] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -263,9 +271,33 @@ const MLProblemDetailPage = () => {
       toast.error(res.error);
       return;
     }
-    toast.success("ML Problem updated");
+    toast.success("Model updated");
     await loadModels();
     cancelUpdate();
+  };
+
+  const askSetProd = (id: string, name: string) => {
+    setSetProdTarget({ id, name });
+    setOpenSetProd(true);
+  };
+
+  const cancelSetProd = () => {
+    setOpenSetProd(false);
+    setSetProdTarget(null);
+  };
+
+  const onSetProd = async (model_id: string) => {
+    if (!model_id) return;
+
+    const res = await set_model_to_production(model_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Model set to production");
+    await loadModels();
+    cancelSetProd();
+    setSetting(false);
   };
 
   if (loading) {
@@ -275,120 +307,137 @@ const MLProblemDetailPage = () => {
   if (!mlProblem) return <NotFound name="ML Problem" />;
 
   return (
-    <div className="w-full pl-4 pt-8">
-      <div className="mx-auto w-full px-6">
-        <h1>ML problem details: {mlProblem?.name ?? "Unknown ML Problem"}</h1>
-        {tabValue === "models" && (
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Manage all models of {mlProblem?.name ?? "Unknown ML Problem"}.
-          </p>
-        )}
-        {tabValue === "configuration" && (
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Manage the configuration of{" "}
-            {mlProblem?.name ?? "Unknown ML Problem"}.
-          </p>
-        )}
-        <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
-          <TabsList className="w-full items-center justify-start gap-2">
-            <TabsTrigger value="models">Models</TabsTrigger>
-            <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          </TabsList>
-          <TabsContent value="models">
-            {models.length > 0 || hasActiveFilters ? (
-              <div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <ModelsFilterbar />
-                  </div>
-                  <div className="flex gap-2">
-                    <Train
-                      problemId={problemId}
-                      task={mlProblem.task}
-                      onCreate={loadModels}
-                    />
-                    <Predict problemId={problemId} onCreate={() => {}} />
-                  </div>
-                </div>
-                <ModelsTable
-                  models={models}
-                  askDelete={askDelete}
-                  askUpdate={askUpdate}
-                  task={mlProblem.task}
-                />
-                <div className="mt-2 grid grid-cols-3 items-center">
-                  <div />
-                  {totalPages > 1 ? (
-                    <div className="flex justify-center">
-                      <Pagination totalPages={totalPages} />
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-                  <div className="flex justify-end">
-                    <PageSize size={size} />
-                  </div>
-                </div>
-                {deleteTarget && (
-                  <ModelDelete
-                    target={deleteTarget}
-                    open={openDelete}
-                    onConfirm={onDelete}
-                    onCancel={cancelDelete}
-                    deleting={deleting}
-                  />
-                )}
-                {updateTarget && (
-                  <ModelUpdate
-                    target={updateTarget}
-                    open={openUpdate}
-                    onConfirm={onUpdate}
-                    onCancel={cancelUpdate}
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="relative min-h-[80vh] bg-background">
-                <div className="flex items-center">
-                  <Fox
-                    aria-hidden
-                    size="80%"
-                    className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
-                    style={{ color: "hsl(var(--sidebar-foreground))" }}
-                    nodeFill="hsl(var(--sidebar-foreground))"
-                  />
-                </div>
+    <div>
+      <div className="w-full pl-4 pt-8">
+        <div className="mx-auto w-full px-6">
+          <h1>ML problem details: {mlProblem?.name ?? "Unknown ML Problem"}</h1>
+          {tabValue === "models" && (
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">
+              Manage all models of {mlProblem?.name ?? "Unknown ML Problem"}.
+            </p>
+          )}
+          {tabValue === "configuration" && (
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">
+              Manage the configuration of{" "}
+              {mlProblem?.name ?? "Unknown ML Problem"}.
+            </p>
+          )}
+          <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
+            <TabsList className="w-full items-center justify-start gap-2">
+              <TabsTrigger value="models">Models</TabsTrigger>
+              {models.length > 0 ? (
+                <TabsTrigger value="configuration">Configured</TabsTrigger>
+              ) : (
+                <TabsTrigger value="configuration">Configuration</TabsTrigger>
+              )}
+            </TabsList>
+            <TabsContent value="models">
+              {models.length > 0 || hasActiveFilters ? (
                 <div>
-                  <p className="text-base font-semibold">No Models yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Train a model to activate this Tab.
-                  </p>
-                  <div className="mt-5">
-                    <Train
-                      problemId={problemId}
-                      task={mlProblem.task}
-                      onCreate={loadModels}
+                  <div className="flex justify-between">
+                    <div className="relative">
+                      <ModelsFilterbar />
+                    </div>
+                    <div className="flex gap-2">
+                      <Train
+                        problemId={problemId}
+                        task={mlProblem.task}
+                        onCreate={loadModels}
+                      />
+                      <Predict problemId={problemId} onCreate={() => {}} />
+                    </div>
+                  </div>
+                  <ModelsTable
+                    models={models}
+                    askDelete={askDelete}
+                    askUpdate={askUpdate}
+                    askSetProd={askSetProd}
+                    task={mlProblem.task}
+                  />
+                  <div className="mt-2 grid grid-cols-3 items-center">
+                    <div />
+                    {totalPages > 1 ? (
+                      <div className="flex justify-center">
+                        <Pagination totalPages={totalPages} />
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+                    <div className="flex justify-end">
+                      <PageSize size={size} />
+                    </div>
+                  </div>
+                  {deleteTarget && (
+                    <ModelDelete
+                      target={deleteTarget}
+                      open={openDelete}
+                      onConfirm={onDelete}
+                      onCancel={cancelDelete}
+                      deleting={deleting}
+                    />
+                  )}
+                  {updateTarget && (
+                    <ModelUpdate
+                      target={updateTarget}
+                      open={openUpdate}
+                      onConfirm={onUpdate}
+                      onCancel={cancelUpdate}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="relative min-h-[80vh] bg-background">
+                  <div className="flex items-center">
+                    <Fox
+                      aria-hidden
+                      size="80%"
+                      className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                      style={{ color: "hsl(var(--sidebar-foreground))" }}
+                      nodeFill="hsl(var(--sidebar-foreground))"
                     />
                   </div>
+                  <div>
+                    <p className="text-base font-semibold">No Models yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Train a model to activate this Tab.
+                    </p>
+                    <div className="mt-5">
+                      <Train
+                        problemId={problemId}
+                        task={mlProblem.task}
+                        onCreate={loadModels}
+                      />
+                    </div>
+                  </div>
                 </div>
+              )}
+            </TabsContent>
+            <TabsContent value="configuration">
+              <div>
+                <MLProblemDetails
+                  datasetId={datasetId}
+                  datasetVersionId={datasetVersionId}
+                  datasetVersionName={datasetVersion?.name}
+                  mlProblem={mlProblem}
+                  featureStrategy={featureStrategy}
+                  prodModelName={prodModelName}
+                  prodModelId={prodModelId}
+                  configured={models.length > 0}
+                />
               </div>
-            )}
-          </TabsContent>
-          <TabsContent value="configuration">
-            <div>
-              <MLProblemDetails
-                datasetId={datasetId}
-                datasetVersionId={datasetVersionId}
-                datasetVersionName={datasetVersion?.name}
-                mlProblem={mlProblem}
-                featureStrategy={featureStrategy}
-                prodModelName={prodModelName}
-                prodModelId={prodModelId}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
+      {setProdTarget && (
+        <SetModelProduction
+          target={setProdTarget}
+          open={openSetProd}
+          onConfirm={onSetProd}
+          onCancel={cancelSetProd}
+          setting={setting}
+        />
+      )}
     </div>
   );
 };

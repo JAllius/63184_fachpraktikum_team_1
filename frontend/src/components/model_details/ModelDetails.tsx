@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -12,6 +12,10 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { useState } from "react";
 import ColumnBadges from "../ui/column-badges";
+import { set_model_to_production } from "@/lib/actions/models/model.action";
+import { toast } from "sonner";
+import type { SetProdTarget } from "./SetModelProduction";
+import SetModelProduction from "./SetModelProduction";
 
 type ClassificationMetrics = {
   accuracy: number;
@@ -37,7 +41,7 @@ type Props = {
   created_at: string;
   metadata:
     | {
-        model_name?: string;
+        model_name: string;
         task: "classification";
         target: string;
         preset: string;
@@ -51,7 +55,7 @@ type Props = {
         cross_validation?: { mean: number; std: number };
       }
     | {
-        model_name?: string;
+        model_name: string;
         task: "regression";
         target: string;
         preset: string;
@@ -64,6 +68,7 @@ type Props = {
         semantic_types: Record<string, string[]>;
         cross_validation?: { mean: number; std: number };
       };
+  onRefresh: () => Promise<void>;
 };
 
 const ModelDetails = ({
@@ -74,10 +79,46 @@ const ModelDetails = ({
   mlProblemName,
   created_at,
   metadata,
+  onRefresh,
 }: Props) => {
+  const params = useParams<{ modelId: string }>();
+  if (!params.modelId) {
+    throw new Error("modelId param missing");
+  }
+  const modelId = params.modelId;
+
   const [openTechnical, setOpenTechnical] = useState(false);
+  const [setProdTarget, setSetProdTarget] = useState<SetProdTarget | null>(
+    null,
+  );
+  const [setting, setSetting] = useState(false);
+  const [openSetProd, setOpenSetProd] = useState(false);
 
   const semanticTypes = Object.entries(metadata.semantic_types);
+
+  const askSetProd = (id: string, name: string) => {
+    setSetProdTarget({ id, name });
+    setOpenSetProd(true);
+  };
+
+  const cancelSetProd = () => {
+    setOpenSetProd(false);
+    setSetProdTarget(null);
+  };
+
+  const onSetProd = async (model_id: string) => {
+    if (!model_id) return;
+
+    const res = await set_model_to_production(model_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Model set to production");
+    await onRefresh();
+    cancelSetProd();
+    setSetting(false);
+  };
 
   return (
     <div>
@@ -107,7 +148,7 @@ const ModelDetails = ({
                 label="F1 score"
                 value={metadata.metrics.f1.toFixed(3)}
                 secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
-                  3
+                  3,
                 )}±${metadata?.cross_validation?.std.toFixed(3)}`}
                 tooltip={
                   "Percentage-based balance between precision and recall.\nCV shows average and variation across folds."
@@ -148,7 +189,7 @@ const ModelDetails = ({
                 label="R² score"
                 value={metadata.metrics.r2.toFixed(3)}
                 secondaryValue={`CV ${metadata?.cross_validation?.mean.toFixed(
-                  3
+                  3,
                 )}±${metadata?.cross_validation?.std.toFixed(3)}`}
                 tooltip={
                   "Proportion of variation in the target explained by the model.\nCV shows average and variation across folds."
@@ -179,7 +220,16 @@ const ModelDetails = ({
                   <Badge variant={"secondary"}>{status}</Badge>
                 )}
                 {status !== "production" && (
-                  <Button className="h-5 px-2 text-xs" variant={"default"}>
+                  <Button
+                    className="h-5 px-2 text-xs"
+                    variant={"default"}
+                    onClick={() =>
+                      askSetProd(
+                        modelId,
+                        metadata?.model_name ?? "Unknown Model",
+                      )
+                    }
+                  >
                     Set to production
                   </Button>
                 )}
@@ -282,6 +332,15 @@ const ModelDetails = ({
           </Card>
         )}
       </section>
+      {setProdTarget && (
+        <SetModelProduction
+          target={setProdTarget}
+          open={openSetProd}
+          onConfirm={onSetProd}
+          onCancel={cancelSetProd}
+          setting={setting}
+        />
+      )}
     </div>
   );
 };

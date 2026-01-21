@@ -9,17 +9,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Link } from "react-router-dom";
-import { RowActions, SortableHeader } from "../table";
+import { SortableHeader } from "../table";
 import type { Model } from "@/lib/actions/models/model.action";
+import ModelRowActions from "./ModelRowActions";
 
 type Props = {
   models: Model[];
   askDelete: (id: string, name: string) => void;
   askUpdate: (id: string, name: string) => void;
+  askSetProd: (id: string, name: string) => void;
   task: string;
 };
 
-const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
+const ModelsTable = ({
+  models,
+  askDelete,
+  askUpdate,
+  askSetProd,
+  task,
+}: Props) => {
   function round(value?: number, decimals: number = 2) {
     if (!value) return;
     return Math.round(value * 10 ** decimals) / 10 ** decimals;
@@ -94,11 +102,12 @@ const ModelsTable = ({ models, askDelete, askUpdate, task }: Props) => {
               </TableCell>
               <TableCell>{m.created_at}</TableCell>
               <TableCell>
-                <RowActions
+                <ModelRowActions
                   id={m.id}
                   parent="Model"
                   onDelete={() => askDelete(m.id, m.name)}
                   onUpdate={() => askUpdate(m.id, m.name)}
+                  onSetProd={() => askSetProd(m.id, m.name)}
                   disabled={m.status === "training" || m.status === "failed"}
                 />
               </TableCell>

@@ -26,7 +26,7 @@ services:
       DB_NAME: "team1_db"
       DB_USER: "team1_user"
       DB_PASS: "team1_pass"
-      SEED_TEST_DATA: "true"
+      SEED_TEST_DATA: "false"
       TEST_DB_NAME: "team1_db"
       TEST_DATA_PATH: "/code/db/test_db.txt"
       # C_FORCE_ROOT: "true"
