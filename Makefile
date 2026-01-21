@@ -25,7 +25,7 @@ docker: build
 	docker build -t jallius/fachpraktikum-worker -f DockerfileFrontend .
 
 deploy_local: docker
-	docker compose down -v
+	docker compose down -v  --remove-orphans
 	docker compose up -d
 
 test:
