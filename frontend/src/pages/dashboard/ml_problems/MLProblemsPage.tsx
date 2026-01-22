@@ -152,15 +152,20 @@ const MLProblemsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage ML problems across all dataset versions.
         </p>
-
+        <div
+          className={
+            mlProblems.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "flex justify-between hidden"
+          }
+        >
+          <div className="relative">
+            <MLProblemsJoinedFilterbar />
+          </div>
+          <MLProblemCreate onCreate={loadMLProblems} />
+        </div>
         {mlProblems.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <MLProblemsJoinedFilterbar />
-              </div>
-              <MLProblemCreate onCreate={loadMLProblems} />
-            </div>
             <MLProblemsJoinedTable
               mlProblems={mlProblems}
               askDelete={askDelete}

@@ -289,18 +289,24 @@ const DatasetVersionDetailPage = () => {
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
           <TabsContent value="ml_problems" className="flex-1 min-h-0">
+            <div
+              className={
+                mlProblems.length > 0 || hasActiveFilters
+                  ? "flex justify-between"
+                  : "flex justify-between hidden"
+              }
+            >
+              <div className="relative">
+                <MLProblemsFilterbar />
+              </div>
+              <MLProblemCreate
+                onCreate={loadMLProblems}
+                datasetVersionId={datasetVersionId}
+                columnsDetails={columnsDetails}
+              />
+            </div>
             {mlProblems.length > 0 || hasActiveFilters ? (
               <div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <MLProblemsFilterbar />
-                  </div>
-                  <MLProblemCreate
-                    onCreate={loadMLProblems}
-                    datasetVersionId={datasetVersionId}
-                    columnsDetails={columnsDetails}
-                  />
-                </div>
                 <MLProblemsTable
                   mlProblems={mlProblems}
                   askDelete={askDelete}

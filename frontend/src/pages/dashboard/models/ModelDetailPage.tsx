@@ -247,18 +247,24 @@ const ModelDetailPage = () => {
             <TabsTrigger value="explainability">Explainability</TabsTrigger>
           </TabsList>
           <TabsContent value="predictions">
+            <div
+              className={
+                predictions.length > 0 || hasActiveFilters
+                  ? "flex justify-between"
+                  : "flex justify-between hidden"
+              }
+            >
+              <div className="relative">
+                <PredictionsFilterbar />
+              </div>
+              <Predict
+                problemId={problemId}
+                modelId={modelId}
+                onCreate={loadPredictions}
+              />
+            </div>
             {predictions.length > 0 || hasActiveFilters ? (
               <div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <PredictionsFilterbar />
-                  </div>
-                  <Predict
-                    problemId={problemId}
-                    modelId={modelId}
-                    onCreate={loadPredictions}
-                  />
-                </div>
                 <PredictionsTable
                   predictions={predictions}
                   askDelete={askDelete}

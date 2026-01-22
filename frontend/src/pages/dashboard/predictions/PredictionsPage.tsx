@@ -182,15 +182,20 @@ const PredictionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage predictions across all datasets.
         </p>
-
+        <div
+          className={
+            predictions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "flex justify-between hidden"
+          }
+        >
+          <div className="relative">
+            <PredictionsJoinedFilterbar />
+          </div>
+          <Predict onCreate={loadPredictions} />
+        </div>
         {predictions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <PredictionsJoinedFilterbar />
-              </div>
-              <Predict onCreate={loadPredictions} />
-            </div>
             <PredictionsJoinedTable
               predictions={predictions}
               askDelete={askDelete}

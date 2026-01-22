@@ -127,14 +127,20 @@ const DatasetsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all datasets.
         </p>
+        <div
+          className={
+            datasets.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "flex justify-between hidden"
+          }
+        >
+          <div className="relative">
+            <DatasetsFilterbar />
+          </div>
+          <DatasetCreate onCreate={loadDatasets} />
+        </div>
         {datasets.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetsFilterbar />
-              </div>
-              <DatasetCreate onCreate={loadDatasets} />
-            </div>
             <DatasetsTable
               datasets={datasets}
               askDelete={askDelete}

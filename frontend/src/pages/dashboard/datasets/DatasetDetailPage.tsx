@@ -162,17 +162,23 @@ const DatasetIdPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all dataset versions of {dataset?.name ?? "Unknown Dataset"}.
         </p>
+        <div
+          className={
+            datasetVersions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "flex justify-between hidden"
+          }
+        >
+          <div className="relative">
+            <DatasetVersionsFilterbar />
+          </div>
+          <DatasetVersionCreate
+            onCreate={loadDatasetVersions}
+            datasetId={datasetId}
+          />
+        </div>
         {datasetVersions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetVersionsFilterbar />
-              </div>
-              <DatasetVersionCreate
-                onCreate={loadDatasetVersions}
-                datasetId={datasetId}
-              />
-            </div>
             <DatasetVersionsTable
               datasetVersions={datasetVersions}
               askDelete={askDelete}

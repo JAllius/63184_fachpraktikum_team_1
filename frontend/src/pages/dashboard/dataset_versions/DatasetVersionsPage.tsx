@@ -137,15 +137,20 @@ const DatasetVersionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage dataset versions across all datasets.
         </p>
-
+        <div
+          className={
+            datasetVersions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "flex justify-between hidden"
+          }
+        >
+          <div className="relative">
+            <DatasetVersionsJoinedFilterbar />
+          </div>
+          <DatasetVersionCreate onCreate={loadDatasetVersions} />
+        </div>
         {datasetVersions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetVersionsJoinedFilterbar />
-              </div>
-              <DatasetVersionCreate onCreate={loadDatasetVersions} />
-            </div>
             <DatasetVersionsJoinedTable
               datasetVersions={datasetVersions}
               askDelete={askDelete}

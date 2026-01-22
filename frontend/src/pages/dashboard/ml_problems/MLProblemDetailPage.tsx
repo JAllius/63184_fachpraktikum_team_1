@@ -85,6 +85,7 @@ const MLProblemDetailPage = () => {
   const [setting, setSetting] = useState(false);
   const [openSetProd, setOpenSetProd] = useState(false);
   const [columnNames, setColumnNames] = useState<string[]>([]);
+  const [hasAnyModels, setHasAnyModels] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -133,6 +134,15 @@ const MLProblemDetailPage = () => {
   useEffect(() => {
     loadDatasetVersion();
   }, [loadDatasetVersion]);
+
+  const refreshHasAnyModels = useCallback(async () => {
+    const res = await get_models(problemId);
+    setHasAnyModels(res.items.length > 0);
+  }, [problemId]);
+
+  useEffect(() => {
+    refreshHasAnyModels();
+  }, [refreshHasAnyModels]);
 
   const loadModels = useCallback(async () => {
     try {
@@ -214,6 +224,7 @@ const MLProblemDetailPage = () => {
       } else if (payload.job?.status === "failed") {
         toast.error("Training failed");
       }
+      refreshHasAnyModels();
       loadModels();
     };
 
@@ -250,6 +261,7 @@ const MLProblemDetailPage = () => {
       return;
     }
     toast.success("Model deleted");
+    await refreshHasAnyModels();
     await loadModels();
     cancelDelete();
     setDeleting(false);
@@ -327,28 +339,34 @@ const MLProblemDetailPage = () => {
           <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
             <TabsList className="w-full items-center justify-start gap-2">
               <TabsTrigger value="models">Models</TabsTrigger>
-              {models.length > 0 ? (
+              {hasAnyModels ? (
                 <TabsTrigger value="configuration">Configured</TabsTrigger>
               ) : (
                 <TabsTrigger value="configuration">Configuration</TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="models">
+              <div
+                className={
+                  models.length > 0 || hasActiveFilters
+                    ? "flex justify-between"
+                    : "flex justify-between hidden"
+                }
+              >
+                <div className="relative">
+                  <ModelsFilterbar />
+                </div>
+                <div className="flex gap-2">
+                  <Train
+                    problemId={problemId}
+                    task={mlProblem.task}
+                    onCreate={loadModels}
+                  />
+                  <Predict problemId={problemId} onCreate={() => {}} />
+                </div>
+              </div>
               {models.length > 0 || hasActiveFilters ? (
                 <div>
-                  <div className="flex justify-between">
-                    <div className="relative">
-                      <ModelsFilterbar />
-                    </div>
-                    <div className="flex gap-2">
-                      <Train
-                        problemId={problemId}
-                        task={mlProblem.task}
-                        onCreate={loadModels}
-                      />
-                      <Predict problemId={problemId} onCreate={() => {}} />
-                    </div>
-                  </div>
                   <ModelsTable
                     models={models}
                     askDelete={askDelete}

@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
@@ -223,23 +224,42 @@ const ModelsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-          <Select
-            value={filters.status ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, status: value }))
-            }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1">
+            <Select
+              value={filters.status}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, status: value }))
+              }
+            >
+              <SelectTrigger
+                className={
+                  filters.status
+                    ? "h-9 w-52 justify-between text-left border rounded-md text-sm pl-3"
+                    : "h-9 w-60 justify-between text-left border rounded-md text-sm pl-3"
+                }
+              >
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+                {STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!!filters.status && (
+              <Button
+                type="button"
+                variant={"outline"}
+                size="icon"
+                className=""
+                onClick={() => setFilters((f) => ({ ...f, status: "" }))}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <Input
             placeholder="Algorithm"
             value={filters.algorithm}
@@ -248,40 +268,84 @@ const ModelsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-          <Select
-            value={filters.train_mode ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, train_mode: value }))
-            }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Train mode" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {TRAIN_MODES.map((m) => (
-                <SelectItem key={m.value} value={m.value}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.evaluation_strategy ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, evaluation_strategy: value }))
-            }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Evaluation strategy" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {EVALUATION_STRATEGIES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1">
+            <Select
+              value={filters.train_mode}
+              onValueChange={(value) =>
+                setFilters((f) => ({ ...f, train_mode: value }))
+              }
+            >
+              <SelectTrigger
+                className={
+                  filters.train_mode
+                    ? "h-9 w-52 justify-between text-left border rounded-md text-sm pl-3"
+                    : "h-9 w-60 justify-between text-left border rounded-md text-sm pl-3"
+                }
+              >
+                <SelectValue placeholder="Train mode" />
+              </SelectTrigger>
+              <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+                {TRAIN_MODES.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!!filters.train_mode && (
+              <Button
+                type="button"
+                variant={"outline"}
+                size="icon"
+                className=""
+                onClick={() => setFilters((f) => ({ ...f, train_mode: "" }))}
+                aria-label="Clear train mode"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <Select
+              value={filters.evaluation_strategy}
+              onValueChange={(value) =>
+                setFilters((f) => ({
+                  ...f,
+                  evaluation_strategy: value,
+                }))
+              }
+            >
+              <SelectTrigger
+                className={
+                  filters.evaluation_strategy
+                    ? "h-9 w-52 justify-between text-left border rounded-md text-sm pl-3"
+                    : "h-9 w-60 justify-between text-left border rounded-md text-sm pl-3"
+                }
+              >
+                <SelectValue placeholder="Evaluation strategy" />
+              </SelectTrigger>
+              <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+                {EVALUATION_STRATEGIES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!!filters.evaluation_strategy && (
+              <Button
+                type="button"
+                variant={"outline"}
+                size="icon"
+                className=""
+                onClick={() =>
+                  setFilters((f) => ({ ...f, evaluation_strategy: "" }))
+                }
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>
