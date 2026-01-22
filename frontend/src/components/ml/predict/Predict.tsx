@@ -211,7 +211,6 @@ const Predict = ({ problemId, modelId, onCreate }: Props) => {
                       />
                       {hasFile && (
                         <Button
-                          type="button"
                           variant={"outline"}
                           onClick={clearInputFile}
                           className="h-9 w-9 shrink-0"

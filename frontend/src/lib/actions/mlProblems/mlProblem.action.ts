@@ -11,7 +11,7 @@ export type MLProblem = {
   name: string;
   task: string;
   target: string;
-  feature_strategy: string;
+  feature_strategy_json: string;
   semantic_types: string;
   created_at: string;
 };
@@ -161,6 +161,59 @@ export async function update_ml_problem(
     return {
       ok: false,
       error: "Network error while updating ML problem.",
+    };
+  }
+}
+
+type FeatureStrategy = { include?: string[]; exclude?: string[] };
+
+export async function update_feature_strategy(
+  ml_problem_id: string,
+  req: FeatureStrategy,
+): Promise<UpdateMLProblemResponse> {
+  const url = `${API_URL}/problem/${ml_problem_id}/feature_strategy`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update feature strategy request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating feature strategy.",
+    };
+  }
+}
+
+export async function reset_feature_strategy(
+  ml_problem_id: string,
+): Promise<UpdateMLProblemResponse> {
+  const url = `${API_URL}/problem/${ml_problem_id}/feature_strategy/reset`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update feature strategy request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating feature strategy.",
     };
   }
 }

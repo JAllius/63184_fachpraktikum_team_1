@@ -167,15 +167,14 @@ const ModelsJoinedFilterbar = () => {
 
           <div className="flex shrink-0 items-center gap-2">
             <Button
+              type="button"
               onClick={resetFilters}
               className="hover:scale-105 active:scale-95"
-              type="button"
             >
               Reset
             </Button>
 
             <Button
-              type="button"
               onClick={() => setOpen((v) => !v)}
               className={`hover:scale-105 active:scale-95 ${
                 open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""
@@ -197,52 +196,33 @@ const ModelsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
           <Input
-            placeholder="Algorithm"
-            value={filters.algorithm}
+            placeholder="ML problem name"
+            value={filters.problem_name}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, algorithm: e.target.value }))
+              setFilters((f) => ({ ...f, problem_name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
-          <Select
-            value={filters.train_mode ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, train_mode: value }))
+          <Input
+            placeholder="Dataset version name"
+            value={filters.dataset_version_name}
+            onChange={(e) =>
+              setFilters((f) => ({
+                ...f,
+                dataset_version_name: e.target.value,
+              }))
             }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Train mode" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {TRAIN_MODES.map((m) => (
-                <SelectItem key={m.value} value={m.value}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.evaluation_strategy ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, evaluation_strategy: value }))
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <Input
+            placeholder="Dataset name"
+            value={filters.dataset_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
             }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Evaluation strategy" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {EVALUATION_STRATEGIES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
           <Select
             value={filters.status ?? ""}
             onValueChange={(value) =>
@@ -260,36 +240,48 @@ const ModelsJoinedFilterbar = () => {
               ))}
             </SelectContent>
           </Select>
-
           <Input
-            placeholder="ML problem name"
-            value={filters.problem_name}
+            placeholder="Algorithm"
+            value={filters.algorithm}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, problem_name: e.target.value }))
+              setFilters((f) => ({ ...f, algorithm: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
-          <Input
-            placeholder="Dataset version name"
-            value={filters.dataset_version_name}
-            onChange={(e) =>
-              setFilters((f) => ({
-                ...f,
-                dataset_version_name: e.target.value,
-              }))
+          <Select
+            value={filters.train_mode ?? ""}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, train_mode: value }))
             }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-
-          <Input
-            placeholder="Dataset name"
-            value={filters.dataset_name}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Train mode" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {TRAIN_MODES.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.evaluation_strategy ?? ""}
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, evaluation_strategy: value }))
             }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
+          >
+            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
+              <SelectValue placeholder="Evaluation strategy" />
+            </SelectTrigger>
+            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {EVALUATION_STRATEGIES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
     </div>

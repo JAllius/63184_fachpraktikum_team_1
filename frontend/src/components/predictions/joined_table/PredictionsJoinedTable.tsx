@@ -28,7 +28,13 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
         <TableHeader>
           <TableRow>
             <TableHead>
-              <SortableHeader field="dataset_name" label="Dataset" />
+              <SortableHeader field="name" label="Prediction name" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="model_name" label="Model" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="problem_name" label="ML Problem" />
             </TableHead>
             <TableHead>
               <SortableHeader
@@ -37,13 +43,10 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
               />
             </TableHead>
             <TableHead>
-              <SortableHeader field="problem_name" label="ML Problem" />
+              <SortableHeader field="dataset_name" label="Dataset" />
             </TableHead>
             <TableHead>
-              <SortableHeader field="model_name" label="Model" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="name" label="Prediction name" />
+              <SortableHeader field="status" label="Status" />
             </TableHead>
             <TableHead>
               <SortableHeader field="created_at" label="Created" />
@@ -56,22 +59,25 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
           {predictions.map((pr) => {
             return (
               <TableRow key={pr.id}>
-                <TableCell className="text-muted-foreground">
-                  <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}`}
-                    aria-label="View dataset"
-                    className="font-medium"
-                  >
-                    {pr.dataset_name}
-                  </Link>
+                <TableCell className="font-medium">
+                  {pr.status === "predicting" || pr.status === "failed" ? (
+                    <div>{pr.name}</div>
+                  ) : (
+                    <Link
+                      to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}/${pr.id}`}
+                      aria-label="View prediction"
+                    >
+                      {pr.name}
+                    </Link>
+                  )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}`}
-                    aria-label="View dataset version"
+                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}`}
+                    aria-label="View model"
                     className="font-medium"
                   >
-                    {pr.dataset_version_name}
+                    {pr.model_name}
                   </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
@@ -85,25 +91,23 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}`}
-                    aria-label="View model"
+                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}`}
+                    aria-label="View dataset version"
                     className="font-medium"
                   >
-                    {pr.model_name}
+                    {pr.dataset_version_name}
                   </Link>
                 </TableCell>
-                <TableCell className="font-medium">
-                  {pr.status === "predicting" || pr.status === "failed" ? (
-                    <div>{pr.name}</div>
-                  ) : (
-                    <Link
-                      to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}/${pr.id}`}
-                      aria-label="View prediction"
-                    >
-                      {pr.name}
-                    </Link>
-                  )}
+                <TableCell className="text-muted-foreground">
+                  <Link
+                    to={`/dashboard/datasets/${pr.dataset_id}`}
+                    aria-label="View dataset"
+                    className="font-medium"
+                  >
+                    {pr.dataset_name}
+                  </Link>
                 </TableCell>
+                <TableCell>{pr.status}</TableCell>
                 <TableCell>{pr.created_at}</TableCell>
                 <TableCell>
                   <PredictionActions
@@ -127,7 +131,7 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
 
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={6}>Total</TableCell>
+            <TableCell colSpan={7}>Total</TableCell>
             <TableCell className="text-right">{predictions.length}</TableCell>
           </TableRow>
         </TableFooter>

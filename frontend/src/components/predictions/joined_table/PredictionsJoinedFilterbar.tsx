@@ -84,7 +84,7 @@ const PredictionsJoinedFilterbar = () => {
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
@@ -119,18 +119,15 @@ const PredictionsJoinedFilterbar = () => {
           onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
           className="shadow border rounded-md px-2 py-1 w-60"
         />
-
         <div className="flex shrink-0 items-center gap-2">
           <Button
+            type="button"
             onClick={resetFilters}
             className="hover:scale-105 active:scale-95"
-            type="button"
           >
             Reset
           </Button>
-
           <Button
-            type="button"
             onClick={() => setOpen((v) => !v)}
             className={`hover:scale-105 active:scale-95 ${
               open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""
@@ -140,14 +137,29 @@ const PredictionsJoinedFilterbar = () => {
           </Button>
         </div>
       </div>
-
       {open && (
         <div className="flex flex-row flex-wrap gap-2 mt-2">
           <Input
-            placeholder="Dataset name"
-            value={filters.dataset_name}
+            placeholder="Prediction name"
+            value={filters.name}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
+              setFilters((f) => ({ ...f, name: e.target.value }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <Input
+            placeholder="Model name"
+            value={filters.model_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, model_name: e.target.value }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <Input
+            placeholder="ML problem name"
+            value={filters.problem_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, problem_name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
@@ -163,26 +175,10 @@ const PredictionsJoinedFilterbar = () => {
             className="shadow border rounded-md px-2 py-1 w-60"
           />
           <Input
-            placeholder="ML problem name"
-            value={filters.problem_name}
+            placeholder="Dataset name"
+            value={filters.dataset_name}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, problem_name: e.target.value }))
-            }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-          <Input
-            placeholder="Model name"
-            value={filters.model_name}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, model_name: e.target.value }))
-            }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-          <Input
-            placeholder="Prediction name"
-            value={filters.name}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, name: e.target.value }))
+              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />

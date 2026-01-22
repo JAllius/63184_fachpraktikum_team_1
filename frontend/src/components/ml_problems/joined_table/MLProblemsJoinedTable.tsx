@@ -27,7 +27,7 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
         <TableHeader>
           <TableRow>
             <TableHead>
-              <SortableHeader field="dataset_name" label="Dataset" />
+              <SortableHeader field="name" label="ML Problem name" />
             </TableHead>
             <TableHead>
               <SortableHeader
@@ -36,7 +36,7 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
               />
             </TableHead>
             <TableHead>
-              <SortableHeader field="name" label="ML Problem name" />
+              <SortableHeader field="dataset_name" label="Dataset" />
             </TableHead>
             <TableHead>
               <SortableHeader field="task" label="Task" />
@@ -54,13 +54,13 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
           {mlProblems.map((mlp) => {
             return (
               <TableRow key={mlp.id}>
-                <TableCell className="text-muted-foreground">
+                <TableCell>
                   <Link
-                    to={`/dashboard/datasets/${mlp.dataset_id}`}
-                    aria-label="View dataset"
+                    to={`/dashboard/datasets/${mlp.dataset_id}/${mlp.dataset_version_id}/${mlp.id}`}
+                    aria-label="View ML problem"
                     className="font-medium"
                   >
-                    {mlp.dataset_name}
+                    {mlp.name}
                   </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
@@ -72,13 +72,13 @@ const MLProblemsJoinedTable = ({ mlProblems, askDelete, askUpdate }: Props) => {
                     {mlp.dataset_version_name}
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${mlp.dataset_id}/${mlp.dataset_version_id}/${mlp.id}`}
-                    aria-label="View ML problem"
+                    to={`/dashboard/datasets/${mlp.dataset_id}`}
+                    aria-label="View dataset"
                     className="font-medium"
                   >
-                    {mlp.name}
+                    {mlp.dataset_name}
                   </Link>
                 </TableCell>
                 <TableCell>{mlp.task}</TableCell>

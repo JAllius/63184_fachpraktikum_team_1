@@ -110,18 +110,18 @@ const DatasetVersionDetailPage = () => {
     Boolean(task?.trim()) ||
     Boolean(target?.trim());
 
-  useEffect(() => {
-    async function loadDatasetVersion() {
-      try {
-        const data: DatasetVersion =
-          await get_dataset_version(datasetVersionId);
-        setDatasetVersion(data);
-      } catch (error) {
-        console.log(error);
-      }
+  const loadDatasetVersion = useCallback(async () => {
+    try {
+      const data: DatasetVersion = await get_dataset_version(datasetVersionId);
+      setDatasetVersion(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadDatasetVersion();
   }, [datasetVersionId]);
+
+  useEffect(() => {
+    loadDatasetVersion();
+  }, [loadDatasetVersion]);
 
   useEffect(() => {
     if (!datasetVersion?.profile_json) return;
@@ -209,7 +209,7 @@ const DatasetVersionDetailPage = () => {
 
   const onDelete = async (ml_problem_id: string) => {
     if (!ml_problem_id) return;
-
+    setDeleting(true);
     const res = await delete_ml_problem(ml_problem_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -367,7 +367,11 @@ const DatasetVersionDetailPage = () => {
           <TabsContent value="overview" className="flex-1 min-h-0">
             <div>
               {profile ? (
-                <DatasetVersionDetails profile={profile} />
+                <DatasetVersionDetails
+                  datasetVersionId={datasetVersionId}
+                  profile={profile}
+                  onRefresh={loadDatasetVersion}
+                />
               ) : (
                 <div>
                   No profile was found. Run the profiler to activate this tab.

@@ -109,7 +109,7 @@ const DatasetIdPage = () => {
 
   const onDelete = async (dataset_version_id: string) => {
     if (!dataset_version_id) return;
-
+    setDeleting(true);
     const res = await delete_dataset_version(dataset_version_id);
     if (!res.ok) {
       toast.error(res.error);

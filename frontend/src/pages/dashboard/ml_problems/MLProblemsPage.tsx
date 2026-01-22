@@ -104,7 +104,6 @@ const MLProblemsPage = () => {
 
   const onDelete = async (ml_problem_id: string) => {
     if (!ml_problem_id) return;
-
     setDeleting(true);
     const res = await delete_ml_problem(ml_problem_id);
     if (!res.ok) {

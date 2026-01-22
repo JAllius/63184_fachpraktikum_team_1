@@ -54,7 +54,7 @@ const DatasetsFilterbar = () => {
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
@@ -79,14 +79,13 @@ const DatasetsFilterbar = () => {
         />
         <div className="flex shrink-0 items-center gap-2">
           <Button
+            type="button"
             onClick={resetFilters}
             className="hover:scale-105 active:scale-95"
-            type="button"
           >
             Reset
           </Button>
           <Button
-            type="button"
             onClick={() => setOpen((v) => !v)}
             className={`hover:scale-105 active:scale-95 ${
               open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""

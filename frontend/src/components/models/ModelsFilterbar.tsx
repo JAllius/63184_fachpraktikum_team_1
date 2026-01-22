@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { X } from "lucide-react";
 
 const TRAIN_MODES = [
   { value: "fast", label: "Fast" },
@@ -153,14 +154,13 @@ const ModelsFilterbar = () => {
           />
           <div className="flex shrink-0 items-center gap-2">
             <Button
+              type="button"
               onClick={resetFilters}
               className="hover:scale-105 active:scale-95"
-              type="button"
             >
               Reset
             </Button>
             <Button
-              type="button"
               onClick={() => setOpen((v) => !v)}
               className={`hover:scale-105 active:scale-95 ${
                 open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""
@@ -180,7 +180,6 @@ const ModelsFilterbar = () => {
             onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
           <Input
             placeholder="Model name"
             value={filters.name}
@@ -189,7 +188,6 @@ const ModelsFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
           <Input
             placeholder="Algorithm"
             value={filters.algorithm}
@@ -198,7 +196,6 @@ const ModelsFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
           <Select
             value={filters.train_mode}
             onValueChange={(value) =>
@@ -209,6 +206,15 @@ const ModelsFilterbar = () => {
               <SelectValue placeholder="Train mode" />
             </SelectTrigger>
             <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+              {!!filters.train_mode && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setFilters((f) => ({ ...f, train_mode: "" }))}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
               {TRAIN_MODES.map((m) => (
                 <SelectItem key={m.value} value={m.value}>
                   {m.label}
@@ -216,7 +222,6 @@ const ModelsFilterbar = () => {
               ))}
             </SelectContent>
           </Select>
-
           <Select
             value={filters.evaluation_strategy}
             onValueChange={(value) =>

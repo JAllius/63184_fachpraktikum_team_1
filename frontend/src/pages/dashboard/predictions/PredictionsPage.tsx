@@ -135,7 +135,7 @@ const PredictionsPage = () => {
 
   const onDelete = async (prediction_id: string) => {
     if (!prediction_id) return;
-
+    setDeleting(true);
     const res = await delete_prediction(prediction_id);
     if (!res.ok) {
       toast.error(res.error);

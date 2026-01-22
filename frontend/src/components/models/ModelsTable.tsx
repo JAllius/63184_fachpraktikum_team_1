@@ -29,7 +29,7 @@ const ModelsTable = ({
   task,
 }: Props) => {
   function round(value?: number, decimals: number = 2) {
-    if (!value) return;
+    if (value == null) return "—";
     return Math.round(value * 10 ** decimals) / 10 ** decimals;
   }
 

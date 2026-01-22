@@ -40,13 +40,13 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
     .map(([col]) => col);
 
   function pct_string(value?: number, decimals: number = 2) {
-    if (!value) return;
+    if (value == null) return "—";
     const valuePct = value * 100;
     return valuePct.toFixed(decimals) + "%";
   }
 
   function round(value?: number) {
-    if (!value) return;
+    if (value == null) return "—";
     return Math.round(value * 100) / 100;
   }
 

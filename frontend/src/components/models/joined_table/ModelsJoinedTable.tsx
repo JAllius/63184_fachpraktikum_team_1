@@ -21,7 +21,7 @@ type Props = {
 
 const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
   function round(value?: number, decimals: number = 2) {
-    if (!value) return;
+    if (value == null) return "—";
     return Math.round(value * 10 ** decimals) / 10 ** decimals;
   }
 
@@ -51,7 +51,10 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
         <TableHeader>
           <TableRow>
             <TableHead>
-              <SortableHeader field="dataset_name" label="Dataset" />
+              <SortableHeader field="name" label="Model name" />
+            </TableHead>
+            <TableHead>
+              <SortableHeader field="problem_name" label="ML Problem" />
             </TableHead>
             <TableHead>
               <SortableHeader
@@ -60,10 +63,7 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
               />
             </TableHead>
             <TableHead>
-              <SortableHeader field="problem_name" label="ML Problem" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="name" label="Model name" />
+              <SortableHeader field="dataset_name" label="Dataset" />
             </TableHead>
             <TableHead>
               <SortableHeader field="status" label="Status" />
@@ -94,13 +94,25 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
           {models.map((m) => {
             return (
               <TableRow key={m.id}>
+                <TableCell className="font-medium">
+                  {m.status === "training" || m.status === "failed" ? (
+                    <div>{m.name}</div>
+                  ) : (
+                    <Link
+                      to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}/${m.id}`}
+                      aria-label="View Model"
+                    >
+                      {m.name}
+                    </Link>
+                  )}
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${m.dataset_id}`}
-                    aria-label="View dataset"
+                    to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}`}
+                    aria-label="View ML problem"
                     className="font-medium"
                   >
-                    {m.dataset_name}
+                    {m.problem_name}
                   </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
@@ -114,24 +126,12 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}`}
-                    aria-label="View ML problem"
+                    to={`/dashboard/datasets/${m.dataset_id}`}
+                    aria-label="View dataset"
                     className="font-medium"
                   >
-                    {m.problem_name}
+                    {m.dataset_name}
                   </Link>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {m.status === "training" || m.status === "failed" ? (
-                    <div>{m.name}</div>
-                  ) : (
-                    <Link
-                      to={`/dashboard/datasets/${m.dataset_id}/${m.dataset_version_id}/${m.problem_id}/${m.id}`}
-                      aria-label="View Model"
-                    >
-                      {m.name}
-                    </Link>
-                  )}
                 </TableCell>
                 <TableCell>{m.status}</TableCell>
                 <TableCell>{m.algorithm}</TableCell>

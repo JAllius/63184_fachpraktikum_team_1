@@ -38,8 +38,8 @@ import SetModelProduction from "@/components/model_details/SetModelProduction";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type FeatureStrategy = {
-  include: [string, string][];
-  exclude: [string, string][];
+  include: string[];
+  exclude: string[];
 };
 
 const MLProblemDetailPage = () => {
@@ -84,6 +84,7 @@ const MLProblemDetailPage = () => {
   );
   const [setting, setSetting] = useState(false);
   const [openSetProd, setOpenSetProd] = useState(false);
+  const [columnNames, setColumnNames] = useState<string[]>([]);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -107,30 +108,31 @@ const MLProblemDetailPage = () => {
     Boolean(evaluation_strategy?.trim()) ||
     Boolean(status?.trim());
 
-  useEffect(() => {
-    async function loadMLProblem() {
-      try {
-        const data: MLProblem = await get_ml_problem(problemId);
-        setMLProblem(data);
-      } catch (error) {
-        console.log(error);
-      }
+  const loadMLProblem = useCallback(async () => {
+    try {
+      const data: MLProblem = await get_ml_problem(problemId);
+      setMLProblem(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadMLProblem();
   }, [problemId]);
 
   useEffect(() => {
-    async function loadDatasetVersion() {
-      try {
-        const data: DatasetVersion =
-          await get_dataset_version(datasetVersionId);
-        setDatasetVersion(data);
-      } catch (error) {
-        console.log(error);
-      }
+    loadMLProblem();
+  }, [loadMLProblem]);
+
+  const loadDatasetVersion = useCallback(async () => {
+    try {
+      const data: DatasetVersion = await get_dataset_version(datasetVersionId);
+      setDatasetVersion(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadDatasetVersion();
   }, [datasetVersionId]);
+
+  useEffect(() => {
+    loadDatasetVersion();
+  }, [loadDatasetVersion]);
 
   const loadModels = useCallback(async () => {
     try {
@@ -175,30 +177,30 @@ const MLProblemDetailPage = () => {
 
   useEffect(() => {
     if (!mlProblem || !datasetVersion) return;
-    if (mlProblem.feature_strategy === "auto") {
-      const profile: Profile = datasetVersion?.profile_json
-        ? JSON.parse(datasetVersion?.profile_json)
-        : null;
-      const exclude = Object.entries(profile.exclude_suggestions);
+    const feature_strategy = mlProblem.feature_strategy_json
+      ? JSON.parse(mlProblem.feature_strategy_json)
+      : "auto";
+    const profile: Profile = datasetVersion?.profile_json
+      ? JSON.parse(datasetVersion?.profile_json)
+      : null;
+    if (feature_strategy === "auto") {
+      const exclude = Object.values(profile?.exclude_suggestions ?? {});
       setFeatureStrategy({
         include: [],
         exclude: exclude,
       });
     } else {
-      const feature_strategy = mlProblem?.feature_strategy
-        ? JSON.parse(mlProblem?.feature_strategy)
-        : { include: [], exclude: [] };
-      const include: [string, string][] = Object.entries(
-        feature_strategy?.include,
-      );
-      const exclude: [string, string][] = Object.entries(
-        feature_strategy?.exclude,
+      const include: string[] = Object.values(feature_strategy?.include ?? {});
+      const exclude: string[] = Object.values(
+        feature_strategy?.exclude ?? profile?.exclude_suggestions ?? {},
       );
       setFeatureStrategy({
         include: include,
         exclude: exclude,
       });
     }
+    const columnNames = Object.keys(profile.columns);
+    setColumnNames(columnNames);
   }, [mlProblem, datasetVersion]);
 
   useEffect(() => {
@@ -241,7 +243,7 @@ const MLProblemDetailPage = () => {
 
   const onDelete = async (model_id: string) => {
     if (!model_id) return;
-
+    setDeleting(true);
     const res = await delete_model(model_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -288,7 +290,7 @@ const MLProblemDetailPage = () => {
 
   const onSetProd = async (model_id: string) => {
     if (!model_id) return;
-
+    setSetting(true);
     const res = await set_model_to_production(model_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -420,9 +422,11 @@ const MLProblemDetailPage = () => {
                   datasetVersionName={datasetVersion?.name}
                   mlProblem={mlProblem}
                   featureStrategy={featureStrategy}
+                  columnNames={columnNames}
                   prodModelName={prodModelName}
                   prodModelId={prodModelId}
                   configured={models.length > 0}
+                  onRefresh={loadMLProblem}
                 />
               </div>
             </TabsContent>

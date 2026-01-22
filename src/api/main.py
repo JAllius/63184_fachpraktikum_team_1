@@ -1,4 +1,5 @@
 import shutil
+import uuid
 from ..celery_handler import celery_app
 from fastapi import FastAPI, File, Form, HTTPException, Request, Query, UploadFile
 from fastapi.responses import RedirectResponse
@@ -17,6 +18,7 @@ from pathlib import Path
 import pandas as pd
 from io import BytesIO
 from .events import router as events_router
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +190,7 @@ def save_file(file: UploadFile):
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="File must be a CSV")
     filename = file.filename
-    file_path = UPLOAD_DIR / filename
+    file_path = UPLOAD_DIR / f"{uuid.uuid4()}_{filename}" # force unique naming for CSVs to avoid accidentally overwriting
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -234,6 +236,45 @@ async def get_dataset_version(version: str): #, user_id: int):
 async def patch_dataset_version(version: str, name: str):
     """update the specified dataset version if user has permission"""
     res = update_dataset_version(version, name)
+    return res
+
+class Exclude(BaseModel):
+    exclude: list[str]
+
+@app.patch("/datasetVersion/{version}/exclude_suggestions")
+def update_exclude_suggestions(version: str, exclude_body: Exclude) -> bool:
+    dataset_version = db_get_dataset_version(version)
+    if not dataset_version:
+        raise HTTPException(404, "Dataset version not found")
+
+    raw_profile = dataset_version.get("profile_json")
+    if not raw_profile:
+        raise HTTPException(404, "Dataset Version profile not found")
+    
+    profile = json.loads(raw_profile)
+    profile["exclude_suggestions"] = exclude_body.exclude
+
+    res = update_dataset_version(version, profile_json=profile)
+    return res
+
+
+@app.post("/datasetVersion/{version}/profile")
+def reset_dataset_version_profile(version: str) -> bool:
+    dataset_version = db_get_dataset_version(version)
+    if not dataset_version:
+        raise HTTPException(404, "Dataset version not found")
+
+    uri = dataset_version.get("uri")
+    if not uri:
+        raise HTTPException(404, "Dataset version URI not found")
+
+    # TO BE ADDED TO TASK AND UPDATE WHEN READY
+    df = get_dataframe_from_csv(uri)
+    profile_json = suggest_profile(df)
+    schema_json = suggest_schema(df)
+    # END OF COMMENT
+
+    res = update_dataset_version(version, profile_json=profile_json, schema_json=schema_json)
     return res
 
 
@@ -293,8 +334,8 @@ async def get_list_problems(
     id: Optional[str] = Query(None),
     task: Optional[str] = Query(None),
     target: Optional[str] = Query(None),
-    #name: Optional[str] = Query(None),):   
-):
+    name: Optional[str] = Query(None),   
+    ):
     """get all ml_problems"""
     items, total = get_ml_problems(
         dataset_version_id=dataset_version_id,
@@ -306,7 +347,7 @@ async def get_list_problems(
         id=id,
         task=task,
         target=target,
-        # name=name,
+        name=name,
     )
     total_pages = int((total + size -1)/size) if size > 0 else 1
 
@@ -322,7 +363,7 @@ async def get_list_problems(
         "id": id,
         "task": task,
         "target": target,
-        # "name": name,
+        "name": name,
     }
 
 
@@ -415,6 +456,46 @@ async def delete_ml_problem_ep(problem_id: str):
     """delete the specified ml_problem if user has permission"""
     res = delete_ml_problem(problem_id)
     return res
+
+
+class FeatureStrategy(BaseModel):
+    include: list[str] | None = None
+    exclude: list[str] | None = None
+
+@app.patch("/problem/{problem_id}/feature_strategy")
+def update_feature_strategy(
+    problem_id: str,
+    feature_strategy_body: FeatureStrategy,
+    ) -> bool:
+    
+    problem = get_ml_problem(problem_id)
+    if not problem:
+        raise HTTPException(404, detail="ML Problem not found")
+    
+    raw_feature_strategy = problem.get("feature_strategy_json")
+    feature_strategy = {}
+    if raw_feature_strategy:
+        feature_strategy = json.loads(raw_feature_strategy)
+        if feature_strategy == "auto":
+            feature_strategy = {}
+        
+    if feature_strategy_body.include is not None: # changed from "if include" to "if include is not None" to include "include=[]"
+        feature_strategy["include"] = feature_strategy_body.include
+    if feature_strategy_body.exclude is not None: # changed from "if exclude" to "if exclude is not None" to include "exclude=[]"
+        feature_strategy["exclude"] = feature_strategy_body.exclude
+    if feature_strategy.get("include") == []:
+        feature_strategy.pop("include", None) # None -> safeguard for keyError
+    
+    if feature_strategy == {}:
+        res = update_ml_problem(problem_id, feature_strategy_json="auto")
+        return res
+    res = update_ml_problem(problem_id, feature_strategy_json=feature_strategy)
+    return res
+
+
+@app.post("/problem/{problem_id}/feature_strategy/reset")
+def reset_feature_strategy(problem_id: str) -> bool:
+    return update_ml_problem(problem_id, feature_strategy_json="auto")
 
 
 # ========== ML_Train ==========

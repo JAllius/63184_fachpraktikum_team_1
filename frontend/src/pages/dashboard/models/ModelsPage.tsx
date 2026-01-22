@@ -145,6 +145,7 @@ const ModelsPage = () => {
 
   const onDelete = async (model_id: string) => {
     if (!model_id) return;
+    setDeleting(true);
     const res = await delete_model(model_id);
     if (!res.ok) {
       toast.error(res.error);

@@ -51,7 +51,7 @@ export type ModelQueryParams = {
 
 export async function get_models(
   problem_id: string,
-  params: ModelQueryParams = {},
+  params: ModelQueryParams = {}
 ): Promise<ModelListResponse> {
   const search = new URLSearchParams();
 
@@ -81,7 +81,7 @@ export async function get_models(
     throw new Error(`Failed to fetch models: ${res.status}`);
   }
   const data = await res.json();
-  console.log(`models of ${problem_id}:`, data);
+  // console.log(`models of ${problem_id}:`, data);
   return data;
 }
 
@@ -91,7 +91,7 @@ export async function get_model(model_id: string): Promise<Model> {
     throw new Error(`Failed to fetch model: ${res.status}`);
   }
   const data = await res.json();
-  console.log("model:", data);
+  // console.log("model:", data);
   return data;
 }
 
@@ -99,7 +99,7 @@ type UpdateModelResponse = { ok: true } | { ok: false; error: string };
 
 export async function update_model(
   model_id: string,
-  req: unknown,
+  req: unknown
 ): Promise<UpdateModelResponse> {
   const parsed = ModelUpdateSchema.safeParse(req);
   if (!parsed.success) {
@@ -139,7 +139,7 @@ export async function update_model(
 type DeleteModelResponse = { ok: true } | { ok: false; error: string };
 
 export async function delete_model(
-  model_id: string,
+  model_id: string
 ): Promise<DeleteModelResponse> {
   const url = `${API_URL}/model/${model_id}`;
   try {
@@ -209,7 +209,7 @@ export type ModelAllQueryParams = {
 };
 
 export async function get_models_all(
-  params: ModelAllQueryParams = {},
+  params: ModelAllQueryParams = {}
 ): Promise<ModelAllListResponse> {
   const search = new URLSearchParams();
 
@@ -247,7 +247,7 @@ export async function get_models_all(
 type SetProductionResponse = { ok: true } | { ok: false; error: string };
 
 export async function set_model_to_production(
-  model_id: string,
+  model_id: string
 ): Promise<SetProductionResponse> {
   const url = `${API_URL}/model/${model_id}/set_production`;
 
