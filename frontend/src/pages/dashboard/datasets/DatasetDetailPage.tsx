@@ -166,7 +166,7 @@ const DatasetIdPage = () => {
           className={
             datasetVersions.length > 0 || hasActiveFilters
               ? "flex justify-between"
-              : "flex justify-between hidden"
+              : "hidden"
           }
         >
           <div className="relative">

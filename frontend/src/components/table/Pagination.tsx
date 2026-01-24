@@ -5,11 +5,12 @@ type Props = {
   totalPages: number;
   // size shows how many pages to show in total. Default 9 -> +- 4 from current page
   size?: number;
+  pageParam?: string;
 };
 
-const Pagination = ({ totalPages, size = 9 }: Props) => {
+const Pagination = ({ totalPages, size = 9, pageParam = "page" }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawPage = searchParams.get("page");
+  const rawPage = searchParams.get(pageParam);
   const current =
     Number.isFinite(Number(rawPage)) && Number(rawPage) > 0
       ? Math.floor(Number(rawPage))
@@ -18,8 +19,8 @@ const Pagination = ({ totalPages, size = 9 }: Props) => {
   const goto = (page: number) => {
     const normPage = page < 1 ? 1 : page > totalPages ? totalPages : page;
     const params = new URLSearchParams(searchParams);
-    if (normPage === 1) params.delete("page");
-    else params.set("page", normPage.toString());
+    if (normPage === 1) params.delete(pageParam);
+    else params.set(pageParam, normPage.toString());
 
     setSearchParams(params, { replace: true });
   };
@@ -60,16 +61,10 @@ const Pagination = ({ totalPages, size = 9 }: Props) => {
       {totalPages > 1 &&
         Array.from(
           { length: Math.max(0, end - start + 1) },
-          (_, i) => start + i
+          (_, i) => start + i,
         ).map((p) =>
           p === current ? (
-            <Button
-              variant="default"
-              size="sm"
-              key={p}
-              aria-current="page"
-              className="scale-110"
-            >
+            <Button variant="default" size="sm" key={p} className="scale-110">
               {p}
             </Button>
           ) : (
@@ -83,7 +78,7 @@ const Pagination = ({ totalPages, size = 9 }: Props) => {
             >
               {p}
             </Button>
-          )
+          ),
         )}
 
       {/* Next */}

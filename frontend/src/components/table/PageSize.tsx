@@ -9,17 +9,19 @@ import { useSearchParams } from "react-router-dom";
 
 type Props = {
   size: number;
+  sizeParam?: string;
+  pageParam?: string;
 };
 
 const DEFAULT_SIZE = 20;
 
-const PageSize = ({ size }: Props) => {
+const PageSize = ({ size, sizeParam = "size", pageParam = "page" }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const onChange = (size: string) => {
     const params = new URLSearchParams(searchParams);
-    if (Number(size) === DEFAULT_SIZE) params.delete("size");
-    else params.set("size", size);
-    params.delete("page");
+    if (Number(size) === DEFAULT_SIZE) params.delete(sizeParam);
+    else params.set(sizeParam, size);
+    params.delete(pageParam);
     setSearchParams(params, { replace: true });
   };
   return (

@@ -350,7 +350,7 @@ const MLProblemDetailPage = () => {
                 className={
                   models.length > 0 || hasActiveFilters
                     ? "flex justify-between"
-                    : "flex justify-between hidden"
+                    : "hidden"
                 }
               >
                 <div className="relative">

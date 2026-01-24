@@ -12,7 +12,6 @@ import StatCard from "../ui/stat-card";
 import ColumnBadges from "../ui/column-badges";
 import { Button } from "../ui/button";
 import ColumnsDetailsTable from "./column_details/ColumnsDetailsTable";
-import Filterbar from "./column_details/Filterbar";
 import { AlertTriangle } from "lucide-react";
 import { Field, FieldError, FieldLabel } from "../ui/field";
 import { Controller, useForm } from "react-hook-form";
@@ -273,7 +272,6 @@ const DatasetVersionDetails = ({
           </section>
         </TabsContent>
         <TabsContent value="columns">
-          <Filterbar />
           <ColumnsDetailsTable columns={Object.entries(profile?.columns)} />
         </TabsContent>
       </Tabs>

@@ -37,7 +37,7 @@ def _analyse_column(
         "cardinality": float('nan'),
         "cardinality_ratio": float('nan'),
         "missing_pct": missing_pct,
-        "suggested_analysis": "",
+        "suggested_analysis": "none",
         "is_empty": False,
         "is_constant": False,
         "is_unique": False,

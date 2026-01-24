@@ -156,7 +156,7 @@ const MLProblemsPage = () => {
           className={
             mlProblems.length > 0 || hasActiveFilters
               ? "flex justify-between"
-              : "flex justify-between hidden"
+              : "hidden"
           }
         >
           <div className="relative">
@@ -220,6 +220,9 @@ const MLProblemsPage = () => {
               <p className="mt-1 text-sm text-muted-foreground">
                 Create an ML problem to activate this page.
               </p>
+              <div className="mt-5">
+                <MLProblemCreate onCreate={loadMLProblems} />
+              </div>
             </div>
           </div>
         )}
