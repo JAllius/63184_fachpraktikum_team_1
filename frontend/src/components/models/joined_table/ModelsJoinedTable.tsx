@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import ModelActions from "./ModelActions";
 import { SortableHeader } from "@/components/table";
 import type { ModelJoined } from "@/lib/actions/models/model.action";
+import ModelStatusBadge from "@/components/ui/model-status-badge";
 
 type Props = {
   models: ModelJoined[];
@@ -133,7 +134,9 @@ const ModelsJoinedTable = ({ models, askDelete, askUpdate }: Props) => {
                     {m.dataset_name}
                   </Link>
                 </TableCell>
-                <TableCell>{m.status}</TableCell>
+                <TableCell>
+                  <ModelStatusBadge status={m.status} />
+                </TableCell>
                 <TableCell>{m.algorithm}</TableCell>
                 <TableCell>{safeMetric(m.metrics_json)}</TableCell>
                 <TableCell>{m.train_mode}</TableCell>

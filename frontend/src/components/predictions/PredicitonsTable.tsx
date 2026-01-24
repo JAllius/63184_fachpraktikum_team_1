@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { RowActions, SortableHeader } from "../table";
 import type { Prediction } from "@/lib/actions/predictions";
+import PredictionStatusBadge from "../ui/prediction-status-badge";
 
 type Props = {
   predictions: Prediction[];
@@ -51,7 +52,9 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">{pr.id}</TableCell>
-              <TableCell>{pr.status}</TableCell>
+              <TableCell>
+                <PredictionStatusBadge status={pr.status} />
+              </TableCell>
               <TableCell>{pr.created_at}</TableCell>
               <TableCell>
                 <RowActions

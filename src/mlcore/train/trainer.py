@@ -141,6 +141,7 @@ def train(
     metadata["schema_snapshot"]["y"] = {
         y.name: str(y.dtype)
     }
+    metadata["schema_snapshot"]["feature_order"] = list(X.columns)
     metadata["metrics"] = metrics
     if explaination_summary:
         metadata["explanation"] = explaination_summary

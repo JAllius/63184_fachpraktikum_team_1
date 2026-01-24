@@ -163,7 +163,7 @@ const ModelDetailPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnPredict);
       eventSource.close();
     };
-  });
+  }, [loadPredictions]);
 
   const askDelete = (id: string) => {
     setDeleteTarget({ id });

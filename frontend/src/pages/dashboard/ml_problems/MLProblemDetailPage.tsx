@@ -236,7 +236,7 @@ const MLProblemDetailPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnTrain);
       eventSource.close();
     };
-  });
+  }, [loadModels, refreshHasAnyModels]);
 
   const prodModel = models.find((model) => model.status === "production");
   const prodModelName = prodModel?.name;
@@ -425,7 +425,10 @@ const MLProblemDetailPage = () => {
                       <Train
                         problemId={problemId}
                         task={mlProblem.task}
-                        onCreate={loadModels}
+                        onCreate={() => {
+                          refreshHasAnyModels();
+                          loadModels();
+                        }}
                       />
                     </div>
                   </div>

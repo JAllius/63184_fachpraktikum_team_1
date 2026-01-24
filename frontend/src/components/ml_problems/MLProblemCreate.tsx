@@ -38,7 +38,7 @@ import {
   get_dataset_version,
   type DatasetVersion,
 } from "@/lib/actions/dataset_versions";
-// import { useDebounce } from "react-use";
+import { useDebounce } from "react-use";
 
 type Props = {
   onCreate: () => Promise<void> | void;
@@ -58,19 +58,19 @@ const MLProblemCreate = ({
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
     null,
   );
-  // const [debouncedFilter, setDebouncedFilter] = useState("");
+  const [debouncedFilter, setDebouncedFilter] = useState("");
 
-  // useDebounce(
-  //   () => {
-  //     setDebouncedFilter(columnsFilter);
-  //   },
-  //   150,
-  //   [columnsFilter],
-  // );
+  useDebounce(
+    () => {
+      setDebouncedFilter(columnsFilter);
+    },
+    500,
+    [columnsFilter],
+  );
 
   useEffect(() => {
     async function loadDatasetVersion() {
-      if (!id) return;
+      if (!id || id.length !== 36) return;
       try {
         const data: DatasetVersion = await get_dataset_version(id);
         setDatasetVersion(data);
@@ -107,10 +107,10 @@ const MLProblemCreate = ({
   }, [columnsDetails, profileDetails]);
 
   const filteredColumns = useMemo(() => {
-    const q = columnsFilter.trim().toLowerCase();
+    const q = debouncedFilter.trim().toLowerCase();
     if (!q) return details;
     return details.filter((v) => v.name.toLowerCase().includes(q));
-  }, [details, columnsFilter]);
+  }, [details, debouncedFilter]);
 
   const {
     register,

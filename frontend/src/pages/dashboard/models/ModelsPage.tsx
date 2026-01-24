@@ -131,7 +131,7 @@ const ModelsPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnTrain);
       eventSource.close();
     };
-  });
+  }, [loadModels]);
 
   const askDelete = (id: string, name: string) => {
     setDeleteTarget({ id, name });
