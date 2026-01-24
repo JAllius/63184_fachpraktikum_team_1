@@ -53,6 +53,7 @@ type Props = {
         metrics: ClassificationMetrics;
         semantic_types: Record<string, string[]>;
         cross_validation?: { mean: number; std: number };
+        selected_model?: string;
       }
     | {
         model_name: string;
@@ -67,6 +68,7 @@ type Props = {
         metrics: RegressionMetrics;
         semantic_types: Record<string, string[]>;
         cross_validation?: { mean: number; std: number };
+        selected_model?: string;
       };
   onRefresh: () => Promise<void>;
 };
@@ -281,6 +283,9 @@ const ModelDetails = ({
               <div>
                 <span className="text-muted-foreground/80">Preset: </span>
                 <span>{metadata.algorithm}</span>
+                {metadata?.selected_model && (
+                  <span> ({metadata?.selected_model})</span>
+                )}
                 <span className="text-muted-foreground/80"> • </span>
                 <span>{metadata.framework}</span>
               </div>

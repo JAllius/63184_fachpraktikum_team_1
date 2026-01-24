@@ -98,8 +98,8 @@ const ModelsTable = ({
               <TableCell>{m.algorithm}</TableCell>
               <TableCell>
                 {task === "classification"
-                  ? (round(JSON.parse(m.metrics_json)?.f1, 3) ?? "")
-                  : (JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? "")}
+                  ? (round(JSON.parse(m.metrics_json)?.f1, 3) ?? "—")
+                  : (JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? "—")}
               </TableCell>
               <TableCell>{m.train_mode}</TableCell>
               <TableCell>

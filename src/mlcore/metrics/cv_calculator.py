@@ -34,18 +34,18 @@ def classification_cv(
         random_state = random_seed,
     )
 
-    score = "f1_macro" # if multi_class else "f1"
+    scoring = "f1_macro" # if multi_class else "f1"
     cv_scores = cross_val_score(
         model,
         X_train,
         y_train,
         cv = cv,
-        scoring = score,
+        scoring = scoring,
         n_jobs=-1,
     )
 
     cv_summary = {
-        "score": score,
+        "scoring": scoring,
         "cv_folds": [round(float(v), 4) for v in cv_scores],
         "mean": round(float(cv_scores.mean()), 4),
         "std": round(float(cv_scores.std()), 4),
@@ -76,7 +76,7 @@ def regression_cv(
     )
 
     cv_summary = {
-        "score": "r2",
+        "scoring": "r2",
         "cv_folds": [round(float(v), 4) for v in cv_scores],
         "mean": round(float(cv_scores.mean()), 4),
         "std": round(float(cv_scores.std()), 4),
