@@ -35,7 +35,6 @@ const StatCard = ({
             <Tooltip open={open} onOpenChange={setOpen}>
               <TooltipTrigger asChild>
                 <button
-                  type="button"
                   onClick={() => setOpen((v) => !v)}
                   className="inline-flex items-center"
                 >

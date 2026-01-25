@@ -131,7 +131,7 @@ const ModelsPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnTrain);
       eventSource.close();
     };
-  });
+  }, [loadModels]);
 
   const askDelete = (id: string, name: string) => {
     setDeleteTarget({ id, name });
@@ -145,6 +145,7 @@ const ModelsPage = () => {
 
   const onDelete = async (model_id: string) => {
     if (!model_id) return;
+    setDeleting(true);
     const res = await delete_model(model_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -187,18 +188,23 @@ const ModelsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage models across all datasets.
         </p>
-
+        <div
+          className={
+            models.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "hidden"
+          }
+        >
+          <div className="relative">
+            <ModelsJoinedFilterbar />
+          </div>
+          <div className="flex gap-2">
+            <Train onCreate={loadModels} />
+            <Predict onCreate={() => {}} />
+          </div>
+        </div>
         {models.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <ModelsJoinedFilterbar />
-              </div>
-              <div className="flex gap-2">
-                <Train onCreate={loadModels} />
-                <Predict onCreate={() => {}} />
-              </div>
-            </div>
             <ModelsJoinedTable
               models={models}
               askDelete={askDelete}

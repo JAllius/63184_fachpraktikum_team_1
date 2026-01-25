@@ -23,6 +23,9 @@ import {
 import type { Metadata } from "@/pages/dashboard/dataset_versions/DatasetVersionDetailPage";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import Filterbar from "./Filterbar";
+import { useSearchParams } from "react-router-dom";
+import { PageSize, Pagination } from "@/components/table";
 
 type Props = {
   columns: [string, Metadata][];
@@ -35,23 +38,59 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
   } | null>(null);
   const [openTechnical, setOpenTechnical] = useState(false);
 
+  const [searchParams] = useSearchParams();
+
+  const page = Number(searchParams.get("colPage") ?? 1);
+  const size = Number(searchParams.get("colSize") ?? 20);
+
+  const colName = searchParams.get("colName") ?? "";
+  const colSemantic = searchParams.get("colSemantic") ?? "";
+  const colRecommendation = searchParams.get("colRecommendation") ?? "";
+  const colSuggested_analysis = searchParams.get("colSuggested_analysis") ?? "";
+
+  const filteredColumns = columns.filter(([name, meta]) => {
+    if (colName && !name.toLowerCase().includes(colName.toLowerCase()))
+      return false;
+
+    if (colSemantic && colSemantic !== meta.semantic_type) return false;
+
+    if (colRecommendation === "include" && meta.exclude_for_analysis)
+      return false;
+    if (colRecommendation === "exclude" && !meta.exclude_for_analysis)
+      return false;
+
+    if (
+      colSuggested_analysis &&
+      colSuggested_analysis !== meta.suggested_analysis
+    )
+      return false;
+
+    return true;
+  });
+
+  const totalRows = filteredColumns.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / size));
+  const offset = (page - 1) * size;
+  const pageRows = filteredColumns.slice(offset, offset + size);
+
   const warnings: string[] = columns
     .filter(([, meta]) => meta?.warning)
     .map(([col]) => col);
 
   function pct_string(value?: number, decimals: number = 2) {
-    if (!value) return;
+    if (value == null) return "—";
     const valuePct = value * 100;
     return valuePct.toFixed(decimals) + "%";
   }
 
   function round(value?: number) {
-    if (!value) return;
+    if (value == null) return "—";
     return Math.round(value * 100) / 100;
   }
 
   return (
     <div>
+      <Filterbar />
       <Table>
         <TableCaption>List of Column Details</TableCaption>
         <TableHeader>
@@ -65,7 +104,7 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {columns.map(([name, metadata]) => (
+          {pageRows.map(([name, metadata]) => (
             <TableRow
               key={name}
               onClick={() => {
@@ -103,7 +142,7 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {metadata.suggested_analysis ? (
+                {metadata.suggested_analysis !== "none" ? (
                   <span className="capitalize">
                     {metadata.suggested_analysis}
                   </span>
@@ -121,6 +160,19 @@ const ColumnsDetailsTable = ({ columns }: Props) => {
           </TableRow>
         </TableFooter>
       </Table>
+      <div className="mt-2 grid grid-cols-3 items-center">
+        <div />
+        {totalPages > 1 ? (
+          <div className="flex justify-center">
+            <Pagination totalPages={totalPages} pageParam="colPage" />
+          </div>
+        ) : (
+          <div />
+        )}
+        <div className="flex justify-end">
+          <PageSize size={size} sizeParam="colSize" pageParam="colPage" />
+        </div>
+      </div>
       {selected && (
         <div>
           <Sheet

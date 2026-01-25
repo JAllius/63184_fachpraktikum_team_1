@@ -56,11 +56,39 @@ def predict(
     if target in X.columns:
         X = X.drop(columns=[target])
 
-    schema_snapshot = metadata["schema_snapshot"]
+    # Check schema snapshot and feature order and compare with X -> reorder if needed
+    schema_snapshot = metadata.get("schema_snapshot")
+    if not schema_snapshot:
+        raise ValueError("schema_snapshot is missing from model metadata.")
+    feature_order = schema_snapshot.get("feature_order")
+    if not feature_order:
+        raise ValueError("schema_snapshot.feature_order is missing from model metadata.")
 
-    ### MISSING ###
-    # Check schema snapshot and compare with X
-    ### END MISSING ###
+    input_order = list(X.columns)
+
+    # Empty or invalid columns names check
+    if any(column is None or column.strip() == "" for column in input_order):
+        raise ValueError("Input contains empty or invalid column names.")
+
+    # Duplicate columns check
+    if len(set(input_order)) != len(input_order):
+        raise ValueError("Input contains duplicate column names.")
+
+    # Missing columns check
+    expected = set(feature_order)
+    got = set(input_order)
+
+    missing = [column for column in feature_order if column not in got]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # Extra columns check
+    extra = [column for column in input_order if column not in expected]
+    if extra:
+        raise ValueError(f"Unexpected extra columns: {extra}")
+
+    # Reorder to training order for safety
+    X = X[feature_order]
 
     y_pred = model.predict(X)
 

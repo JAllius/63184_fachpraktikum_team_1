@@ -38,8 +38,8 @@ import SetModelProduction from "@/components/model_details/SetModelProduction";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 export type FeatureStrategy = {
-  include: [string, string][];
-  exclude: [string, string][];
+  include: string[];
+  exclude: string[];
 };
 
 const MLProblemDetailPage = () => {
@@ -84,6 +84,8 @@ const MLProblemDetailPage = () => {
   );
   const [setting, setSetting] = useState(false);
   const [openSetProd, setOpenSetProd] = useState(false);
+  const [columnNames, setColumnNames] = useState<string[]>([]);
+  const [hasAnyModels, setHasAnyModels] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -107,30 +109,40 @@ const MLProblemDetailPage = () => {
     Boolean(evaluation_strategy?.trim()) ||
     Boolean(status?.trim());
 
-  useEffect(() => {
-    async function loadMLProblem() {
-      try {
-        const data: MLProblem = await get_ml_problem(problemId);
-        setMLProblem(data);
-      } catch (error) {
-        console.log(error);
-      }
+  const loadMLProblem = useCallback(async () => {
+    try {
+      const data: MLProblem = await get_ml_problem(problemId);
+      setMLProblem(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadMLProblem();
   }, [problemId]);
 
   useEffect(() => {
-    async function loadDatasetVersion() {
-      try {
-        const data: DatasetVersion =
-          await get_dataset_version(datasetVersionId);
-        setDatasetVersion(data);
-      } catch (error) {
-        console.log(error);
-      }
+    loadMLProblem();
+  }, [loadMLProblem]);
+
+  const loadDatasetVersion = useCallback(async () => {
+    try {
+      const data: DatasetVersion = await get_dataset_version(datasetVersionId);
+      setDatasetVersion(data);
+    } catch (error) {
+      console.log(error);
     }
-    loadDatasetVersion();
   }, [datasetVersionId]);
+
+  useEffect(() => {
+    loadDatasetVersion();
+  }, [loadDatasetVersion]);
+
+  const refreshHasAnyModels = useCallback(async () => {
+    const res = await get_models(problemId);
+    setHasAnyModels(res.items.length > 0);
+  }, [problemId]);
+
+  useEffect(() => {
+    refreshHasAnyModels();
+  }, [refreshHasAnyModels]);
 
   const loadModels = useCallback(async () => {
     try {
@@ -175,30 +187,30 @@ const MLProblemDetailPage = () => {
 
   useEffect(() => {
     if (!mlProblem || !datasetVersion) return;
-    if (mlProblem.feature_strategy === "auto") {
-      const profile: Profile = datasetVersion?.profile_json
-        ? JSON.parse(datasetVersion?.profile_json)
-        : null;
-      const exclude = Object.entries(profile.exclude_suggestions);
+    const feature_strategy = mlProblem.feature_strategy_json
+      ? JSON.parse(mlProblem.feature_strategy_json)
+      : "auto";
+    const profile: Profile = datasetVersion?.profile_json
+      ? JSON.parse(datasetVersion?.profile_json)
+      : null;
+    if (feature_strategy === "auto") {
+      const exclude = Object.values(profile?.exclude_suggestions ?? {});
       setFeatureStrategy({
         include: [],
         exclude: exclude,
       });
     } else {
-      const feature_strategy = mlProblem?.feature_strategy
-        ? JSON.parse(mlProblem?.feature_strategy)
-        : { include: [], exclude: [] };
-      const include: [string, string][] = Object.entries(
-        feature_strategy?.include,
-      );
-      const exclude: [string, string][] = Object.entries(
-        feature_strategy?.exclude,
+      const include: string[] = Object.values(feature_strategy?.include ?? {});
+      const exclude: string[] = Object.values(
+        feature_strategy?.exclude ?? profile?.exclude_suggestions ?? {},
       );
       setFeatureStrategy({
         include: include,
         exclude: exclude,
       });
     }
+    const columnNames = Object.keys(profile.columns);
+    setColumnNames(columnNames);
   }, [mlProblem, datasetVersion]);
 
   useEffect(() => {
@@ -212,6 +224,7 @@ const MLProblemDetailPage = () => {
       } else if (payload.job?.status === "failed") {
         toast.error("Training failed");
       }
+      refreshHasAnyModels();
       loadModels();
     };
 
@@ -223,7 +236,7 @@ const MLProblemDetailPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnTrain);
       eventSource.close();
     };
-  });
+  }, [loadModels, refreshHasAnyModels]);
 
   const prodModel = models.find((model) => model.status === "production");
   const prodModelName = prodModel?.name;
@@ -241,13 +254,14 @@ const MLProblemDetailPage = () => {
 
   const onDelete = async (model_id: string) => {
     if (!model_id) return;
-
+    setDeleting(true);
     const res = await delete_model(model_id);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
     toast.success("Model deleted");
+    await refreshHasAnyModels();
     await loadModels();
     cancelDelete();
     setDeleting(false);
@@ -288,7 +302,7 @@ const MLProblemDetailPage = () => {
 
   const onSetProd = async (model_id: string) => {
     if (!model_id) return;
-
+    setSetting(true);
     const res = await set_model_to_production(model_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -325,28 +339,34 @@ const MLProblemDetailPage = () => {
           <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
             <TabsList className="w-full items-center justify-start gap-2">
               <TabsTrigger value="models">Models</TabsTrigger>
-              {models.length > 0 ? (
+              {hasAnyModels ? (
                 <TabsTrigger value="configuration">Configured</TabsTrigger>
               ) : (
                 <TabsTrigger value="configuration">Configuration</TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="models">
+              <div
+                className={
+                  models.length > 0 || hasActiveFilters
+                    ? "flex justify-between"
+                    : "hidden"
+                }
+              >
+                <div className="relative">
+                  <ModelsFilterbar />
+                </div>
+                <div className="flex gap-2">
+                  <Train
+                    problemId={problemId}
+                    task={mlProblem.task}
+                    onCreate={loadModels}
+                  />
+                  <Predict problemId={problemId} onCreate={() => {}} />
+                </div>
+              </div>
               {models.length > 0 || hasActiveFilters ? (
                 <div>
-                  <div className="flex justify-between">
-                    <div className="relative">
-                      <ModelsFilterbar />
-                    </div>
-                    <div className="flex gap-2">
-                      <Train
-                        problemId={problemId}
-                        task={mlProblem.task}
-                        onCreate={loadModels}
-                      />
-                      <Predict problemId={problemId} onCreate={() => {}} />
-                    </div>
-                  </div>
                   <ModelsTable
                     models={models}
                     askDelete={askDelete}
@@ -405,7 +425,10 @@ const MLProblemDetailPage = () => {
                       <Train
                         problemId={problemId}
                         task={mlProblem.task}
-                        onCreate={loadModels}
+                        onCreate={() => {
+                          refreshHasAnyModels();
+                          loadModels();
+                        }}
                       />
                     </div>
                   </div>
@@ -420,9 +443,11 @@ const MLProblemDetailPage = () => {
                   datasetVersionName={datasetVersion?.name}
                   mlProblem={mlProblem}
                   featureStrategy={featureStrategy}
+                  columnNames={columnNames}
                   prodModelName={prodModelName}
                   prodModelId={prodModelId}
                   configured={models.length > 0}
+                  onRefresh={loadMLProblem}
                 />
               </div>
             </TabsContent>

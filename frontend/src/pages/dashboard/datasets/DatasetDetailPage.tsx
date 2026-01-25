@@ -109,7 +109,7 @@ const DatasetIdPage = () => {
 
   const onDelete = async (dataset_version_id: string) => {
     if (!dataset_version_id) return;
-
+    setDeleting(true);
     const res = await delete_dataset_version(dataset_version_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -162,17 +162,23 @@ const DatasetIdPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Manage all dataset versions of {dataset?.name ?? "Unknown Dataset"}.
         </p>
+        <div
+          className={
+            datasetVersions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "hidden"
+          }
+        >
+          <div className="relative">
+            <DatasetVersionsFilterbar />
+          </div>
+          <DatasetVersionCreate
+            onCreate={loadDatasetVersions}
+            datasetId={datasetId}
+          />
+        </div>
         {datasetVersions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetVersionsFilterbar />
-              </div>
-              <DatasetVersionCreate
-                onCreate={loadDatasetVersions}
-                datasetId={datasetId}
-              />
-            </div>
             <DatasetVersionsTable
               datasetVersions={datasetVersions}
               askDelete={askDelete}

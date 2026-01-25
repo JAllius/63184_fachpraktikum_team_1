@@ -31,10 +31,10 @@ const DatasetVersionsJoinedTable = ({
         <TableHeader>
           <TableRow>
             <TableHead>
-              <SortableHeader field="dataset_name" label="Dataset name" />
+              <SortableHeader field="name" label="Dataset version name" />
             </TableHead>
             <TableHead>
-              <SortableHeader field="name" label="Dataset version name" />
+              <SortableHeader field="dataset_name" label="Dataset name" />
             </TableHead>
             <TableHead>
               <SortableHeader field="filename" label="Filename" />
@@ -49,15 +49,6 @@ const DatasetVersionsJoinedTable = ({
         <TableBody>
           {datasetVersions.map((dsv) => (
             <TableRow key={dsv.id}>
-              <TableCell className="text-muted-foreground">
-                <Link
-                  to={`/dashboard/datasets/${dsv.dataset_id}`}
-                  aria-label="View dataset"
-                  className="font-medium"
-                >
-                  {dsv.dataset_name}
-                </Link>
-              </TableCell>
               <TableCell>
                 <Link
                   to={`/dashboard/datasets/${dsv.dataset_id}/${dsv.id}`}
@@ -65,6 +56,15 @@ const DatasetVersionsJoinedTable = ({
                   className="font-medium"
                 >
                   {dsv.name}
+                </Link>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                <Link
+                  to={`/dashboard/datasets/${dsv.dataset_id}`}
+                  aria-label="View dataset"
+                  className="font-medium"
+                >
+                  {dsv.dataset_name}
                 </Link>
               </TableCell>
               <TableCell>{dsv.filename}</TableCell>

@@ -183,6 +183,59 @@ export async function update_dataset_version(
   }
 }
 
+type Exclude = { exclude: string[] };
+
+export async function update_exclude_suggestions(
+  dataset_version_id: string,
+  req: Exclude,
+): Promise<UpdateDatasetVersionResponse> {
+  const url = `${API_URL}/datasetVersion/${dataset_version_id}/exclude_suggestions`;
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update profile request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating profile.",
+    };
+  }
+}
+
+export async function calculate_profile(
+  dataset_version_id: string,
+): Promise<UpdateDatasetVersionResponse> {
+  const url = `${API_URL}/datasetVersion/${dataset_version_id}/profile`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `Update profile request failed (status ${res.status}).`,
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while updating profile.",
+    };
+  }
+}
+
 type DeleteDatasetVersionResponse = { ok: true } | { ok: false; error: string };
 
 export async function delete_dataset_version(

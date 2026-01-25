@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { SortableHeader } from "../table";
 import type { Model } from "@/lib/actions/models/model.action";
 import ModelRowActions from "./ModelRowActions";
+import ModelStatusBadge from "../ui/model-status-badge";
 
 type Props = {
   models: Model[];
@@ -29,7 +30,7 @@ const ModelsTable = ({
   task,
 }: Props) => {
   function round(value?: number, decimals: number = 2) {
-    if (!value) return;
+    if (value == null) return "—";
     return Math.round(value * 10 ** decimals) / 10 ** decimals;
   }
 
@@ -57,7 +58,11 @@ const ModelsTable = ({
               <SortableHeader field="algorithm" label="Algorithm" />
             </TableHead>
             <TableHead>
-              <SortableHeader field="metrics" label="Metrics *" />
+              <SortableHeader
+                field="metrics"
+                label="Metrics *"
+                className="whitespace-nowrap"
+              />
             </TableHead>
             <TableHead>
               <SortableHeader field="train_mode" label="Train Mode" />
@@ -87,12 +92,14 @@ const ModelsTable = ({
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">{m.id}</TableCell>
-              <TableCell>{m.status}</TableCell>
+              <TableCell>
+                <ModelStatusBadge status={m.status} />
+              </TableCell>
               <TableCell>{m.algorithm}</TableCell>
               <TableCell>
                 {task === "classification"
-                  ? (round(JSON.parse(m.metrics_json)?.f1, 3) ?? "")
-                  : (JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? "")}
+                  ? (round(JSON.parse(m.metrics_json)?.f1, 3) ?? "—")
+                  : (JSON.parse(m.metrics_json)?.rmse.toFixed(2) ?? "—")}
               </TableCell>
               <TableCell>{m.train_mode}</TableCell>
               <TableCell>

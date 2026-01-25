@@ -4,9 +4,10 @@ import { useSearchParams } from "react-router-dom";
 type Props = {
   field: string;
   label: string;
+  className?: string;
 };
 
-const SortableHeader = ({ field, label }: Props) => {
+const SortableHeader = ({ field, label, className }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const sort = searchParams.get("sort");
   const dir = searchParams.get("dir");
@@ -38,7 +39,7 @@ const SortableHeader = ({ field, label }: Props) => {
       onClick={() => toggleSort(field)}
       className="flex items-center gap-1 hover:text-foreground"
     >
-      <span>{label}</span>
+      <span className={className}>{label}</span>
       {isActive ? (
         dir === "desc" ? (
           <ChevronDown className="h-4 w-4 text-sky-400" />

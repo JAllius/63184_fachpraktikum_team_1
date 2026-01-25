@@ -51,7 +51,7 @@ const Train = ({ problemId, task, onCreate }: Props) => {
           setPresets(data);
           return;
         }
-        if (!id) {
+        if (!id || id.length !== 36) {
           setPresets([]);
           return;
         }

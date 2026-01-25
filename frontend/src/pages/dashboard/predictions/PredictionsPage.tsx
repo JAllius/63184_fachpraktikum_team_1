@@ -121,7 +121,7 @@ const PredictionsPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnPredict);
       eventSource.close();
     };
-  });
+  }, [loadPredictions]);
 
   const askDelete = (id: string) => {
     setDeleteTarget({ id });
@@ -135,7 +135,7 @@ const PredictionsPage = () => {
 
   const onDelete = async (prediction_id: string) => {
     if (!prediction_id) return;
-
+    setDeleting(true);
     const res = await delete_prediction(prediction_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -182,15 +182,20 @@ const PredictionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage predictions across all datasets.
         </p>
-
+        <div
+          className={
+            predictions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "hidden"
+          }
+        >
+          <div className="relative">
+            <PredictionsJoinedFilterbar />
+          </div>
+          <Predict onCreate={loadPredictions} />
+        </div>
         {predictions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <PredictionsJoinedFilterbar />
-              </div>
-              <Predict onCreate={loadPredictions} />
-            </div>
             <PredictionsJoinedTable
               predictions={predictions}
               askDelete={askDelete}

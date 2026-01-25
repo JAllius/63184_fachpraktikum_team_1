@@ -163,7 +163,7 @@ const ModelDetailPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnPredict);
       eventSource.close();
     };
-  });
+  }, [loadPredictions]);
 
   const askDelete = (id: string) => {
     setDeleteTarget({ id });
@@ -177,7 +177,7 @@ const ModelDetailPage = () => {
 
   const onDelete = async (prediction_id: string) => {
     if (!prediction_id) return;
-
+    setDeleting(true);
     const res = await delete_prediction(prediction_id);
     if (!res.ok) {
       toast.error(res.error);
@@ -247,18 +247,24 @@ const ModelDetailPage = () => {
             <TabsTrigger value="explainability">Explainability</TabsTrigger>
           </TabsList>
           <TabsContent value="predictions">
+            <div
+              className={
+                predictions.length > 0 || hasActiveFilters
+                  ? "flex justify-between"
+                  : "hidden"
+              }
+            >
+              <div className="relative">
+                <PredictionsFilterbar />
+              </div>
+              <Predict
+                problemId={problemId}
+                modelId={modelId}
+                onCreate={loadPredictions}
+              />
+            </div>
             {predictions.length > 0 || hasActiveFilters ? (
               <div>
-                <div className="flex justify-between">
-                  <div className="relative">
-                    <PredictionsFilterbar />
-                  </div>
-                  <Predict
-                    problemId={problemId}
-                    modelId={modelId}
-                    onCreate={loadPredictions}
-                  />
-                </div>
                 <PredictionsTable
                   predictions={predictions}
                   askDelete={askDelete}

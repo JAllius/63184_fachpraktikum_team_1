@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "react-use";
@@ -28,7 +29,7 @@ const MLProblemsJoinedFilterbar = () => {
 
   const [filters, setFilters] = useState(initial);
 
-  const tasks = [
+  const TASKS = [
     { value: "classification", label: "Classification" },
     { value: "regression", label: "Regression" },
   ];
@@ -90,7 +91,7 @@ const MLProblemsJoinedFilterbar = () => {
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
@@ -126,14 +127,13 @@ const MLProblemsJoinedFilterbar = () => {
           />
           <div className="flex shrink-0 items-center gap-2">
             <Button
+              type="button"
               onClick={resetFilters}
               className="hover:scale-105 active:scale-95"
-              type="button"
             >
               Reset
             </Button>
             <Button
-              type="button"
               onClick={() => setOpen((v) => !v)}
               className={`hover:scale-105 active:scale-95 ${
                 open ? "bg-zinc-100 text-black hover:bg-zinc-200" : ""
@@ -144,7 +144,6 @@ const MLProblemsJoinedFilterbar = () => {
           </div>
         </div>
       </div>
-
       {open && (
         <div className="flex flex-row gap-2 mt-2 flex-wrap">
           <Input
@@ -155,34 +154,6 @@ const MLProblemsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
-          <Select
-            value={filters.task ?? ""}
-            onValueChange={(value) =>
-              setFilters((f) => ({ ...f, task: value }))
-            }
-          >
-            <SelectTrigger className="h-9 w-60 justify-between text-left border rounded-md text-sm pl-3">
-              <SelectValue placeholder="Task" />
-            </SelectTrigger>
-            <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
-              {tasks.map((task) => (
-                <SelectItem key={task.value} value={task.value}>
-                  {task.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Input
-            placeholder="Target"
-            value={filters.target}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, target: e.target.value }))
-            }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-
           <Input
             placeholder="Dataset version name"
             value={filters.dataset_version_name}
@@ -194,12 +165,58 @@ const MLProblemsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-
           <Input
             placeholder="Dataset name"
             value={filters.dataset_name}
             onChange={(e) =>
               setFilters((f) => ({ ...f, dataset_name: e.target.value }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <div className="flex items-center gap-1">
+            <Select
+              value={filters.task}
+              onValueChange={(value) =>
+                setFilters((f) => ({
+                  ...f,
+                  task: value,
+                }))
+              }
+            >
+              <SelectTrigger
+                className={
+                  filters.task
+                    ? "h-9 w-52 justify-between text-left border rounded-md text-sm pl-3"
+                    : "h-9 w-60 justify-between text-left border rounded-md text-sm pl-3"
+                }
+              >
+                <SelectValue placeholder="Task" />
+              </SelectTrigger>
+              <SelectContent className="shadow border rounded-md px-2 py-1 w-60">
+                {TASKS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!!filters.task && (
+              <Button
+                type="button"
+                variant={"outline"}
+                size="icon"
+                className=""
+                onClick={() => setFilters((f) => ({ ...f, task: "" }))}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <Input
+            placeholder="Target"
+            value={filters.target}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, target: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />

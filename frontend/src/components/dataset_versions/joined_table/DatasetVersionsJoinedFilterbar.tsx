@@ -54,7 +54,7 @@ const DatasetVersionsFilterbar = () => {
       }
     },
     500,
-    [filters]
+    [filters],
   );
 
   const resetFilters = () => {
@@ -79,9 +79,9 @@ const DatasetVersionsFilterbar = () => {
         />
         <div className="flex shrink-0 items-center gap-2">
           <Button
+            type="button"
             onClick={resetFilters}
             className="hover:scale-105 active:scale-95"
-            type="button"
           >
             Reset
           </Button>
@@ -100,14 +100,6 @@ const DatasetVersionsFilterbar = () => {
       {open && (
         <div className="flex flex-row gap-2 mt-2">
           <Input
-            placeholder="Dataset name"
-            value={filters.dataset_name}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
-            }
-            className="shadow border rounded-md px-2 py-1 w-60"
-          />
-          <Input
             placeholder="Dataset version name"
             value={filters.dataset_version_name}
             onChange={(e) =>
@@ -115,6 +107,14 @@ const DatasetVersionsFilterbar = () => {
                 ...f,
                 dataset_version_name: e.target.value,
               }))
+            }
+            className="shadow border rounded-md px-2 py-1 w-60"
+          />
+          <Input
+            placeholder="Dataset name"
+            value={filters.dataset_name}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, dataset_name: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />

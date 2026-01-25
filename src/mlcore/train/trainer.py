@@ -1,3 +1,4 @@
+from sklearn.pipeline import Pipeline
 from mlcore.io.preset_loader import loader
 from mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from mlcore.io.model_saver import save_model
@@ -80,9 +81,19 @@ def train(
 
     model, metadata = build_model(categorical, numeric, boolean, train_mode)
 
+    logger.info("[TRAIN] fitting model...")
     model.fit(X_train, y_train)
+    logger.info("[TRAIN] fit done")
 
+    est = model.named_steps["est"]
+    pre = model.named_steps["pre"]
+
+    if algorithm.lower() == "auto":
+        metadata["selected_model"] = est.best_model_name_
+
+    logger.info("[TRAIN] predicting holdout...")
     y_pred = model.predict(X_test)
+    logger.info("[TRAIN] predict done")
 
     if label_encoder is not None:
         y_test_dec = label_encoder.inverse_transform(y_test)
@@ -92,9 +103,15 @@ def train(
         y_pred_dec = y_pred
 
     metrics = calculate_metrics(y_test_dec, y_pred_dec, task) #, multi_class)
+
     if evaluation_strategy == "cv":
-        cv = calculate_cv(model, X_train, y_train, task) #, multi_class)
-        metadata["cross_validation"] = cv
+        logger.info("[TRAIN] starting CV...")
+        if algorithm.lower() == "auto":
+            metadata["cross_validation"] = est.cv_summary_
+        else:
+            cv = calculate_cv(model, X_train, y_train, task) #, multi_class)
+            metadata["cross_validation"] = cv
+        logger.info("[TRAIN] CV done")
 
     explaination_summary = {}
     label_classes = None
@@ -102,11 +119,14 @@ def train(
         label_classes = label_encoder.classes_.tolist()
 
     if explain:
-        model_shap = model.named_steps.get("est")
-        preprocessor = model.named_steps.get("pre")
+        logger.info("[TRAIN] starting explain...")
+        if algorithm.lower() == "auto":
+            model_shap = est.best_estimator_
+        else:
+            model_shap = est
 
         # Get feature names from transformed output
-        feature_info = get_feature_names(preprocessor)
+        feature_info = get_feature_names(pre)
         feature_names = feature_info["feature_names"]
         feature_parents = feature_info["feature_parents"]
 
@@ -114,8 +134,8 @@ def train(
         metadata["feature_names"] = feature_names
         metadata["feature_parents"] = feature_parents
 
-        X_train_shap = preprocessor.transform(X_train)
-        X_test_shap = preprocessor.transform(X_test)
+        X_train_shap = pre.transform(X_train)
+        X_test_shap = pre.transform(X_test)
         # explanation = explain_model(task, model_shap, X_train_shap, X_test_shap)
         explaination_summary = explain_model(
             task=task,
@@ -131,6 +151,7 @@ def train(
             include_distributions=True,
             random_seed=random_seed,
         )
+        logger.info("[TRAIN] explain done")
 
     metadata["model_name"] = name
     metadata["problem_id"] = problem_id
@@ -141,6 +162,7 @@ def train(
     metadata["schema_snapshot"]["y"] = {
         y.name: str(y.dtype)
     }
+    metadata["schema_snapshot"]["feature_order"] = list(X.columns)
     metadata["metrics"] = metrics
     if explaination_summary:
         metadata["explanation"] = explaination_summary
@@ -178,7 +200,15 @@ def train(
 
     parent_path = Path(model_uri).parent
 
-    if save_model(model, parent_path):
+    if algorithm.lower() == "auto":
+        model_to_save = Pipeline([
+            ("pre", pre),
+            ("est", est.best_estimator_),
+        ])
+    else:
+        model_to_save = model
+
+    if save_model(model_to_save, parent_path):
         logger.info(f"[SAVE_MODEL] Model saved at: {model_uri}")
         if save_metadata(metadata, parent_path):
             logger.info(f"[SAVE_MODEL_METADATA] Model's metadata saved at: {model_uri}")

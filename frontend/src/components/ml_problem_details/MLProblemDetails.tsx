@@ -1,4 +1,8 @@
-import type { MLProblem } from "@/lib/actions/mlProblems/mlProblem.action";
+import {
+  reset_feature_strategy,
+  update_feature_strategy,
+  type MLProblem,
+} from "@/lib/actions/mlProblems/mlProblem.action";
 import {
   Card,
   CardContent,
@@ -12,6 +16,11 @@ import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import type { FeatureStrategy } from "@/pages/dashboard/ml_problems/MLProblemDetailPage";
 import ColumnBadges from "../ui/column-badges";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Field, FieldError, FieldLabel } from "../ui/field";
+import Combobox from "../ui/combobox";
+import { toast } from "sonner";
+import Reset from "../ui/reset";
 
 type Props = {
   datasetId: string;
@@ -19,9 +28,11 @@ type Props = {
   datasetVersionName?: string;
   mlProblem: MLProblem;
   featureStrategy: FeatureStrategy;
+  columnNames: string[];
   prodModelName?: string;
   prodModelId?: string;
   configured?: boolean;
+  onRefresh: () => Promise<void>;
 };
 
 const MLProblemDetails = ({
@@ -30,14 +41,90 @@ const MLProblemDetails = ({
   datasetVersionName,
   mlProblem,
   featureStrategy,
+  columnNames,
   prodModelName,
   prodModelId,
   configured = false,
+  onRefresh,
 }: Props) => {
   const [openTechnical, setOpenTechnical] = useState(false);
+  const [editingIncludes, setEditingIncludes] = useState(false);
+  const [editingExcludes, setEditingExcludes] = useState(false);
+  const [openReset, setOpenReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const semanticTypesJSON = JSON.parse(mlProblem.semantic_types);
   const semanticTypes: [string, string[]][] = Object.entries(semanticTypesJSON);
+
+  type IncludesForm = { columns: string[] };
+  type ExcludesForm = { columns: string[] };
+
+  const includeDefaults = featureStrategy.include ?? [];
+  const excludeDefaults = featureStrategy.exclude ?? [];
+
+  const onSaveIncludes = async (data: IncludesForm) => {
+    if (!mlProblem.id || !data) return;
+    const res = await update_feature_strategy(mlProblem.id, {
+      include: data.columns,
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Feature strategy updated");
+    await onRefresh();
+    setEditingIncludes(false);
+    resetInclude(data);
+  };
+
+  const onSaveExcludes = async (data: ExcludesForm) => {
+    if (!mlProblem.id || !data) return;
+    const res = await update_feature_strategy(mlProblem.id, {
+      exclude: data.columns,
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Feature strategy updated");
+    await onRefresh();
+    setEditingExcludes(false);
+    resetExclude(data);
+  };
+
+  const onReset = async () => {
+    if (!mlProblem.id) return;
+    setResetting(true);
+    const res = await reset_feature_strategy(mlProblem.id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Feature strategy updated");
+    await onRefresh();
+    setEditingIncludes(false);
+    setEditingExcludes(false);
+    setOpenReset(false);
+    setResetting(false);
+  };
+
+  const {
+    control: includeControl,
+    handleSubmit: handleIncludeSubmit,
+    formState: { errors: includeErrors, isSubmitting: includeSubmitting },
+    reset: resetInclude,
+  } = useForm<IncludesForm>({
+    defaultValues: { columns: includeDefaults },
+  });
+
+  const {
+    control: excludeControl,
+    handleSubmit: handleExcludeSubmit,
+    formState: { errors: excludeErrors, isSubmitting: excludeSubmitting },
+    reset: resetExclude,
+  } = useForm<ExcludesForm>({
+    defaultValues: { columns: excludeDefaults },
+  });
 
   return (
     <div>
@@ -102,7 +189,11 @@ const MLProblemDetails = ({
             Feature Strategy
           </h3>
           {!configured ? (
-            <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
+            <Button
+              className="h-6 px-2 py-0 text-xs"
+              variant={"default"}
+              onClick={() => setOpenReset(true)}
+            >
               Reset to default
             </Button>
           ) : (
@@ -111,45 +202,161 @@ const MLProblemDetails = ({
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <Card className="w-full h-full flex flex-col text-foreground">
             <CardHeader>
               <div className="flex items-center justify-between text-foreground">
                 <CardTitle>Include</CardTitle>
-                {!configured && (
-                  <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
-                    Edit
-                  </Button>
-                )}
+                {!configured &&
+                  (!editingIncludes ? (
+                    <Button
+                      className="h-6 px-2 py-0 text-xs"
+                      variant="default"
+                      onClick={() => setEditingIncludes(true)}
+                    >
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className="h-6 min-w-[52px] px-2 py-0 text-xs"
+                        variant="default"
+                        type="submit"
+                        form="update-includes"
+                        disabled={includeSubmitting}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        className="h-6 min-w-[52px] px-2 py-0 text-xs"
+                        variant="secondary"
+                        onClick={() => {
+                          resetInclude({ columns: includeDefaults });
+                          setEditingIncludes(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ))}
               </div>
             </CardHeader>
             <CardDescription />
             <CardContent className="flex flex-1 flex-col text-sm">
-              <ColumnBadges
-                items={featureStrategy.include}
-                className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-                empty="Auto"
-              />
+              {!editingIncludes ? (
+                <ColumnBadges
+                  items={featureStrategy.include}
+                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                  empty="Auto"
+                />
+              ) : (
+                <form
+                  id="update-includes"
+                  onSubmit={handleIncludeSubmit(onSaveIncludes)}
+                >
+                  <Controller
+                    name="columns"
+                    control={includeControl}
+                    render={({ field }) => (
+                      <Field data-invalid={!!includeErrors.columns}>
+                        <FieldLabel />
+                        <Combobox
+                          options={columnNames}
+                          value={field.value ?? []}
+                          onChange={field.onChange}
+                          placeholder="Select columns to include"
+                          searchPlaceholder="Filter columns"
+                        />
+                        <FieldError
+                          errors={
+                            includeErrors.columns
+                              ? [includeErrors.columns]
+                              : undefined
+                          }
+                        />
+                      </Field>
+                    )}
+                  />
+                </form>
+              )}
             </CardContent>
           </Card>
           <Card className="w-full h-full flex flex-col text-foreground">
             <CardHeader>
               <div className="flex items-center justify-between text-foreground">
                 <CardTitle>Exclude</CardTitle>
-                {!configured && (
-                  <Button className="h-6 px-2 py-0 text-xs" variant={"default"}>
-                    Edit
-                  </Button>
-                )}
+                {!configured &&
+                  (!editingExcludes ? (
+                    <Button
+                      className="h-6 px-2 py-0 text-xs"
+                      variant="default"
+                      onClick={() => setEditingExcludes(true)}
+                    >
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className="h-6 min-w-[52px] px-2 py-0 text-xs"
+                        variant="default"
+                        type="submit"
+                        form="update-excludes"
+                        disabled={excludeSubmitting}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        className="h-6 min-w-[52px] px-2 py-0 text-xs"
+                        variant="secondary"
+                        onClick={() => {
+                          resetExclude({ columns: excludeDefaults });
+                          setEditingExcludes(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ))}
               </div>
             </CardHeader>
             <CardDescription />
             <CardContent className="flex flex-1 flex-col text-sm">
-              <ColumnBadges
-                items={featureStrategy.exclude}
-                className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-                empty="Auto"
-              />
+              {!editingExcludes ? (
+                <ColumnBadges
+                  items={featureStrategy.exclude}
+                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                  empty="None"
+                />
+              ) : (
+                <form
+                  id="update-excludes"
+                  onSubmit={handleExcludeSubmit(onSaveExcludes)}
+                >
+                  <Controller
+                    name="columns"
+                    control={excludeControl}
+                    render={({ field }) => (
+                      <Field data-invalid={!!excludeErrors.columns}>
+                        <FieldLabel />
+                        <Combobox
+                          options={columnNames}
+                          value={field.value ?? []}
+                          onChange={field.onChange}
+                          placeholder="Select columns to exclude"
+                          searchPlaceholder="Filter columns"
+                        />
+                        <FieldError
+                          errors={
+                            excludeErrors.columns
+                              ? [excludeErrors.columns]
+                              : undefined
+                          }
+                        />
+                      </Field>
+                    )}
+                  />
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -190,6 +397,14 @@ const MLProblemDetails = ({
           </Card>
         )}
       </section>
+      <Reset
+        target={mlProblem.id}
+        open={openReset}
+        onOpenChange={setOpenReset}
+        onConfirm={onReset}
+        resetting={resetting}
+        parent="Feature Strategy"
+      />
     </div>
   );
 };

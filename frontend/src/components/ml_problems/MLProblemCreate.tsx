@@ -38,6 +38,7 @@ import {
   get_dataset_version,
   type DatasetVersion,
 } from "@/lib/actions/dataset_versions";
+import { useDebounce } from "react-use";
 
 type Props = {
   onCreate: () => Promise<void> | void;
@@ -55,11 +56,21 @@ const MLProblemCreate = ({
   const [columnsFilter, setColumnsFilter] = useState("");
   const [suggestedAnalysis, setSuggestedAnalysis] = useState("");
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
-    null
+    null,
+  );
+  const [debouncedFilter, setDebouncedFilter] = useState("");
+
+  useDebounce(
+    () => {
+      setDebouncedFilter(columnsFilter);
+    },
+    500,
+    [columnsFilter],
   );
 
   useEffect(() => {
     async function loadDatasetVersion() {
+      if (!id || id.length !== 36) return;
       try {
         const data: DatasetVersion = await get_dataset_version(id);
         setDatasetVersion(data);
@@ -78,7 +89,7 @@ const MLProblemCreate = ({
         ([name, metadata]) => ({
           name: name,
           analysis: metadata.suggested_analysis,
-        })
+        }),
       );
       return details;
     } catch (error) {
@@ -95,9 +106,11 @@ const MLProblemCreate = ({
     }
   }, [columnsDetails, profileDetails]);
 
-  const filteredColumns = details.filter((v) =>
-    v.name.toLowerCase().includes(columnsFilter.toLowerCase())
-  );
+  const filteredColumns = useMemo(() => {
+    const q = debouncedFilter.trim().toLowerCase();
+    if (!q) return details;
+    return details.filter((v) => v.name.toLowerCase().includes(q));
+  }, [details, debouncedFilter]);
 
   const {
     register,
@@ -186,7 +199,7 @@ const MLProblemCreate = ({
                 />
                 <FieldError errors={errors.name ? [errors.name] : undefined} />
               </Field>
-              {datasetVersionId && (
+              {id && (
                 <div>
                   {/* Target Column */}
                   <Controller
@@ -199,8 +212,8 @@ const MLProblemCreate = ({
                           value={field.value}
                           onValueChange={(value) => {
                             field.onChange(value);
-                            const column = columnsDetails?.find(
-                              (c) => c.name === value
+                            const column = details?.find(
+                              (c) => c.name === value,
                             );
                             if (column) {
                               setSuggestedAnalysis(column.analysis);
@@ -249,7 +262,7 @@ const MLProblemCreate = ({
                   />
                 </div>
               )}
-              {datasetVersionId && (
+              {id && (
                 <div>
                   {/* Task */}
                   <Controller

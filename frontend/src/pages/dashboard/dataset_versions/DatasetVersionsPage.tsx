@@ -87,7 +87,6 @@ const DatasetVersionsPage = () => {
 
   const onDelete = async (dataset_version_id: string) => {
     if (!dataset_version_id) return;
-
     setDeleting(true);
     const res = await delete_dataset_version(dataset_version_id);
     if (!res.ok) {
@@ -138,15 +137,20 @@ const DatasetVersionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage dataset versions across all datasets.
         </p>
-
+        <div
+          className={
+            datasetVersions.length > 0 || hasActiveFilters
+              ? "flex justify-between"
+              : "hidden"
+          }
+        >
+          <div className="relative">
+            <DatasetVersionsJoinedFilterbar />
+          </div>
+          <DatasetVersionCreate onCreate={loadDatasetVersions} />
+        </div>
         {datasetVersions.length > 0 || hasActiveFilters ? (
           <div>
-            <div className="flex justify-between">
-              <div className="relative">
-                <DatasetVersionsJoinedFilterbar />
-              </div>
-              <DatasetVersionCreate onCreate={loadDatasetVersions} />
-            </div>
             <DatasetVersionsJoinedTable
               datasetVersions={datasetVersions}
               askDelete={askDelete}

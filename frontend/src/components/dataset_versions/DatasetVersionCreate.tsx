@@ -190,14 +190,13 @@ const DatasetVersionCreate = ({ datasetId, onCreate }: Props) => {
                               "file:bg-transparent",
                               "file:text-sm",
                               "file:font-medium",
-                              "file:text-muted-foreground"
+                              "file:text-muted-foreground",
                             )}
                           />
                         )}
                       />
                       {hasFile && (
                         <Button
-                          type="button"
                           variant={"outline"}
                           onClick={clearInputFile}
                           className="h-9 w-9 shrink-0"
