@@ -11,7 +11,7 @@ import json
 import time
 import os
 from ..db.init_db import main
-from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, create_prediction, db_get_dataset, db_get_dataset_version, delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_prediction, get_dashboard_stats, get_dataset_versions_all_joined, get_datasets, get_dataset_versions, get_ml_problem, get_ml_problems, get_ml_problems_all_joined, get_model, get_models, get_models_all_joined, get_prediction, get_predictions, get_predictions_all_joined, set_model_to_production, update_dataset, update_dataset_version, update_ml_problem, update_model, update_prediction
+from ..db.db import create_dataset, create_dataset_version, create_ml_problem, create_model, create_prediction, db_get_dataset, db_get_dataset_version, delete_dataset, delete_dataset_version, delete_ml_problem, delete_model, delete_prediction, get_dashboard_stats, get_dataset_versions_all_joined, get_datasets, get_dataset_versions, get_ml_predictions_all_joined, get_ml_problem, get_ml_problems, get_ml_problems_all_joined, get_model, get_models, get_models_all_joined, get_prediction, get_predictions, get_predictions_all_joined, set_model_to_production, update_dataset, update_dataset_version, update_ml_problem, update_model, update_prediction
 from ..mlcore.profile.profiler import suggest_profile, suggest_schema
 from ..mlcore.io.data_reader import get_dataframe_from_csv, preprocess_dataframe, get_semantic_types
 from pathlib import Path
@@ -669,6 +669,46 @@ async def set_model_to_production_ep(model_id: str):
 
 
 # ========== ML_Predictions ==========
+
+@app.get("/problemPredictions/{problem_id}")
+async def get_list_predictions_all(
+    problem_id: str,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    sort: str = Query("created_at"),
+    dir: Literal["asc", "desc"] = Query("desc"),
+    q: Optional[str] = Query(None),
+    name: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    model_name: Optional[str] = Query(None),
+):
+    """get all predictions across all models (joined: model_name) for a problem_id"""
+    items, total = get_ml_predictions_all_joined(
+        problem_id=problem_id,
+        page=page,
+        size=size,
+        sort=sort,
+        dir=dir,
+        q=q,
+        name=name,
+        status=status,
+        model_name=model_name,
+    )
+    total_pages = int((total + size - 1) / size) if size > 0 else 1
+
+    return {
+        "items": items,
+        "page": page,
+        "size": size,
+        "total": total,
+        "total_pages": total_pages,
+        "sort": sort,
+        "dir": dir,
+        "q": q,
+        "name": name,
+        "status": status,
+        "model_name": model_name,
+    }
 
 
 @app.get("/modelPredictions/{model_id}")  # models

@@ -5,8 +5,55 @@ import Loading from "@/components/loading/Loading";
 import { get_prediction, type Prediction } from "@/lib/actions/predictions";
 import PredictionTable from "@/components/prediction_details/PredicitonTable";
 import NotFound from "@/components/errors/not_found/NotFound";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const PredictionDetailPage = () => {
+  const params = useParams<{
+    datasetId: string;
+    datasetVersionId: string;
+    problemId: string;
+    modelId: string;
+    predictionId: string;
+  }>();
+  if (!params.datasetId) {
+    throw new Error("datasetId param missing");
+  }
+  if (!params.problemId) {
+    throw new Error("problemId param missing");
+  }
+  if (!params.datasetVersionId) {
+    throw new Error("datasetVersionId param missing");
+  }
+  if (!params.modelId) {
+    throw new Error("modelId param missing");
+  }
+  if (!params.predictionId) {
+    throw new Error("predictionId param missing");
+  }
+  const datasetId = params.datasetId;
+  const datasetVersionId = params.datasetVersionId;
+  const problemId = params.problemId;
+  const modelId = params.modelId;
+  const predictionId = params.predictionId;
+
+  const menu = [
+    { label: "Home", href: "/dashboard/" },
+    { label: "Datasets", href: "/dashboard/datasets/" },
+    { label: "Versions", href: `/dashboard/datasets/${datasetId}` },
+    {
+      label: "ML Problems",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}`,
+    },
+    {
+      label: "Models",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}/${problemId}`,
+    },
+    {
+      label: "Predictions",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}/${problemId}/${modelId}`,
+    },
+  ];
+
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [prediction, setPrediction] = useState<Prediction | null>(null);
@@ -16,12 +63,6 @@ const PredictionDetailPage = () => {
   const sort = searchParams.get("sort");
   const dir: "asc" | "desc" =
     searchParams.get("dir") === "asc" ? "asc" : "desc";
-
-  const params = useParams<{ predictionId: string }>();
-  if (!params.predictionId) {
-    throw new Error("predictionId param missing");
-  }
-  const predictionId = params.predictionId;
 
   const loadPrediction = useCallback(async () => {
     try {
@@ -33,6 +74,8 @@ const PredictionDetailPage = () => {
       setLoading(false);
     }
   }, [predictionId]);
+
+  const lastEntry = prediction ? prediction.name : "Prediction";
 
   useEffect(() => {
     loadPrediction();
@@ -100,10 +143,15 @@ const PredictionDetailPage = () => {
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
-        <h1>Prediction: {prediction?.name ?? "Unknown Prediction"}</h1>
+        {/* <h1>Prediction: {prediction?.name ?? "Unknown Prediction"}</h1>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Results and details for {prediction?.name ?? "Unknown Prediction"}.
-        </p>
+        </p> */}
+        <p className="text-sm text-muted-foreground">Prediction</p>
+        <h1 className="text-3xl font-bold tracking-tight pb-3">
+          {prediction?.name ?? "Unknown Prediction"}
+        </h1>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <PredictionTable
           columnNames={columnNames}
           rows={filteredRows}

@@ -21,8 +21,12 @@ import { toast } from "sonner";
 import type { MLProblemUpdateInput } from "@/components/ml_problems/ml_problem.schema";
 import MLProblemsJoinedTable from "@/components/ml_problems/joined_table/MLProblemsJoinedTable";
 import MLProblemsJoinedFilterbar from "@/components/ml_problems/joined_table/MLProblemsJoinedFilterbar";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const MLProblemsPage = () => {
+  const menu = [{ label: "Home", href: "/dashboard/" }];
+  const lastEntry = "ML Problems";
+
   const [mlProblems, setMLProblems] = useState<MLProblemJoined[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
@@ -150,8 +154,9 @@ const MLProblemsPage = () => {
       <div className="mx-auto w-full px-6">
         <h1>ML Problems</h1>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Browse and manage ML problems across all dataset versions.
+          Browse and manage ML problems across all datasets.
         </p>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <div
           className={
             mlProblems.length > 0 || hasActiveFilters

@@ -29,6 +29,7 @@ import { Fox } from "@/components/watermark/Fox";
 import DatasetVersionDataTable from "@/components/dataset_version_data/DatasetVersionDataTable";
 import { toast } from "sonner";
 import type { MLProblemUpdateInput } from "@/components/ml_problems/ml_problem.schema";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 export type ColumnDetails = { name: string; analysis: string };
 export type Metadata = {
@@ -71,7 +72,17 @@ const DatasetVersionDetailPage = () => {
   if (!params.datasetVersionId) {
     throw new Error("datasetVersionId param missing");
   }
+  if (!params.datasetId) {
+    throw new Error("datasetId param missing");
+  }
   const datasetVersionId = params.datasetVersionId;
+  const datasetId = params.datasetId;
+
+  const menu = [
+    { label: "Home", href: "/dashboard/" },
+    { label: "Datasets", href: "/dashboard/datasets/" },
+    { label: "Versions", href: `/dashboard/datasets/${datasetId}` },
+  ];
 
   const [mlProblems, setMLProblems] = useState<MLProblem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,6 +133,8 @@ const DatasetVersionDetailPage = () => {
   useEffect(() => {
     loadDatasetVersion();
   }, [loadDatasetVersion]);
+
+  const lastEntry = datasetVersion ? datasetVersion.name : "ML Problems";
 
   useEffect(() => {
     if (!datasetVersion?.profile_json) return;
@@ -254,13 +267,13 @@ const DatasetVersionDetailPage = () => {
   if (!datasetVersion) return <NotFound name="Dataset Version" />;
 
   return (
-    <div className="w-full pl-4 pt-8 h-screen overflow-hidden flex flex-col">
+    <div className="w-full pl-4 pt-8 h-screen flex flex-col">
       <div className="mx-auto w-full px-6 flex flex-col flex-1 min-h-0">
-        <h1>
-          Dataset version details:{" "}
+        <p className="text-sm text-muted-foreground">Dataset version details</p>
+        <h1 className="text-3xl font-bold tracking-tight pb-3">
           {datasetVersion?.name ?? "Unknown Dataset Version"}
         </h1>
-        {tabValue === "ml_problems" && (
+        {/* {tabValue === "ml_problems" && (
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
             Manage all ML problems of{" "}
             {datasetVersion?.name ?? "Unknown Dataset Version"}.
@@ -277,7 +290,8 @@ const DatasetVersionDetailPage = () => {
             Data overview of {datasetVersion?.name ?? "Unknown Dataset Version"}
             .
           </p>
-        )}
+        )} */}
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <Tabs
           className="flex flex-col flex-1 min-h-0 w-full"
           value={tabValue}

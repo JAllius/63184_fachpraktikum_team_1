@@ -399,7 +399,11 @@ def get_ml_problems(
 
     if q:
         like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s OR task LIKE %s OR target LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        where_clauses.append(
+            "("
+            "name LIKE %s OR task LIKE %s OR target LIKE %s"
+            ")"
+        ) # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
         params.extend([like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
 
     if id:
@@ -570,7 +574,11 @@ def get_models(
 
     if q:
         like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
+        where_clauses.append(
+            "("
+            "name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s"
+            ")"
+            ) # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
         params.extend([like, like, like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
 
     if id:
@@ -1026,13 +1034,8 @@ def get_dataset_versions_all_joined(
     version_name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
     """
-    Return (items, total) for ALL dataset_versions (no dataset_id parent filter),
-    joined with datasets to include dataset id + name.
-
-    Filters:
-      - q searches BOTH dv.name and d.name
-      - dataset_name filters d.name
-      - version_name filters dv.name
+    Return (items, total) for ALL dataset_versions,
+    joined with datasets for names only.
     """
     ### SORTING ###
     sort_column = ALLOWED_DATASET_VERSION_JOIN_SORT_FIELDS.get(sort, "dv.created_at")
@@ -1254,11 +1257,11 @@ def get_models_all_joined(
         where_clauses.append(
             "("
             "m.name LIKE %s OR m.algorithm LIKE %s OR m.train_mode LIKE %s OR "
-            "m.evaluation_strategy LIKE %s OR m.status LIKE %s OR "
+            "m.evaluation_strategy LIKE %s OR "
             "mp.name LIKE %s OR dv.name LIKE %s OR d.name LIKE %s"
             ")"
         )
-        params.extend([like, like, like, like, like, like, like, like])
+        params.extend([like, like, like, like, like, like, like])
 
     if id:
         where_clauses.append("m.id = %s")
@@ -1391,11 +1394,11 @@ def get_predictions_all_joined(
         like = f"%{q}%"
         where_clauses.append(
             "("
-            "p.name LIKE %s OR p.status LIKE %s OR "
+            "p.name LIKE %s OR "
             "m.name LIKE %s OR mp.name LIKE %s OR dv.name LIKE %s OR d.name LIKE %s"
             ")"
         )
-        params.extend([like, like, like, like, like, like])
+        params.extend([like, like, like, like, like])
 
     if id:
         where_clauses.append("p.id = %s")
@@ -1468,6 +1471,94 @@ def get_predictions_all_joined(
         JOIN ml_problems mp ON mp.id = m.problem_id
         JOIN dataset_versions dv ON dv.id = mp.dataset_version_id
         JOIN datasets d ON d.id = dv.dataset_id
+        {where_sql}
+        ORDER BY {sort_column} {dir_sql}
+        LIMIT %s OFFSET %s
+    """
+    with cursor() as cur:
+        cur.execute(items_sql, params + [size, offset])
+        items = cur.fetchall()
+
+    return items, total
+
+
+ALLOWED_ML_PREDICTION_JOINED_SORT_FIELDS = {
+    "name": "p.name",
+    "created_at": "p.created_at",
+    "status": "p.status",
+    "model_name": "m.name",
+}
+
+def get_ml_predictions_all_joined(
+    problem_id: str,
+    page: int,
+    size: int,
+    sort: str,
+    dir: Literal["asc", "desc"],
+    q: Optional[str] = None,
+    name: Optional[str] = None,
+    status: Optional[str] = None,
+    model_name: Optional[str] = None,
+) -> Tuple[List[Dict], int]:
+    """
+    Return (items, total) for ALL predictions of a given problem_id,
+    joined for names only:
+      - m.name AS model_name
+    """
+
+    ### SORTING ###
+    sort_column = ALLOWED_ML_PREDICTION_JOINED_SORT_FIELDS.get(sort, "p.created_at")
+    dir_sql = "ASC" if dir == "asc" else "DESC"
+
+    ### WHERE CLAUSES ###
+    where_clauses = ["m.problem_id = %s"]
+    params = [problem_id]
+
+    if q:
+        like = f"%{q}%"
+        where_clauses.append(
+            "("
+            "p.name LIKE %s OR "
+            "m.name LIKE %s"
+            ")"
+        )
+        params.extend([like, like])
+
+    if name:
+        where_clauses.append("p.name LIKE %s")
+        params.append(f"%{name}%")
+
+    if status:
+        where_clauses.append("p.status LIKE %s")
+        params.append(f"%{status}%")
+
+    if model_name:
+        where_clauses.append("m.name LIKE %s")
+        params.append(f"%{model_name}%")
+
+    where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    ### TOTAL ###
+    count_sql = f"""
+        SELECT COUNT(*) AS total
+        FROM predictions p
+        JOIN models m ON m.id = p.model_id
+        {where_sql}
+    """
+    with cursor() as cur:
+        cur.execute(count_sql, params)
+        row = cur.fetchone()
+        total = row["total"] if row else 0
+
+    ### ITEMS ###
+    offset = (page - 1) * size
+    items_sql = f"""
+        SELECT
+            p.*,
+            m.id   AS model_id,
+            m.name AS model_name
+        FROM predictions p
+        JOIN models m ON m.id = p.model_id
         {where_sql}
         ORDER BY {sort_column} {dir_sql}
         LIMIT %s OFFSET %s

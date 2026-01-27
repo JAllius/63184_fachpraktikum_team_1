@@ -21,6 +21,7 @@ import { PageSize, Pagination } from "@/components/table";
 import Loading from "@/components/loading/Loading";
 import { Fox } from "@/components/watermark/Fox";
 import { toast } from "sonner";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const DatasetsPage = () => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -44,6 +45,9 @@ const DatasetsPage = () => {
 
   const hasActiveFilters =
     Boolean(q?.trim()) || Boolean(id?.trim()) || Boolean(name?.trim());
+
+  const menu = [{ label: "Home", href: "/dashboard" }];
+  const lastEntry = "Datasets";
 
   const loadDatasets = useCallback(async () => {
     try {
@@ -125,8 +129,9 @@ const DatasetsPage = () => {
       <div className="mx-auto w-full px-6">
         <h1>Datasets</h1>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Manage all datasets.
+          Browse and manage all datasets.
         </p>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <div
           className={
             datasets.length > 0 || hasActiveFilters
@@ -189,7 +194,7 @@ const DatasetsPage = () => {
               />
             </div>
             <div>
-              <p className="text-base font-semibold">No Datasets yet</p>
+              <p className="text-base font-semibold">No Datasets found</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Create a dataset to activate this page.
               </p>

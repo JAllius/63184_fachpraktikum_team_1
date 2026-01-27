@@ -16,8 +16,8 @@ const Loading = ({ className }: Props) => {
   return (
     <div
       className={cn(
-        "relative min-h-screen bg-background p-8 flex items-center justify-center",
-        { className }
+        "relative h-full w-full overflow-hidden bg-background flex items-center justify-center",
+        className,
       )}
     >
       <div className="flex items-center">

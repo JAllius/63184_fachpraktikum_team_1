@@ -26,7 +26,7 @@ import {
 } from "./prediction.schema";
 
 type Props = {
-  target: { id: string; name?: string };
+  target: { id: string; name: string };
   open: boolean;
   onConfirm: (id: string, data: PredictionUpdateInput) => Promise<void>;
   onCancel: () => void;

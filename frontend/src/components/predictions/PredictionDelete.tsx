@@ -14,7 +14,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 type Props = {
-  target: { id: string; name?: string };
+  target: { id: string; name: string };
   open: boolean;
   onConfirm: (id: string) => Promise<void>;
   onCancel: () => void;
@@ -23,7 +23,7 @@ type Props = {
 
 export type DeleteTarget = {
   id: string;
-  name?: string;
+  name: string;
 };
 
 const DatasetDelete = ({

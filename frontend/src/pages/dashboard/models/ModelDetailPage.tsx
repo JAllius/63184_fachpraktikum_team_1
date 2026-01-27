@@ -32,6 +32,7 @@ import {
 } from "@/lib/actions/predictions/prediction.action";
 import type { PredictionUpdateInput } from "@/components/predictions/prediction.schema";
 import PredictionUpdate from "@/components/predictions/PredictionUpdate";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
@@ -58,6 +59,20 @@ const ModelDetailPage = () => {
   const datasetVersionId = params.datasetVersionId;
   const problemId = params.problemId;
   const modelId = params.modelId;
+
+  const menu = [
+    { label: "Home", href: "/dashboard/" },
+    { label: "Datasets", href: "/dashboard/datasets/" },
+    { label: "Versions", href: `/dashboard/datasets/${datasetId}` },
+    {
+      label: "ML Problems",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}`,
+    },
+    {
+      label: "Models",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}/${problemId}`,
+    },
+  ];
 
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +111,8 @@ const ModelDetailPage = () => {
   useEffect(() => {
     loadModel();
   }, [loadModel]);
+
+  const lastEntry = model ? model.name : "Predictions";
 
   useEffect(() => {
     async function loadMLProblem() {
@@ -146,10 +163,11 @@ const ModelDetailPage = () => {
 
     const refreshOnPredict = (e: MessageEvent) => {
       const payload = JSON.parse(e.data);
-      if (payload.job?.type === "predict") {
-        if (payload.job?.status === "completed")
-          toast.success("Prediction finished successfully");
-      } else if (payload.job?.status === "failed") {
+      if (payload.job?.type !== "predict") return;
+      if (payload.job.model_id !== modelId) return;
+      if (payload.job.status === "completed") {
+        toast.success("Prediction finished successfully");
+      } else if (payload.job.status === "failed") {
         toast.error("Prediction failed");
       }
       loadPredictions();
@@ -163,10 +181,10 @@ const ModelDetailPage = () => {
       eventSource.removeEventListener("job.failed", refreshOnPredict);
       eventSource.close();
     };
-  }, [loadPredictions]);
+  }, [loadPredictions, modelId]);
 
-  const askDelete = (id: string) => {
-    setDeleteTarget({ id });
+  const askDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
     setOpenDelete(true);
   };
 
@@ -224,7 +242,7 @@ const ModelDetailPage = () => {
   return (
     <div className="w-full pl-4 pt-8">
       <div className="mx-auto w-full px-6">
-        <h1>Model details: {model?.name ?? "Unknown Model"}</h1>
+        {/* <h1>Model details: {model?.name ?? "Unknown Model"}</h1>
         {tabValue === "predictions" && (
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
             Manage all predictions of {model?.name ?? "Unknown Model"}.
@@ -239,7 +257,12 @@ const ModelDetailPage = () => {
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
             Explain {model?.name ?? "Unknown Model"}.
           </p>
-        )}
+        )} */}
+        <p className="text-sm text-muted-foreground">Model details</p>
+        <h1 className="text-3xl font-bold tracking-tight pb-3">
+          {model?.name ?? "Unknown Model"}
+        </h1>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
           <TabsList className="w-full items-center justify-start gap-2">
             <TabsTrigger value="predictions">Predictions</TabsTrigger>
@@ -313,7 +336,7 @@ const ModelDetailPage = () => {
                   />
                 </div>
                 <div>
-                  <p className="text-base font-semibold">No predictions yet</p>
+                  <p className="text-base font-semibold">No Predictions yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Run a prediction to activate this tab.
                   </p>

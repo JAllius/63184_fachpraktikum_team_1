@@ -96,7 +96,7 @@ const DatasetVersionDataTable = ({ uri }: Props) => {
   }
 
   return (
-    <div className="w-full h-full min-h-0 overflow-auto">
+    <div className="w-full h-full min-h-0">
       {csvLoading ? (
         <div className="h-full flex items-center justify-center">
           <Loading />

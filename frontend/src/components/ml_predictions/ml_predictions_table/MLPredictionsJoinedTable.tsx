@@ -10,17 +10,17 @@ import {
 } from "@/components/ui/table";
 import { Link } from "react-router-dom";
 import { SortableHeader } from "@/components/table";
-import PredictionActions from "./PredictionActions";
-import type { PredictionJoined } from "@/lib/actions/predictions/prediction.action";
+import type { MLPredictionJoined } from "@/lib/actions/predictions/prediction.action";
+import MLPredictionActions from "./MLPredictionActions";
 import PredictionStatusBadge from "@/components/ui/prediction-status-badge";
 
 type Props = {
-  predictions: PredictionJoined[];
+  predictions: MLPredictionJoined[];
   askDelete: (id: string, name: string) => void;
   askUpdate: (id: string, name: string) => void;
 };
 
-const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
+const MLPredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
   return (
     <div>
       <Table>
@@ -33,18 +33,6 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
             </TableHead>
             <TableHead>
               <SortableHeader field="model_name" label="Model" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="problem_name" label="ML Problem" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader
-                field="dataset_version_name"
-                label="Dataset Version"
-              />
-            </TableHead>
-            <TableHead>
-              <SortableHeader field="dataset_name" label="Dataset" />
             </TableHead>
             <TableHead>
               <SortableHeader field="status" label="Status" />
@@ -65,7 +53,7 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                     <div>{pr.name}</div>
                   ) : (
                     <Link
-                      to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}/${pr.id}`}
+                      to={`${pr.model_id}/${pr.id}`}
                       aria-label="View prediction"
                     >
                       {pr.name}
@@ -74,38 +62,11 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}/${pr.model_id}`}
+                    to={`${pr.model_id}`}
                     aria-label="View model"
                     className="font-medium"
                   >
                     {pr.model_name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}/${pr.problem_id}`}
-                    aria-label="View ML problem"
-                    className="font-medium"
-                  >
-                    {pr.problem_name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}/${pr.dataset_version_id}`}
-                    aria-label="View dataset version"
-                    className="font-medium"
-                  >
-                    {pr.dataset_version_name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  <Link
-                    to={`/dashboard/datasets/${pr.dataset_id}`}
-                    aria-label="View dataset"
-                    className="font-medium"
-                  >
-                    {pr.dataset_name}
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -113,10 +74,7 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                 </TableCell>
                 <TableCell>{pr.created_at}</TableCell>
                 <TableCell>
-                  <PredictionActions
-                    datasetId={pr.dataset_id}
-                    datasetVersionId={pr.dataset_version_id}
-                    problemId={pr.problem_id}
+                  <MLPredictionActions
                     modelId={pr.model_id}
                     predictionId={pr.id}
                     parent="Prediction"
@@ -143,4 +101,4 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
   );
 };
 
-export default PredictionsTable;
+export default MLPredictionsTable;

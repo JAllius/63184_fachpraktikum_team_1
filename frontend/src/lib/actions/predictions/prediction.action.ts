@@ -179,7 +179,7 @@ export type PredictionAllQueryParams = {
   dataset_version_name?: string;
   problem_name?: string;
   model_name?: string;
-
+  // status?: string;
   id?: string;
 };
 
@@ -209,6 +209,61 @@ export async function get_predictions_all(
   const url = qs
     ? `${API_URL}/predictionsAll?${qs}`
     : `${API_URL}/predictionsAll`;
+
+  const res = await fetch(url);
+  if (!res.ok)
+    throw new Error(`Failed to fetch predictions_all: ${res.status}`);
+  return await res.json();
+}
+
+export type MLPredictionJoined = Prediction & {
+  model_id: string;
+  model_name: string | null;
+};
+
+export type MLPredictionAllListResponse = {
+  items: MLPredictionJoined[];
+  page: number;
+  size: number;
+  total: number;
+  total_pages: number;
+  sort: string;
+  dir: "asc" | "desc";
+  q: string | null;
+  name: string | null;
+  model_name: string | null;
+};
+
+export type MLPredictionAllQueryParams = {
+  page?: number;
+  size?: number;
+  sort?: string;
+  dir?: "asc" | "desc";
+  q?: string;
+  name?: string;
+  model_name?: string;
+};
+
+export async function get_ml_predictions_all(
+  problem_id: string,
+  params: MLPredictionAllQueryParams = {},
+): Promise<MLPredictionAllListResponse> {
+  const search = new URLSearchParams();
+
+  if (params.page !== undefined) search.set("page", String(params.page));
+  if (params.size !== undefined) search.set("size", String(params.size));
+  if (params.sort !== undefined) search.set("sort", String(params.sort));
+  if (params.dir !== undefined) search.set("dir", String(params.dir));
+  if (params.q !== undefined) search.set("q", String(params.q));
+  if (params.name !== undefined) search.set("name", String(params.name));
+
+  if (params.model_name !== undefined)
+    search.set("model_name", String(params.model_name));
+
+  const qs = search.toString();
+  const url = qs
+    ? `${API_URL}/problemPredictions/${problem_id}?${qs}`
+    : `${API_URL}/problemPredictions/${problem_id}`;
 
   const res = await fetch(url);
   if (!res.ok)

@@ -1,31 +1,32 @@
 import { Fox } from "@/components/watermark/Fox";
+import { cn } from "@/lib/utils";
 
 type Props = {
   name?: string;
   bypass?: string;
+  className?: string;
 };
 
-const NotFound = ({ name, bypass }: Props) => {
+const NotFound = ({ name, bypass, className }: Props) => {
+  const text = bypass ?? `${name ?? "File"} was not found.`;
+
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="flex items-center">
+    <div
+      className={cn(
+        "relative h-full w-full overflow-hidden bg-background flex items-center justify-center",
+        className,
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <Fox
           aria-hidden
           size="80%"
-          className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+          className="opacity-[0.12]"
           style={{ color: "hsl(var(--sidebar-foreground))" }}
           nodeFill="hsl(var(--sidebar-foreground))"
         />
       </div>
-      <div className="w-full min-h-screen flex items-center justify-center">
-        {bypass ? (
-          <p className="text-xl font-semibold">{bypass}</p>
-        ) : (
-          <p className="text-xl font-semibold">
-            {name ?? "File"} was not found.
-          </p>
-        )}
-      </div>
+      <p className="relative z-10 text-xl font-semibold">{text}</p>
     </div>
   );
 };

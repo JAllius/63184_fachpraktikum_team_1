@@ -182,14 +182,14 @@ const PredictionsJoinedFilterbar = () => {
             }
             className="shadow border rounded-md px-2 py-1 w-60"
           />
-          <Input
+          {/* <Input
             placeholder="Status"
             value={filters.status}
             onChange={(e) =>
               setFilters((f) => ({ ...f, status: e.target.value }))
             }
             className="shadow border rounded-md px-2 py-1 w-60"
-          />
+          /> */}
         </div>
       )}
     </div>

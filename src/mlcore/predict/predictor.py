@@ -7,6 +7,8 @@ from mlcore.io.model_loader import load_model
 from mlcore.io.metadata_loader import load_metadata
 from db.db import get_ml_problem, get_model, create_prediction, update_prediction
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 def predict(
     name: str,
@@ -85,9 +87,10 @@ def predict(
     # Extra columns check
     extra = [column for column in input_order if column not in expected]
     if extra:
-        raise ValueError(f"Unexpected extra columns: {extra}")
+        logger.warning("[PREDICT] Dropping extra columns not used by model: {extra}")
+        # X = X.drop(columns=extra)
 
-    # Reorder to training order for safety
+    # Reorder to training order for safety (X.drop is integrated here)
     X = X[feature_order]
 
     y_pred = model.predict(X)

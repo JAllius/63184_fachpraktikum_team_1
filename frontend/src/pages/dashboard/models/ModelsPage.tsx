@@ -21,10 +21,14 @@ import { toast } from "sonner";
 import type { ModelUpdateInput } from "@/components/models/model.schema";
 import ModelsJoinedFilterbar from "@/components/models/joined_table/ModelsJoinedFilterbar";
 import ModelsJoinedTable from "@/components/models/joined_table/ModelsJoinedTable";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 const ModelsPage = () => {
+  const menu = [{ label: "Home", href: "/dashboard/" }];
+  const lastEntry = "Models";
+
   const [models, setModels] = useState<ModelJoined[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
@@ -188,6 +192,7 @@ const ModelsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage models across all datasets.
         </p>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <div
           className={
             models.length > 0 || hasActiveFilters

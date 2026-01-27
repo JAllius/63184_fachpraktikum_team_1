@@ -173,9 +173,7 @@ const MLProblemDetails = ({
                   aria-label="View dataset version"
                   className="inline-flex items-center gap-1 group"
                 >
-                  <span className="capitalize">
-                    {prodModelName ?? "Unknown Model"}
-                  </span>
+                  <span>{prodModelName ?? "Unknown Model"}</span>
                   <FileText className="w-3 h-3 group-hover:text-sky-400 group-hover:scale-105 active:scale-95" />
                 </Link>
               </div>

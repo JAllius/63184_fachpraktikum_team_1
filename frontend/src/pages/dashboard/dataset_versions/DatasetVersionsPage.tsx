@@ -21,8 +21,12 @@ import { toast } from "sonner";
 import type { DatasetVersionUpdateInput } from "@/components/dataset_versions/datasetVersion.schema";
 import DatasetVersionsJoinedFilterbar from "@/components/dataset_versions/joined_table/DatasetVersionsJoinedFilterbar";
 import DatasetVersionsJoinedTable from "@/components/dataset_versions/joined_table/DatasetVersionsJoinedTable";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const DatasetVersionsPage = () => {
+  const menu = [{ label: "Home", href: "/dashboard/" }];
+  const lastEntry = "Versions";
+
   const [datasetVersions, setDatasetVersions] = useState<
     DatasetVersionJoined[]
   >([]);
@@ -137,6 +141,7 @@ const DatasetVersionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage dataset versions across all datasets.
         </p>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <div
           className={
             datasetVersions.length > 0 || hasActiveFilters
@@ -203,6 +208,9 @@ const DatasetVersionsPage = () => {
             <div>
               <p className="text-base font-semibold">
                 No Dataset Versions found
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create a dataset version to activate this page.
               </p>
               <div className="mt-5">
                 <DatasetVersionCreate onCreate={loadDatasetVersions} />

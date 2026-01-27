@@ -23,10 +23,14 @@ import type { PredictionUpdateInput } from "@/components/predictions/prediction.
 import PredictionUpdate from "@/components/predictions/PredictionUpdate";
 import PredictionsJoinedFilterbar from "@/components/predictions/joined_table/PredictionsJoinedFilterbar";
 import PredictionsJoinedTable from "@/components/predictions/joined_table/PredictionsJoinedTable";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
 const PredictionsPage = () => {
+  const menu = [{ label: "Home", href: "/dashboard/" }];
+  const lastEntry = "Predictions";
+
   const [predictions, setPredictions] = useState<PredictionJoined[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
@@ -123,8 +127,8 @@ const PredictionsPage = () => {
     };
   }, [loadPredictions]);
 
-  const askDelete = (id: string) => {
-    setDeleteTarget({ id });
+  const askDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
     setOpenDelete(true);
   };
 
@@ -182,6 +186,7 @@ const PredictionsPage = () => {
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
           Browse and manage predictions across all datasets.
         </p>
+        <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
         <div
           className={
             predictions.length > 0 || hasActiveFilters
@@ -247,7 +252,10 @@ const PredictionsPage = () => {
               />
             </div>
             <div>
-              <p className="text-base font-semibold">No predictions found</p>
+              <p className="text-base font-semibold">No Predictions found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Run a prediction to activate this page.
+              </p>
               <div className="mt-5">
                 <Predict onCreate={loadPredictions} />
               </div>

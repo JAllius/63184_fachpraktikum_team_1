@@ -34,6 +34,21 @@ import { toast } from "sonner";
 import type { ModelUpdateInput } from "@/components/models/model.schema";
 import type { SetProdTarget } from "@/components/model_details/SetModelProduction";
 import SetModelProduction from "@/components/model_details/SetModelProduction";
+import {
+  delete_prediction,
+  get_ml_predictions_all,
+  update_prediction,
+  type MLPredictionAllListResponse,
+  type MLPredictionJoined,
+} from "@/lib/actions/predictions/prediction.action";
+import MLPredictionsTable from "@/components/ml_predictions/ml_predictions_table/MLPredictionsJoinedTable";
+import {
+  PredictionDelete,
+  type PredictionUpdateInput,
+} from "@/components/predictions";
+import PredictionUpdate from "@/components/predictions/PredictionUpdate";
+import MLPredictionsJoinedFilterbar from "@/components/ml_predictions/ml_predictions_table/MLPredictionsJoinedFilterbar";
+import NavBarBreadcrumb from "@/components/ui/NavBarBreadcrumb";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:42000";
 
@@ -61,6 +76,16 @@ const MLProblemDetailPage = () => {
   const datasetVersionId = params.datasetVersionId;
   const problemId = params.problemId;
 
+  const menu = [
+    { label: "Home", href: "/dashboard/" },
+    { label: "Datasets", href: "/dashboard/datasets/" },
+    { label: "Versions", href: `/dashboard/datasets/${datasetId}` },
+    {
+      label: "ML Problems",
+      href: `/dashboard/datasets/${datasetId}/${datasetVersionId}`,
+    },
+  ];
+
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
@@ -68,12 +93,23 @@ const MLProblemDetailPage = () => {
   const [datasetVersion, setDatasetVersion] = useState<DatasetVersion | null>(
     null,
   );
+  const [predictions, setPredictions] = useState<MLPredictionJoined[]>([]);
   const [totalPages, setTotalPages] = useState(0);
+  const [predTotalPages, setPredTotalPages] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
   const [openUpdate, setOpenUpdate] = useState(false);
+  const [deleteTargetPred, setDeleteTargetPred] = useState<DeleteTarget | null>(
+    null,
+  );
+  const [openDeletePred, setOpenDeletePred] = useState(false);
+  const [deletingPred, setDeletingPred] = useState(false);
+  const [updateTargetPred, setUpdateTargetPred] = useState<UpdateTarget | null>(
+    null,
+  );
+  const [openUpdatePred, setOpenUpdatePred] = useState(false);
   const [tabValue, setTabValue] = useState("models");
   const [featureStrategy, setFeatureStrategy] = useState<FeatureStrategy>({
     include: [],
@@ -86,6 +122,7 @@ const MLProblemDetailPage = () => {
   const [openSetProd, setOpenSetProd] = useState(false);
   const [columnNames, setColumnNames] = useState<string[]>([]);
   const [hasAnyModels, setHasAnyModels] = useState(false);
+  const [hasRunnableModel, setHasRunnableModel] = useState(false);
 
   const page = Number(searchParams.get("page") ?? 1);
   const size = Number(searchParams.get("size") ?? 20);
@@ -100,6 +137,15 @@ const MLProblemDetailPage = () => {
   const evaluation_strategy = searchParams.get("evaluation_strategy") || "";
   const status = searchParams.get("status") || "";
 
+  const predpage = Number(searchParams.get("predpage") ?? 1);
+  const predsize = Number(searchParams.get("predsize") ?? 20);
+  const predsort = searchParams.get("predsort") ?? "created_at";
+  const preddir: "asc" | "desc" =
+    searchParams.get("preddir") === "asc" ? "asc" : "desc";
+  const predq = searchParams.get("predq") || "";
+  const predmodel_name = searchParams.get("predmodel_name") || "";
+  const predname = searchParams.get("predname") || "";
+
   const hasActiveFilters =
     Boolean(q?.trim()) ||
     Boolean(id?.trim()) ||
@@ -108,6 +154,11 @@ const MLProblemDetailPage = () => {
     Boolean(train_mode?.trim()) ||
     Boolean(evaluation_strategy?.trim()) ||
     Boolean(status?.trim());
+
+  const hasActiveFiltersPred =
+    Boolean(predq?.trim()) ||
+    Boolean(predmodel_name?.trim()) ||
+    Boolean(predname?.trim());
 
   const loadMLProblem = useCallback(async () => {
     try {
@@ -121,6 +172,8 @@ const MLProblemDetailPage = () => {
   useEffect(() => {
     loadMLProblem();
   }, [loadMLProblem]);
+
+  const lastEntry = mlProblem ? mlProblem.name : "Models";
 
   const loadDatasetVersion = useCallback(async () => {
     try {
@@ -138,6 +191,9 @@ const MLProblemDetailPage = () => {
   const refreshHasAnyModels = useCallback(async () => {
     const res = await get_models(problemId);
     setHasAnyModels(res.items.length > 0);
+    setHasRunnableModel(
+      res.items.some((m) => m.status !== "training" && m.status !== "failed"),
+    );
   }, [problemId]);
 
   useEffect(() => {
@@ -185,6 +241,41 @@ const MLProblemDetailPage = () => {
     loadModels();
   }, [loadModels]);
 
+  const loadPredictions = useCallback(async () => {
+    try {
+      const data: MLPredictionAllListResponse = await get_ml_predictions_all(
+        problemId,
+        {
+          page: predpage,
+          size: predsize,
+          sort: predsort,
+          dir: preddir,
+          q: predq || undefined,
+          model_name: predmodel_name || undefined,
+          name: predname || undefined,
+        },
+      );
+      setPredictions(data.items);
+      setPredTotalPages(data.total_pages);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [
+    problemId,
+    predpage,
+    predsize,
+    predsort,
+    preddir,
+    predq,
+    predmodel_name,
+    predname,
+  ]);
+
+  useEffect(() => {
+    if (!hasRunnableModel) return;
+    loadPredictions();
+  }, [hasRunnableModel, loadPredictions]);
+
   useEffect(() => {
     if (!mlProblem || !datasetVersion) return;
     const feature_strategy = mlProblem.feature_strategy_json
@@ -216,27 +307,42 @@ const MLProblemDetailPage = () => {
   useEffect(() => {
     const eventSource = new EventSource(`${API_URL}/events/stream`);
 
-    const refreshOnTrain = (e: MessageEvent) => {
+    const refreshOnEvent = (e: MessageEvent) => {
       const payload = JSON.parse(e.data);
-      if (payload.job?.type === "train") {
-        if (payload.job?.status === "completed")
+
+      const job = payload?.job;
+      if (!job) return;
+
+      if (job.problem_id !== problemId) return;
+
+      const type = job.type;
+      const status = job.status;
+
+      if (type === "train") {
+        if (status === "completed")
           toast.success("Training finished successfully");
-      } else if (payload.job?.status === "failed") {
-        toast.error("Training failed");
+        if (status === "failed") toast.error("Training failed");
+        refreshHasAnyModels();
+        loadModels();
       }
-      refreshHasAnyModels();
-      loadModels();
+
+      if (type === "predict") {
+        if (status === "completed")
+          toast.success("Prediction finished successfully");
+        if (status === "failed") toast.error("Prediction failed");
+        loadPredictions();
+      }
     };
 
-    eventSource.addEventListener("job.completed", refreshOnTrain);
-    eventSource.addEventListener("job.failed", refreshOnTrain);
+    eventSource.addEventListener("job.completed", refreshOnEvent);
+    eventSource.addEventListener("job.failed", refreshOnEvent);
 
     return () => {
-      eventSource.removeEventListener("job.completed", refreshOnTrain);
-      eventSource.removeEventListener("job.failed", refreshOnTrain);
+      eventSource.removeEventListener("job.completed", refreshOnEvent);
+      eventSource.removeEventListener("job.failed", refreshOnEvent);
       eventSource.close();
     };
-  }, [loadModels, refreshHasAnyModels]);
+  }, [loadModels, refreshHasAnyModels, loadPredictions, problemId]);
 
   const prodModel = models.find((model) => model.status === "production");
   const prodModelName = prodModel?.name;
@@ -314,6 +420,56 @@ const MLProblemDetailPage = () => {
     setSetting(false);
   };
 
+  const askDeletePred = (id: string, name: string) => {
+    setDeleteTargetPred({ id, name });
+    setOpenDeletePred(true);
+  };
+
+  const cancelDeletePred = () => {
+    setOpenDeletePred(false);
+    setDeleteTargetPred(null);
+  };
+
+  const onDeletePred = async (prediction_id: string) => {
+    if (!prediction_id) return;
+    setDeletingPred(true);
+    const res = await delete_prediction(prediction_id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Prediction deleted");
+    await loadPredictions();
+    cancelDeletePred();
+    setDeletingPred(false);
+  };
+
+  const askUpdatePred = (id: string, name: string) => {
+    setUpdateTargetPred({ id, name });
+    setOpenUpdatePred(true);
+  };
+
+  const cancelUpdatePred = () => {
+    setOpenUpdatePred(false);
+    setUpdateTargetPred(null);
+  };
+
+  const onUpdatePred = async (
+    prediction_id: string,
+    data: PredictionUpdateInput,
+  ) => {
+    if (!prediction_id || !data) return;
+
+    const res = await update_prediction(prediction_id, data);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Prediction updated");
+    await loadPredictions();
+    cancelUpdatePred();
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -324,7 +480,7 @@ const MLProblemDetailPage = () => {
     <div>
       <div className="w-full pl-4 pt-8">
         <div className="mx-auto w-full px-6">
-          <h1>ML problem details: {mlProblem?.name ?? "Unknown ML Problem"}</h1>
+          {/* <h1>ML problem details: {mlProblem?.name ?? "Unknown ML Problem"}</h1>
           {tabValue === "models" && (
             <p className="mt-1 mb-4 text-sm text-muted-foreground">
               Manage all models of {mlProblem?.name ?? "Unknown ML Problem"}.
@@ -336,6 +492,17 @@ const MLProblemDetailPage = () => {
               {mlProblem?.name ?? "Unknown ML Problem"}.
             </p>
           )}
+          {tabValue === "predictions" && (
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">
+              Manage the predictions of{" "}
+              {mlProblem?.name ?? "Unknown ML Problem"}.
+            </p>
+          )} */}
+          <p className="text-sm text-muted-foreground">ML problem details</p>
+          <h1 className="text-3xl font-bold tracking-tight pb-3">
+            {mlProblem?.name ?? "Unknown ML Problem"}
+          </h1>
+          <NavBarBreadcrumb menu={menu} lastEntry={lastEntry} />
           <Tabs className="w-full" value={tabValue} onValueChange={setTabValue}>
             <TabsList className="w-full items-center justify-start gap-2">
               <TabsTrigger value="models">Models</TabsTrigger>
@@ -343,6 +510,9 @@ const MLProblemDetailPage = () => {
                 <TabsTrigger value="configuration">Configured</TabsTrigger>
               ) : (
                 <TabsTrigger value="configuration">Configuration</TabsTrigger>
+              )}
+              {hasRunnableModel && (
+                <TabsTrigger value="predictions">Predictions</TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="models">
@@ -362,7 +532,7 @@ const MLProblemDetailPage = () => {
                     task={mlProblem.task}
                     onCreate={loadModels}
                   />
-                  <Predict problemId={problemId} onCreate={() => {}} />
+                  <Predict problemId={problemId} onCreate={loadPredictions} />
                 </div>
               </div>
               {models.length > 0 || hasActiveFilters ? (
@@ -450,6 +620,87 @@ const MLProblemDetailPage = () => {
                   onRefresh={loadMLProblem}
                 />
               </div>
+            </TabsContent>
+            <TabsContent value="predictions">
+              <div
+                className={
+                  predictions.length > 0 || hasActiveFiltersPred
+                    ? "flex justify-between"
+                    : "hidden"
+                }
+              >
+                <div className="relative">
+                  <MLPredictionsJoinedFilterbar />
+                </div>
+                <div className="flex gap-2">
+                  <Predict problemId={problemId} onCreate={loadPredictions} />
+                </div>
+              </div>
+              {predictions.length > 0 || hasActiveFiltersPred ? (
+                <div>
+                  <MLPredictionsTable
+                    predictions={predictions}
+                    askDelete={askDeletePred}
+                    askUpdate={askUpdatePred}
+                  />
+                  <div className="mt-2 grid grid-cols-3 items-center">
+                    <div />
+                    {predTotalPages > 1 ? (
+                      <div className="flex justify-center">
+                        <Pagination totalPages={predTotalPages} />
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+                    <div className="flex justify-end">
+                      <PageSize size={predsize} />
+                    </div>
+                  </div>
+                  {deleteTargetPred && (
+                    <PredictionDelete
+                      target={deleteTargetPred}
+                      open={openDeletePred}
+                      onConfirm={onDeletePred}
+                      onCancel={cancelDeletePred}
+                      deleting={deletingPred}
+                    />
+                  )}
+                  {updateTargetPred && (
+                    <PredictionUpdate
+                      target={updateTargetPred}
+                      open={openUpdatePred}
+                      onConfirm={onUpdatePred}
+                      onCancel={cancelUpdatePred}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="relative min-h-[80vh] bg-background">
+                  <div className="flex items-center">
+                    <Fox
+                      aria-hidden
+                      size="80%"
+                      className="pointer-events-none absolute inset-0 z-0 opacity-[0.12] m-auto"
+                      style={{ color: "hsl(var(--sidebar-foreground))" }}
+                      nodeFill="hsl(var(--sidebar-foreground))"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold">
+                      No Predictions yet
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Run a prediction to activate this tab.
+                    </p>
+                    <div className="mt-5">
+                      <Predict
+                        problemId={problemId}
+                        onCreate={loadPredictions}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
