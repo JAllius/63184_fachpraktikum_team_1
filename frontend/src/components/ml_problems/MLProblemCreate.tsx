@@ -98,19 +98,12 @@ const MLProblemCreate = ({
     }
   }, [datasetVersion]);
 
-  const details = useMemo(() => {
-    if (columnsDetails) {
-      return columnsDetails;
-    } else {
-      return profileDetails;
-    }
-  }, [columnsDetails, profileDetails]);
+  const details = columnsDetails ?? profileDetails;
 
-  const filteredColumns = useMemo(() => {
-    const q = debouncedFilter.trim().toLowerCase();
-    if (!q) return details;
-    return details.filter((v) => v.name.toLowerCase().includes(q));
-  }, [details, debouncedFilter]);
+  const q = debouncedFilter.trim().toLowerCase();
+  const filteredColumns = !q
+    ? details
+    : details.filter((c) => c.name.toLowerCase().includes(q));
 
   const {
     register,
