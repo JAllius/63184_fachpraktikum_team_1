@@ -19,7 +19,7 @@ export const Fox = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
       className,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <svg
@@ -32,23 +32,20 @@ export const Fox = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
         className={className}
         {...props}
       >
-        {/* LINES */}
-        <g
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* OUTER SHAPE */}
-          <path d="M 42.5 0 L 402.5 239.75 H 542.5 L 902.5 0" />
-          <path d="M 902.5 0 L 875 450" />
-          <path d="M 875 450 L 945 600" />
-          <path d="M 945 600 L 472.5 885" />
-          <path d="M 472.5 885 L 0 600" />
-          <path d="M 0 600 L 70 450" />
-          <path d="M 70 450 L 42.5 0" />
+        {/* Lines */}
+        <g stroke={strokeColor} strokeWidth={strokeWidth}>
+          {/* Outer Lines */}
+          <line x1="42.5" y1="0" x2="402.5" y2="239.75" />
+          <line x1="402.5" y1="239.75" x2="542.5" y2="239.75" />
+          <line x1="542.5" y1="239.75" x2="902.5" y2="0" />
+          <line x1="902.5" y1="0" x2="875" y2="450" />
+          <line x1="875" y1="450" x2="945" y2="600" />
+          <line x1="945" y1="600" x2="472.5" y2="885" />
+          <line x1="472.5" y1="885" x2="0" y2="600" />
+          <line x1="0" y1="600" x2="70" y2="450" />
+          <line x1="70" y1="450" x2="42.5" y2="0" />
 
-          {/* INNER LINES */}
+          {/* Inner Lines */}
           <line x1="70" y1="450" x2="402.5" y2="239.75" />
           <line x1="220" y1="118.5" x2="472.5" y2="885" />
           <line x1="472.5" y1="885" x2="725" y2="118.5" />
@@ -62,7 +59,7 @@ export const Fox = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
           <line x1="433" y1="763" x2="512" y2="763" />
         </g>
 
-        {/* NODES */}
+        {/* Nodes */}
         <g fill={nodeFill} stroke="none">
           <circle cx="42.5" cy="0" r={nodeRadius} />
           <circle cx="902.5" cy="0" r={nodeRadius} />
@@ -80,7 +77,7 @@ export const Fox = React.forwardRef<SVGSVGElement, FoxWatermarkProps>(
         </g>
       </svg>
     );
-  }
+  },
 );
 
 Fox.displayName = "Fox";

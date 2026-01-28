@@ -97,8 +97,6 @@ const DatasetVersionDetailPage = () => {
   const [updateTarget, setUpdateTarget] = useState<UpdateTarget | null>(null);
   const [openUpdate, setOpenUpdate] = useState(false);
   const [tabValue, setTabValue] = useState("ml_problems");
-  const [csv, setCsv] = useState<string | null>(null);
-  const [csvLoading, setCsvLoading] = useState(false);
   const [columnsDetails, setColumnsDetails] = useState<
     ColumnDetails[] | undefined
   >(undefined);
@@ -185,30 +183,6 @@ const DatasetVersionDetailPage = () => {
   useEffect(() => {
     loadMLProblems();
   }, [loadMLProblems]);
-
-  const loadCSV = useCallback(async () => {
-    if (!datasetVersion?.uri) {
-      setCsv(null);
-      return;
-    }
-    setCsvLoading(true);
-    try {
-      const raw_csv = await fetch(datasetVersion.uri);
-      const csv = await raw_csv.text();
-      setCsv(csv);
-    } catch (error) {
-      setCsv(null);
-      console.log(error);
-    } finally {
-      setCsvLoading(false);
-    }
-  }, [datasetVersion?.uri]);
-
-  useEffect(() => {
-    if (tabValue === "data" && csv === null && !csvLoading) {
-      loadCSV();
-    }
-  }, [tabValue, csv, csvLoading, loadCSV]);
 
   const askDelete = (id: string, name?: string) => {
     setDeleteTarget({ id, name });

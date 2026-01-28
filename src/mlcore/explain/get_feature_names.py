@@ -10,7 +10,7 @@ def get_feature_names(preprocessor) -> dict[str, list[str]]:
     bool_columns = list(transformer_specs[2][2]) if len(transformer_specs) > 2 else []
 
     feature_names = []
-    # The umbrella term for the OHE
+    # The parent term for the OHE
     feature_parents = []
 
     # Categorical Columns (OHE Block)

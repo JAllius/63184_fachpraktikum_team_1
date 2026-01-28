@@ -69,7 +69,6 @@ def calculate_summary(
         shap_matrix = values
 
         # abs because right now we only care about importance of features, not positive/negative (to calculate top_fids)
-        # axis=0 -> calculate over rows -> result has length n_features
         mean_abs = np.mean(np.abs(shap_matrix), axis=0)
         top_k_eff = min(top_k, len(feature_names))
         # fid = feature id (index)
@@ -83,7 +82,6 @@ def calculate_summary(
         }
 
         # Parent aggregation
-        # defaultdict so that we can "+=" without having a value in this field already 
         parent_sums = defaultdict(float)
         for fid, parent in enumerate(feature_parents):
             parent_sums[parent] += mean_abs[fid]
@@ -140,7 +138,6 @@ def calculate_summary(
             for c in range(n_classes):
                 shap_matrix_c = values[:, :, c]
                 # abs because right now we only care about importance of features (per class), not positive/negative (to calculate top_fids)
-                # axis=0 -> calculate over rows -> result has length n_features
                 mean_abs_c = np.mean(np.abs(shap_matrix_c), axis=0)
                 top_k_eff = min(top_k, len(feature_names))
                 # fid = feature id (index)
