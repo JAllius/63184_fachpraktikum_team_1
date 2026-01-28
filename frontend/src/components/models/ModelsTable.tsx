@@ -116,6 +116,7 @@ const ModelsTable = ({
                   onUpdate={() => askUpdate(m.id, m.name)}
                   onSetProd={() => askSetProd(m.id, m.name)}
                   disabled={m.status === "training" || m.status === "failed"}
+                  disableProd={m.status === "production"}
                 />
               </TableCell>
             </TableRow>

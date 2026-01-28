@@ -43,7 +43,7 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
           {predictions.map((pr) => (
             <TableRow key={pr.id}>
               <TableCell className="font-medium">
-                {pr.status === "predicting" ? (
+                {pr.status === "predicting" || pr.status === "failed" ? (
                   <div>{pr.name}</div>
                 ) : (
                   <Link to={`${pr.id}`} aria-label="View prediction">
@@ -62,6 +62,9 @@ const PredictionsTable = ({ predictions, askDelete, askUpdate }: Props) => {
                   parent="Prediction"
                   onDelete={() => askDelete(pr.id, pr.name)}
                   onUpdate={() => askUpdate(pr.id, pr.name)}
+                  disabled={
+                    pr.status === "predicting" || pr.status === "failed"
+                  }
                 />
               </TableCell>
             </TableRow>

@@ -412,6 +412,7 @@ const MLProblemDetailPage = () => {
     const res = await set_model_to_production(model_id);
     if (!res.ok) {
       toast.error(res.error);
+      setSetting(false);
       return;
     }
     toast.success("Model set to production");

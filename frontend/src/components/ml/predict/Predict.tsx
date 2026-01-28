@@ -141,6 +141,11 @@ const Predict = ({ problemId, modelId, onCreate }: Props) => {
                 <FieldError
                   errors={errors.model_id ? [errors.model_id] : undefined}
                 />
+                {!modelId && (
+                  <p className="text-xs text-muted-foreground">
+                    "production" only if there is a production model
+                  </p>
+                )}
               </Field>
               {/* Prediction name */}
               <Field data-invalid={!!errors.name}>
