@@ -2,10 +2,10 @@
 - Containerisierung mit Docker
     - einfaches Deployment
 - Aufteilung in skalierbare Nodes
-- Frontend in Node.js
+- Frontend in Node.js-Container
 
 # Struktur
-[Bild der Struktur. Siehe alte Präsentation, aber mit Frontend. Bild schicke ich noch]
+![Docker Structure](structure_release.png)
 
 # Docker & Skalierung
 - Container kommunizieren nur über Schnittstellen
