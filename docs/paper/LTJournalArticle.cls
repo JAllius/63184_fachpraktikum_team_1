@@ -225,3 +225,11 @@
 \newcommand{\refsec}[1]{Sektion \ref{#1}}
 
 \newcommand{\refsubsec}[1]{Untersektion \ref{#1}}
+
+\usepackage{rotating}
+
+\newcommand{\np}{\begin{turn}{90}{\tiny NP}\end{turn}\space}
+
+\newcommand{\hg}{\begin{turn}{90}{\tiny HG}\end{turn}\space}
+
+\newcommand{\ja}{\begin{turn}{90}{\tiny JA}\end{turn}\space}
