@@ -19,8 +19,11 @@ Die einzelnen Komponenten des Projekts werden als containerisierte Microservices
 
 Besonders sind dabei die Frontend, API und Worker Nodes zu betrachten. Die verbleibenden Komponenten sind unmodifizierte 3rd-party Softwares.
 
-% TODO:
-\todo{Aufbau von frontend, API, Worker. Warum wurden diese Tools gewählt?}
+Die Frontend Node stellt eine in Docker gewrappte React-Applikation dar. React stellt ist dabei ein weit verbreitetes JavaScript-Framework zur Erstellung von interaktiven Weboberflächen. Auf das Frontend wird in der \refsubsec{subsec:ux:webui} näher eingegangen.
+
+API Nodes stellen dabei eine in Docker gewrappte FastAPI dar. FastAPI ist ein Python-Framework zur Erstellung von REST-APIs. Die API wird entweder über das Frontend oder direkt durch einen versierten Nutzer angesteuert und löst entsprechende Celery-Tasks aus. Die FastAPI-Schnittstelle wird in der \refsubsec{subsec:ux:fastapi} beschrieben.
+
+Worker Nodes basieren auf einem Python-Dockerimage und bieten die Kernfunktionen von MLCore an, also die tatsächliche Datenverarbeitung. Diese Funktionen werden über Celery Tasks ausgeführt. In der \refsec{sec:mlcore} wird vertiefend auf MLCore eingegangen.
 
 MySQL wurde aufgrund der weiten Verbreitung des Tools verwendet. So war MySQL 2023 die zweit-meistverwendeste Datenbank nach Oracle \cite{DBEnginesRanking}. Oracle wurde allerdings aufgrund der Lizenzbedingungen für dieses Projekt nicht in Betracht gezogen. Zudem wurde speziell eine SQL-basierte Datenbank verwendet, um die Vorteile einer effizienten Speicherung für strukturierte Metadaten zu nutzen. Dabei ist zu beachten, dass in der aktuellen Version Nutzer-Uploads nur eingeschränkt in der Datenbank gespeichert werden (siehe Sektion \ref{sec:perspektive}). Für eine direkte Speicherung z.B. von .csv-Uploads wären auch dokumentbasierte Datenbanken wie beispielsweise MongoDB in Betracht zu ziehen gewesen \cite{DocumentStoresDBEngines}.
 
@@ -37,6 +40,9 @@ Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgr
 \label{subsec:container}
 \ja
 \lipsum
+%TODO: Docker Images, Tools
+%TODO: Compose & Deployment
+%TODO: Skalierung
 
 \subsection{Datenbank}
 \label{subsec:db}
