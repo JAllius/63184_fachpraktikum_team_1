@@ -132,13 +132,13 @@ def seed_db(input_path: str, reset: bool) -> None:
         "feature_strategy_json") or {}
     schema_snapshot = mp.get("schema_snapshot") or schema_json or {}
 
-    semantic_types = {}
+    semantic_types = {"categorical": [], "numeric": [], "boolean": []}
     cols = profile_json.get("columns", {})
     if isinstance(cols, dict):
         for col, info in cols.items():
             st = (info or {}).get("semantic_type")
-            if st is not None:
-                semantic_types[col] = st
+            if st in semantic_types and col != target:
+                semantic_types[st].append(col)
 
     evaluation_strategy = mp.get("validation_strategy") or "train_test_split"
 
@@ -174,7 +174,7 @@ def seed_db(input_path: str, reset: bool) -> None:
         status="staging",
         metrics_json={"note": "test model row"},
         uri=None,
-        metadata_uri=None,
+        metadata_json=None,
         explanation_uri=None,
         created_by=user_id,
     )

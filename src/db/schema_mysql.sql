@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS datasets (
 
 CREATE TABLE IF NOT EXISTS dataset_versions (
   id CHAR(36) PRIMARY KEY,
+  name VARCHAR(255),                        -- human readable name
   dataset_id CHAR(36) NOT NULL,
+  filename VARCHAR(255),
   uri TEXT NOT NULL,                        -- where the dataset file is stored
   schema_json JSON,                         -- inferred schema at upload
   profile_json JSON,                        -- data profile / stats
@@ -39,6 +41,7 @@ CREATE TABLE IF NOT EXISTS dataset_versions (
 CREATE TABLE IF NOT EXISTS ml_problems (
   id CHAR(36) PRIMARY KEY,
   dataset_version_id CHAR(36) NOT NULL,
+  name VARCHAR(255),                        -- human readable name
   dataset_version_uri TEXT,                 -- snapshot of the URI used for training
   task VARCHAR(64) NOT NULL,                -- 'timeseries' | 'regression' | 'classification'
   target VARCHAR(255) NOT NULL,             -- target column name
@@ -48,7 +51,8 @@ CREATE TABLE IF NOT EXISTS ml_problems (
   current_model_id CHAR(36),                -- id of current production model (no URI duplication)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dataset_version_id) REFERENCES dataset_versions(id)
-  -- current_model_id: we can add a FK to models.id later if we want
+  -- FOREIGN KEY (current_model_id) REFERENCES models(id) -- this can't work at the moment, because at the time of ml_problems table creation, models table is not yet created
+                                                          -- and it errors trying to reference a non existent table
 );
 
 -- ==========================================
@@ -65,8 +69,8 @@ CREATE TABLE IF NOT EXISTS models (
   status VARCHAR(32) NOT NULL,              -- 'staging' | 'production' | 'archived'
   metrics_json JSON,                        -- metrics as JSON (rmse, mae, f1, etc.)
   uri TEXT,                                 -- where the model file is stored (joblib, etc.)
-  metadata_uri TEXT,                        -- optional extra metadata file
-  explanation_uri TEXT,                     -- optional explanation/shap file
+  metadata_json JSON,                       -- optional extra metadata file
+  explanation_json JSON,                    -- optional explanation/shap file
   created_by CHAR(36),                      -- FK to users.id (who trained it)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (problem_id) REFERENCES ml_problems(id),
@@ -99,11 +103,13 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 CREATE TABLE IF NOT EXISTS predictions (
   id CHAR(36) PRIMARY KEY,
-  model_id CHAR(36) NOT NULL,               -- which model was used
+  model_id CHAR(36),                        -- which model was used
+  name VARCHAR(255),                        -- human readable name
   input_uri TEXT,                           -- file with inputs (e.g. CSV)
   inputs_json JSON,                         -- small inputs inline
   outputs_json JSON,                        -- small outputs inline
   outputs_uri TEXT,                         -- file with outputs (CSV/Parquet)
+  status VARCHAR(32) NOT NULL,              -- 'predicting' | 'completed' | 'failed'
   requested_by CHAR(36),                    -- FK: who asked for the prediction
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (model_id) REFERENCES models(id),

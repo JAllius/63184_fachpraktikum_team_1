@@ -61,7 +61,7 @@ INSERT INTO ml_problems (
 -- NOTE: evaluation_strategy moved to models
 INSERT INTO models (
   id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
-  metrics_json, uri, metadata_uri, explanation_uri, created_by
+  metrics_json, uri, metadata_json, explanation_json, created_by
 ) VALUES (
   @model_id,
   @problem_id,

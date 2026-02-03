@@ -25,6 +25,8 @@ def loader(
         # Create a specification of the module from */*.py
         spec = importlib.util.spec_from_file_location(
             f"{base_pkg}.mlcore.presets.{task}.{algorithm}", path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Could not load spec for {path}")
         # Create an empty container/module from this specification
         module = importlib.util.module_from_spec(spec)
         # Run all top-level code to populate the module

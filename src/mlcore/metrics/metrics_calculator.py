@@ -6,11 +6,11 @@ def calculate_metrics(
     y_true: pd.Series,
     y_pred: pd.Series,
     task: str,
-    multi_class: bool | None = True,
+    #multi_class: bool | None = True,
 )-> dict:
     
     if task == "classification":
-        metrics = classification_metrics(y_true, y_pred)
+        metrics = classification_metrics(y_true, y_pred) #, multi_class)
     elif task == "regression":
         metrics = regression_metrics(y_true, y_pred)
     else:
@@ -20,16 +20,21 @@ def calculate_metrics(
 def classification_metrics(
     y_true: pd.Series,
     y_pred: pd.Series,
-    multi_class: bool | None = False,
+    #multi_class: bool | None = False,
 )-> dict:
-    if multi_class:
-        f1 = f1_score(y_true, y_pred, average="macro")
-    else:
-        f1 = f1_score(y_true, y_pred)
+    # if multi_class:
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average="macro", zero_division=0)
+    recall = recall_score(y_true, y_pred, average="macro", zero_division=0)
+    f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
+    # else:
+    #     precision = precision_score(y_true, y_pred, zero_division=0)
+    #     recall = recall_score(y_true, y_pred, zero_division=0)
+    #     f1 = f1_score(y_true, y_pred, zero_division=0)
     metrics = {
-        "accuracy": round(accuracy_score(y_true, y_pred), 4),
-        "precision": round(precision_score(y_true, y_pred), 4),
-        "recall": round(recall_score(y_true, y_pred), 4),
+        "accuracy": round(accuracy, 4),
+        "precision": round(precision, 4),
+        "recall": round(recall, 4),
         "f1": round(f1, 4),
     }
     return metrics

@@ -1,9 +1,22 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: DockerfileFrontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: api:42000
+    restart: "unless-stopped"
+    depends_on:
+      - api
   api:
     # image: jallius/fachpraktikum-app
     build:
       context: .
-      dockerfile: DockerfileApp
+      dockerfile: DockerfileApi
+    volumes:
+      - testdata:/code/worker/testdata
     environment:
       REDISSERVER: redis://redis_server:6379
       # Misspelling with DELAY_DB_CONN_ON_StARTUP -> DELAY_DB_CONN_ON_STARTUP
@@ -13,7 +26,7 @@ services:
       DB_NAME: "team1_db"
       DB_USER: "team1_user"
       DB_PASS: "team1_pass"
-      SEED_TEST_DATA: "true"
+      SEED_TEST_DATA: "false"
       TEST_DB_NAME: "team1_db"
       TEST_DATA_PATH: "/code/db/test_db.txt"
       # C_FORCE_ROOT: "true"
@@ -32,6 +45,7 @@ services:
       dockerfile: DockerfileWorker
     volumes:
       - model-data:/models
+      - testdata:/code/worker/testdata
     environment:
       REDISSERVER: redis://redis_server:6379
       DB_HOST: db
@@ -75,3 +89,4 @@ services:
 volumes:
   db-data:
   model-data:
+  testdata:
