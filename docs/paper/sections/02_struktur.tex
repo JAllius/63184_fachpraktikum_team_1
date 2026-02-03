@@ -39,10 +39,9 @@ Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgr
 \subsection{Containerisierung}
 \label{subsec:container}
 \ja
-\lipsum
-%TODO: Docker Images, Tools
-%TODO: Compose & Deployment
-%TODO: Skalierung
+Docker ist ein verbreitetes Tool zu Containerisierung von Anwendungen und Microservices. Auf einem Host wird die sogenannte Docker-Engine installiert. Über diese können isolierte Instanzen von Images als Container erstellt werden. Die Images selber werden durch eine \glqq Dockerfile\grqq\space beschrieben \cite{reisDevelopingDockerDockerCompose2022}. Dabei wird meist ein bereits vorhandenes Image um die gewünschte Funktionalität erweitert, z.B. indem der Projektcode in dem Image eingebunden wird. Dieses Vorgehen nennt sich \glqq Image Layering\grqq\cite{UnderstandingImageLayers0530}.
+
+Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf anderen Host-Systemen verwendet werden. Dazu können die Images beispielsweise in einem Repository (öffentlich) zur Verfügung gestellt werden oder als \glqq tar-Ball\grqq\space exportiert werden \cite{DockerHubContainer}\cite{DockerImage0100}. Dabei muss der Entwickler des Image wenige Vorkehrungen treffen um das Image auf einer Vielzahl an Hosts verwendbar zu machen: die Docker-Engine übernimmt einen Großteil des Aufwands.
 
 
 \begin{figure*}
@@ -51,6 +50,10 @@ Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgr
     \caption{Beispiel: docker-compose.yml}
     \label{fig:compose}
 \end{figure*}
+
+Ebenso kann Docker genutzt werden, um mehrere Container zu deployen, zu vernetzen und diese von außen erreichbar gestalten. Dazu wird \glqq Docker compose\grqq\space genutzt. Hierbei wird die Struktur eines \glqq Compose-Stacks\grqq\space beschrieben. Hierbei werden die einzelnen Images, die Konfigurationen dieser sowie Netzwerke und Volumes beschrieben. 
+
+Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Compose-Stack verknüpft werden können, findet sich in Abbildung \ref{fig:compose}. EINZELNE TEILE ERKLÄREN
 
 
 
@@ -63,4 +66,5 @@ Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgr
 \ja
 \label{sec:workflow}
 % TODO: pytest, CI
+% TODO: problem: nicht alle features durch privates github ohne dev acc. Keine protected branches etc
 \lipsum
