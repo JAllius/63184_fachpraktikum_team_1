@@ -1,8 +1,6 @@
 services:
   frontend:
-    build:
-      context: .
-      dockerfile: DockerfileFrontend
+    image: 63184_fachpraktikum_team_1-frontend
     ports:
       - "3000:3000"
     environment:
@@ -11,10 +9,7 @@ services:
     depends_on:
       - api
   api:
-    # image: jallius/fachpraktikum-app
-    build:
-      context: .
-      dockerfile: DockerfileApi
+    image: 63184_fachpraktikum_team_1-api
     volumes:
       - testdata:/code/worker/testdata
     environment:
@@ -39,10 +34,7 @@ services:
       - redis_server
 
   worker:
-    # image: jallius/fachpraktikum-worker
-    build:
-      context: .
-      dockerfile: DockerfileWorker
+    image: 63184_fachpraktikum_team_1-worker
     volumes:
       - model-data:/models
       - testdata:/code/worker/testdata
@@ -55,7 +47,7 @@ services:
       - "db:db"
     deploy:
       mode: replicated
-      replicas: 3
+      replicas: 1
     restart: "unless-stopped"
     depends_on:
       - redis_server
