@@ -172,6 +172,7 @@ def predict_task(
             "status": "completed",
             "prediction_id": prediction_id,
             "problem_id": problem_id,
+            "model_id": model_id,
             "task_id": self.request.id,
             "ts": time.time(),
         })
@@ -200,6 +201,7 @@ def predict_task(
             "status": "failed",
             "prediction_id": prediction_id,
             "problem_id": problem_id,
+            "model_id": model_id,
             "task_id": self.request.id,
             "ts": time.time(),
         })
