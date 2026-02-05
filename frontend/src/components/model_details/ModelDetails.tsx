@@ -145,7 +145,8 @@ const ModelDetails = ({
               value={metadata.metrics.recall.toFixed(3)}
               tooltip="Percentage of actual positives that are correctly identified."
             />
-            {metadata?.cross_validation ? (
+            {metadata?.cross_validation?.mean &&
+            metadata?.cross_validation?.std ? (
               <StatCard
                 label="F1 score"
                 value={metadata.metrics.f1.toFixed(3)}
@@ -186,7 +187,8 @@ const ModelDetails = ({
               value={metadata.metrics.mape.toFixed(3)}
               tooltip="Average percentage difference between predicted and actual values."
             />
-            {metadata?.cross_validation ? (
+            {metadata?.cross_validation?.mean &&
+            metadata?.cross_validation?.std ? (
               <StatCard
                 label="R² score"
                 value={metadata.metrics.r2.toFixed(3)}
