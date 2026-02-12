@@ -2,6 +2,7 @@ metadata_preset = {
         "problem_id": "",
         "model_id": "",
         "model_uri": "",
+        "model_name": "",
         "task": "",
         "target": "",
         "preset": "",

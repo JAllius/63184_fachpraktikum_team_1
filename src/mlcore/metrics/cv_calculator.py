@@ -7,15 +7,15 @@ def calculate_cv(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     task: str,
-    multi_class: bool | None = False,
+    #multi_class: bool | None = False,
     n_splits: int = 5,
     random_seed: int = 42,
 )-> dict:
     
     if task == "classification":
-        metrics = classification_cv(model, X_train, y_train, multi_class)
+        metrics = classification_cv(model=model, X_train=X_train, y_train=y_train, n_splits=n_splits, random_seed=random_seed) #, multi_class=multi_class
     elif task == "regression":
-        metrics = regression_cv(model, X_train, y_train)
+        metrics = regression_cv(model=model, X_train=X_train, y_train=y_train, n_splits=n_splits, random_seed=random_seed)
     else:
         raise ValueError(f"Invalid task: '{task}'. Expected 'classification' or 'regression'.")
     return metrics
@@ -24,7 +24,7 @@ def classification_cv(
     model: Pipeline,
     X_train: pd.DataFrame,
     y_train: pd.Series,
-    multi_class: bool | None = False,
+    #multi_class: bool | None = False,
     n_splits: int = 5,
     random_seed: int = 42,
 )-> dict:
@@ -34,17 +34,18 @@ def classification_cv(
         random_state = random_seed,
     )
 
-    score = "f1_macro" if multi_class else "f1"
+    scoring = "f1_macro" # if multi_class else "f1"
     cv_scores = cross_val_score(
         model,
         X_train,
         y_train,
         cv = cv,
-        scoring = score,
+        scoring = scoring,
+        n_jobs=-1,
     )
 
     cv_summary = {
-        "score": score,
+        "scoring": scoring,
         "cv_folds": [round(float(v), 4) for v in cv_scores],
         "mean": round(float(cv_scores.mean()), 4),
         "std": round(float(cv_scores.std()), 4),
@@ -71,10 +72,11 @@ def regression_cv(
         y_train,
         cv = cv,
         scoring = "r2",
+        n_jobs=-1,
     )
 
     cv_summary = {
-        "score": "r2",
+        "scoring": "r2",
         "cv_folds": [round(float(v), 4) for v in cv_scores],
         "mean": round(float(cv_scores.mean()), 4),
         "std": round(float(cv_scores.std()), 4),

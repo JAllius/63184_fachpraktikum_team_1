@@ -20,12 +20,13 @@ build: clean
 	./venv/bin/python3 -m pip install -e '.[dev]'
 
 docker: build
-	docker build -t jallius/fachpraktikum-app -f DockerfileApp .
+	docker build -t jallius/fachpraktikum-app -f DockerfileApi .
 	docker build -t jallius/fachpraktikum-worker -f DockerfileWorker .
+	docker build -t jallius/fachpraktikum-worker -f DockerfileFrontend .
 
 deploy_local: docker
 	docker compose down -v
-	docker compose up -d
+	docker compose up -d  --remove-orphans
 
 test:
 	./venv/bin/python3 -m pip install -e '.[test]'

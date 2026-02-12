@@ -37,7 +37,7 @@ def _analyse_column(
         "cardinality": float('nan'),
         "cardinality_ratio": float('nan'),
         "missing_pct": missing_pct,
-        "suggested_analysis": "",
+        "suggested_analysis": "none",
         "is_empty": False,
         "is_constant": False,
         "is_unique": False,
@@ -157,8 +157,8 @@ def _analyse_column(
             column_summary["suggested_analysis"] = "classification"
             column_summary["exclude_for_analysis"] = False
         else:
-            column_summary["exclude_for_analysis"] = True
-            column_summary["exclusion_reason"] = "high_cardinality"
+            column_summary["exclude_for_analysis"] = False
+            column_summary["warning"] = "high_cardinality"
         return column_summary
 
     if pdtypes.is_bool_dtype(column):
