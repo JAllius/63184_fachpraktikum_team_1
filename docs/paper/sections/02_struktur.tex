@@ -25,7 +25,7 @@ Worker Nodes basieren auf einem Python-Dockerimage und bieten die Kernfunktionen
 
 MySQL wurde aufgrund der weiten Verbreitung des Tools verwendet. So war MySQL 2023 die zweit-meistverwendeste Datenbank nach Oracle \cite{DBEnginesRanking}. Oracle wurde allerdings aufgrund der Lizenzbedingungen für dieses Projekt nicht in Betracht gezogen. Zudem wurde speziell eine SQL-basierte Datenbank verwendet, um die Vorteile einer effizienten Speicherung für strukturierte Metadaten zu nutzen. Dabei ist zu beachten, dass in der aktuellen Version Nutzer-Uploads nur eingeschränkt in der Datenbank gespeichert werden (siehe Sektion \ref{sec:perspektive}). Für eine direkte Speicherung z.B. von .csv-Uploads wären auch dokumentbasierte Datenbanken wie beispielsweise MongoDB in Betracht zu ziehen gewesen \cite{DocumentStoresDBEngines}.
 
-Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgrund bestehender Erfahrungen im Team sowie der leichten Implementierung in Python gewählt. Flower wurde folglich als Monitoring-Tool für Redis gewählt.
+Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgrund bestehender Erfahrungen im Team sowie der leichten Implementierung in Python gewählt. Flower wurde folglich als Monitoring-Tool für Redis gewählt. Celery lässt sich als Python-Modul einbinden. Dabei können Funktionen (in MLCore) als Task markiert werden. An anderer Stelle wird dann ein Aufruf implementiert. So löst hier ein Aufruf eines FastAPI-Endpunkts nach einer einfachen Datenvalidierung einen bestimmten Task mit entsprechenden Parametern auf. Da sich sowohl die API Node als auch die Worker Node bereits bei dem Redis-Server als Celery-Knoten gemeldet haben, wird der Task-Aufruf an den Redis-Server gesendet. Von dort wird der Aufruf an eine Worker Node weitergeleitet. Durch die getaggte Funktion stellt sich die Worker Node nämlich als valide Instanz für den entsprechenden Task-Aufruf bereit.
 
 \begin{figure*}
     \centering
@@ -50,8 +50,10 @@ Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf an
 
 Ebenso kann Docker genutzt werden, um mehrere Container zu deployen, zu vernetzen und diese von außen erreichbar gestalten. Dazu wird \glqq Docker compose\grqq\space genutzt. Hierbei wird die Struktur eines \glqq Compose-Stacks\grqq\space beschrieben. Hierbei werden die einzelnen Images, die Konfigurationen dieser sowie Netzwerke und Volumes beschrieben. 
 
-Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Compose-Stack verknüpft werden können, findet sich in Abbildung \ref{fig:compose}. EINZELNE TEILE ERKLÄREN
+Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Compose-Stack verknüpft werden können, findet sich in Abbildung \ref{fig:compose}. 
 
+% TODO: EINZELNE TEILE ERKLÄREN
+\lipsum
 
 
 \subsection{Datenbank}
@@ -60,6 +62,9 @@ Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Com
 
 \section{Workflow}
 \label{sec:workflow}
-% TODO: pytest, CI
 % TODO: problem: nicht alle features durch privates github ohne dev acc. Keine protected branches etc
-\lipsum
+Im Rahmen der Entwicklung wurde GitHub für Source Code Management verwendet. Dabei wurden einzelne Feature Branches erstellt, an denen eines oder mehrere Mitglieder des Projektes entwickeln konnten. Anschließend wurde im Rahmen des Pull Requests (PRs) ein Review durch die restlichen Mitglieder durchgeführt.
+
+Ebenso wurde GitHub Actions verwendet, um die PRs um eine Continuous Integration (CI) Pipeline zu ergänzen. Dabei wurden der Python Code durch Pytest abgedeckt. Für das TypeScript basierte Frontend sowie die Docker Container wurde in einem zweiten CI-Job geprüft, ob der Buildprozess für das Frontend sowie die Docker Images erfolgreich beendet. Zum aktuellen Zeitpunkt wurde kein Continuous Deployment umgesetzt. Damit wurden die erstellten Images also weder veröffentlich noch auf einer staging Umgebung deployed.
+
+Nur wenn beide Pipeline-Jobs, also pytest und der Build-Prozess, erfolgreich abgeschlossen sowie wenn ein Review durchgeführt wurde, wurde der PR umgesetzt. Dieser typische git-Workflow hat dabei die unabhängige Arbeit der Teammitglieder stark vereinfacht.
