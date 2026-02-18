@@ -1,3 +1,91 @@
 \section{MLCore}
 \label{sec:mlcore}
-\lipsum
+MLCore ist das Subsystem für maschinelles Lernen, implementiert unter \code{src/mlcore}. Es fokussiert sich auf Data Profiling und Vorverarbeitung, Model Training, Evaluation und Explainability der Modelle sowie Vorhersage Workflows.
+
+\subsection{Designziele}
+\label{subsec:mlcore:design}
+Das \code{mlcore} Package enthält die Ende-zu-Ende-Logik für maschinelles Lernen, die aus den Workers ausgeführt wird. Es ist verantwortlich sowohl für das Data Profiling und die Vorverarbeitung als auch für die Modellauswahl durch vordefinierte Presets sowie für das Training, die Evaluation der Modelle, ihre Explainability und die Vorhersage.
+
+Dieses Package ist gezielt von der API-Logik getrennt. Verschiedene Aufgaben werden von den Workers behandelt und durch Datenbank-Helpers in der Datenbank dokumentiert und gespeichert. Die Trennung des MLCores von der API ist gezielt, um die Verantwortlichkeiten der einzelnen Komponenten klar zu begrenzen und um die Skalierbarkeit sowie die Wiederverwendbarkeit der ML-Komponente für Batch-Training und Vorhersage zu realisieren. 
+
+Die Hauptdesignziele des Komponenten sind:
+\begin{itemize}
+    \item \textbf{Wiederverwendbarkeit (Reusability)}: Vordefinierte Preset-basierte Pipelines enthalten das Trainings- und Vorverarbeitungs-logik für verschiedene Klassifikations- und Regressions-modelle. Diese Pipelines werden sowohl für das Training als auch für die Vorhersage verwendet.
+    \item \textbf{Erweiterbarkeit (Extensibility)}: Presets werden dynamisch aus mlcore/presets geladen. Das ermöglicht es, durch die Erstellung neuer Presets, neue Algorithmen als separate Modulen einfach einzufügen, ohne die Trainings- oder Vorhersagelogik anzupassen.
+    \item \textbf{Testbarkeit (Testability)}: Profiling, Evaluation und Explainability sind als eigene Module erstellt, um eine einfache und gezielte Testbarkeit sicherzustellen.
+\end{itemize}
+
+\subsection{Data Profiling und Vorverarbeitung}
+
+\subsubsection{Data Profiling}
+
+Das \code{mlcore/profile/profiler} berechnet statistische Daten und semantische Typen für die Spalten einer CSV-Datei. Für jede Spalte werden die folgenden Informationen berechnet:
+\begin{itemize}
+    \item der semantische Typ aus den Datentypen
+        \begin{itemize}
+            \item numeric
+            \item categorical
+            \item boolean
+            \item datetime
+            \item unknown
+        \end{itemize}
+    \item der Prozentanteil der fehlenden Werte, die Kardinalität und eine Zusammenfassung der Verteilung.
+    \item ob alle Werte der Spalte gleich sind (konstante Spalte) oder ob die Spalte id-ähnlich ist (inkl. sequenzähnliche Integer-IDs) zur Exklusion.
+    \item ob die Spalte sehr hohe Kardinalität hat, um eine Meldung an den Benutzer zu geben.
+    \item eine vorgeschlagene Analyseart (Klassifikation oder Regression).
+\end{itemize}
+
+Das resultierende Profil enthält eine Datensatzzusammenfassung, die id-ähnliche Spalten (\glqq id\_candidates\grqq), einen Exklusionsvorschlag(\glqq exclude\_suggestions\grqq) und Metadaten pro Spalte. Später wird dieses Profil für die Vorverarbeitung und das semantische Typing während des Trainingsprozesses verwendet.
+
+\subsubsection{Vorverarbeitung}
+
+Das Training beginnt beim Laden der CSV-Datei einer Dataset-Version durch \code{data\_reader.get\_dataframe\_from\_csv}. Wenn es schon ein Profil für diese Dataset-Version gibt, liest der Trainer dieses ebenfalls ein, und wenn nicht, führt der Trainer die Funktion \code{profiler.suggest\_profile} aus, um eines zu berechnen. Dann wird die Vorverarbeitung durch \code{data\_reader.preprocess\_dataframe} ausgeführt. Die Vorverarbeitungsschritte sind die folgenden:
+
+\begin{itemize}
+    \item Der Benutzer kann durch die Feature-Strategie des ML Problems auswählen, welche Spalten inkludiert und welche exkludiert werden sollen. Das Default-Verhältnis der Feature-Stategie ist \glqq auto\grqq. Das bedeutet, dass alle Spalten als inkludiert und die Spalten aus \glqq exclude\_suggestions\grqq als exkludiert berücksichtigt werden. Dieses Verhältnis kann der Benutzer durch Anpassung der Feature-Strategie beeinflussen und nur die ausgewählten inkludierten und exkludierten Spalten berücksichtigen.
+    \item Die Zeilen mit fehlenden oder Null-Werten in der Zielspalte werden entfernt.
+    \item Die Daten werden in Merkmale X und Zielvariable y getrennt und zurückgegeben.
+\end{itemize}
+
+Am Ende werden die Spalten durch \code{data\_reader.get\_semantic\_types} mithilfe des Profils in kategoriale, numerische und boolische Listen unterschieden, die dann im ColumnTransformer in jedem Preset verwendet werden, um eine konsistente Behandlung für jeden Merkmalstyp sicherzustellen.
+
+\subsection{Training Pipeline Architektur}
+
+Das Training wird durch \code{trainer.train} ausgeführt und folgt einer strukturierten Pipeline:
+\begin{enumerate}
+    \item Die Dataset-Version, Zielspalte und der Analysetyp werden aus der Datenbank geladen.
+    \item Das Dataset-Version-Profil wird geladen oder aus der CSV-Datei neu erstellt.
+    \item Die Daten werden vorverarbeitet und in X und y getrennt.
+    \item Die semantischen Typen der Merkmale werden mithilfe des Profils bestimmt, da sie für die Konfiguration der Vorverarbeitungsschritte vor dem Modelltraining benötigt werden .
+    \item Die Daten werden in Train/Test mit train\_test\_split\ getrennt (inkl. Statifikation für Klassifikation).
+    \item Label Encoding wird auf die Zielspalte angewendet (nur für Klassifikation).
+    \item Das Preset wird geladen und die Modell-Pipeline für den ausgewählten Algorithmus wird gebaut.
+    \item Das Modell wird trainiert.
+    \item Das Modell wird mit den Testdaten evaluiert.
+    \item Die Cross-Validierungsmetriken werden berechnet (wenn gefordert).
+    \item Eine Explainability-Zusammenfassung wird mithile des SHAP-Frameworks berechnet (wenn gefordert).
+    \item Das Modell und seine Metadaten (inkl. Metriken, Cross-Validierung und Explainability-Zusammenfassung) werden gespeichert.
+\end{enumerate}
+
+\subsubsection{Preset Integration}
+
+Die Presets werden dynamisch durch \code{preset\_loader.loader} geladen, der Module aus <algorithm>.py lädt. Jedes Preset bietet eine \code{build\_model()} Funktion, die die folgenden Objekte zurückgibt:
+\begin{itemize}
+    \item Eine scikit-learn-Pipeline, bestehend aus einem \code{ColumnTransformer} und einem \code{Estimator}.
+    \item Ein Metadaten-Dictionary, das auf \code{metadata\_presets.py} basiert.
+\end{itemize}
+Dieser Prozess standardisiert die Vorverarbeitungs- und Trainingsprozesse für alle unterstützten Algorithmen und hält nur die estimator-spezifischen Parameter modular, um eine konsistente Struktur zu gewährleisten.
+
+\subsubsection{Holdout Evaluation (Train-Test-Split)}
+
+Nach dem Training des Modells werden Vorhersagen für die Testdaten erzeugt, um die Modellmetriken zu bestimmen. Für Klassifikationsaufgaben werden die Vorhersagen mithilfe des \code{LabelEncoder} wieder in die ursprünglichen Klassenlabels zurücktransformiert, und anschliessend werden die Metriken auf Basis der dekodierten Labels berechnet.
+
+\subsubsection{Cross-Validation}
+
+Wenn eine Cross-Validation gefordert wird (\code{evaluation\_strategy = “cv”}), wird zusätzlich durch mlcore/metrics/cv\_calculator eine Cross-Validation-Metrik berechnet:
+
+\begin{itemize}
+    \item Für Klassifikation wird die Macro-F1-Metrik mithilfe des Stratified K-Fold-Verfahrens berechnet.
+    \item Für Regression wird die $R^2$-Metrik mithilfe des K-Fold-Verfahrens berechnet.
+\end{itemize}
+Falls das \glqq auto\grqq-Preset ausgewählt wurde, wird im Rahmen der Modellauswahl bereits eine Cross-Validation-Metrik über die verschiedenen Modelle hinweg berechnet, um das \glqq beste\grqq Modell zu bestimmen. In diesem Fall verwendet der Trainer diese intern-berechnete Cross-Validation-Zusammenfassung, anstatt die Cross-Validation erneut auszuführen.
