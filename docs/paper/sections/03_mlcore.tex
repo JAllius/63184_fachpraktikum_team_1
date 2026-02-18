@@ -2,11 +2,13 @@
 \label{sec:mlcore}
 MLCore ist das Subsystem für maschinelles Lernen, implementiert unter \code{src/mlcore}. Es fokussiert sich auf Data Profiling und Vorverarbeitung, Model Training, Evaluation und Explainability der Modelle sowie Vorhersage Workflows.
 
+% ########################################################
+
 \subsection{Designziele}
 \label{subsec:mlcore:design}
 Das \code{mlcore} Package enthält die Ende-zu-Ende-Logik für maschinelles Lernen, die aus den Workers ausgeführt wird. Es ist verantwortlich sowohl für das Data Profiling und die Vorverarbeitung als auch für die Modellauswahl durch vordefinierte Presets sowie für das Training, die Evaluation der Modelle, ihre Explainability und die Vorhersage.
 
-Dieses Package ist gezielt von der API-Logik getrennt. Verschiedene Aufgaben werden von den Workers behandelt und durch Datenbank-Helpers in der Datenbank dokumentiert und gespeichert. Die Trennung des MLCores von der API ist gezielt, um die Verantwortlichkeiten der einzelnen Komponenten klar zu begrenzen und um die Skalierbarkeit sowie die Wiederverwendbarkeit der ML-Komponente für Batch-Training und Vorhersage zu realisieren. 
+Dieses Package ist gezielt von der API-Logik getrennt. Verschiedene Aufgaben werden von den Workers behandelt und durch Datenbank-Helpers in der Datenbank dokumentiert und gespeichert. Die Trennung des MLCores von der API ist gezielt, um die Verantwortlichkeiten der einzelnen Komponenten klar zu begrenzen und um die Skalierbarkeit sowie die Wiederverwendbarkeit der ML-Komponente für Batch-Training und Vorhersage zu realisieren. \cite{pedregosaScikitlearnMachineLearning2011}\cite{lundbergUnifiedApproachInterpreting2017}
 
 Die Hauptdesignziele des Komponenten sind:
 \begin{itemize}
@@ -14,6 +16,8 @@ Die Hauptdesignziele des Komponenten sind:
     \item \textbf{Erweiterbarkeit (Extensibility)}: Presets werden dynamisch aus mlcore/presets geladen. Das ermöglicht es, durch die Erstellung neuer Presets, neue Algorithmen als separate Modulen einfach einzufügen, ohne die Trainings- oder Vorhersagelogik anzupassen.
     \item \textbf{Testbarkeit (Testability)}: Profiling, Evaluation und Explainability sind als eigene Module erstellt, um eine einfache und gezielte Testbarkeit sicherzustellen.
 \end{itemize}
+
+% ########################################################
 
 \subsection{Data Profiling und Vorverarbeitung}
 
@@ -48,6 +52,8 @@ Das Training beginnt beim Laden der CSV-Datei einer Dataset-Version durch \code{
 \end{itemize}
 
 Am Ende werden die Spalten durch \code{data\_reader.get\_semantic\_types} mithilfe des Profils in kategoriale, numerische und boolische Listen unterschieden, die dann im ColumnTransformer in jedem Preset verwendet werden, um eine konsistente Behandlung für jeden Merkmalstyp sicherzustellen.
+
+% ########################################################
 
 \subsection{Training Pipeline Architektur}
 
@@ -90,11 +96,13 @@ Wenn eine Cross-Validation gefordert wird (\code{evaluation\_strategy = “cv”
 \end{itemize}
 Falls das \glqq auto\grqq-Preset ausgewählt wurde, wird im Rahmen der Modellauswahl bereits eine Cross-Validation-Metrik über die verschiedenen Modelle hinweg berechnet, um das \glqq beste\grqq Modell zu bestimmen. In diesem Fall verwendet der Trainer diese intern-berechnete Cross-Validation-Zusammenfassung, anstatt die Cross-Validation erneut auszuführen.
 
+% ########################################################
+
 \subsection{Modell-Presets und Modellauswahl}
 
 \subsubsection{Preset-basiertes Design}
 
-Die Presets enthalten verschiedene Algorithmusoptionen und Vorverarbeitungslogik unter einer konsistenten Struktur, um zu gewährleisten, dass sie in standardisierter Weise angewendet werden können. Sie unterstützen verschiedene \code{training\_modes} (\glqq fast\grqq, \glqq \grqq, \glqq \grqq), die die Hyperparameter der Modelle anpassen, wie z.B. die Anzahl der Estimatoren oder die Regularisierungsparameter usw.
+Die Presets enthalten verschiedene Algorithmusoptionen und Vorverarbeitungslogik unter einer konsistenten Struktur, um zu gewährleisten, dass sie in standardisierter Weise angewendet werden können. Sie unterstützen verschiedene \code{training\_modes} (\glqq fast\grqq, \glqq balanced\grqq, \glqq accurate\grqq), die die Hyperparameter der Modelle anpassen, wie z.B. die Anzahl der Estimatoren oder die Regularisierungsparameter usw.
 
 \subsubsection{Implementierte Modellfamilien}
 \begin{itemize}
@@ -116,7 +124,7 @@ Die Presets enthalten verschiedene Algorithmusoptionen und Vorverarbeitungslogik
         \item Regression: \code{HistGradientBoostingRegressor}
     \end{itemize}
     Begründung: Hohe Leistungsfähigkeit bei tabularischen Daten bei gleichzeitig vertretbaren Trainingskosten. Diese Modelle erfordern dichte Eingabematrizen. Daher wird die Ausgabe des OneHotEncodings in diesen Presets explizit als \glqq dense\grqq konfiguriert.
-    \item \code{XGBoost Modelle}
+    \item \code{XGBoost Modelle}\cite{chenXGBoostScalableTree2016}
     \begin{itemize}
         \item Klassifikation: \code{XGBClassifier}
         \item Regression: \code{XGBRegressor}
@@ -134,3 +142,117 @@ Die Presets enthalten verschiedene Algorithmusoptionen und Vorverarbeitungslogik
 
 Klassifikationspresets verwenden probabilistische Ausgaben sowie die Macro-F1-Metrik, um Klassenungleichgewichte angemessen zu berücksichtigen.
 Regressionspresets verwenden die $R^2$-Metrik und bieten optional zusätzliche \code{PolynomialFeatures}, um leichte Nonlinearitäten zu modellieren, während die Interpretierbarkeit weitgehend erhalten bleibt.
+
+% ########################################################
+
+\subsection{Evaluierung und Metriken}
+
+\subsubsection{Klassifikationsmetriken}
+
+Das \code{mlcore/metrics/metrics\_calculator} berechnet für Klassifikation:
+
+\begin{itemize}
+    \item Genauigkeit (\glqq Accuracy\grqq)
+    \item Präzision (\glqq Precision\grqq) (macro)
+    \item Sensitivität (\glqq Recall\grqq) (macro)
+    \item F1 (macro)
+\end{itemize}
+
+Macro-averaging wird verwendet, um die Übergewichtung von Mehrheitsklassen zu vermeiden und eine gleichmässige Bewertung aller Klassen sicherzustellen.
+
+\subsubsection{Regressionsmetriken}
+Das \code{mlcore/metrics/metrics\_calculator} berechnet für Regression:
+
+\begin{itemize}
+    \item Mean Absolute Error (\glqq MAE\grqq)
+    \item Mean Squared Error (\glqq MSE\grqq)
+    \item Root Mean Squared Error (\glqq RMSE\grqq)
+    \item $R^2$
+    \item Mean Absolute Percentage Error (\glqq MAPE\grqq)
+\end{itemize}
+Diese Metriken bieten eine komplementäre Sicht auf die Fehlersensitivität und das relative Fehlerverhältnis.
+
+\subsubsection{Einschränkung der Metriken}
+\begin{itemize}
+    \item Die Macro-F1-Metrik gewichtet jede Klasse gleich und kann daher die Leistung auf dominanten Klassen unterschätzen.
+    \item $R^2$ kann bei stark nichtlinearen Zusammenhängen oder schief verteilten Zielvariablen die Modellgüte falsch darstellen.
+    \item MAPE wird instabil, wenn die tatsächlichen Zielwerte nahe Null liegen.
+\end{itemize}
+
+% ########################################################
+
+\subsection{Explainability}
+Die Explainability wird in \code{mlcore/explain} implementiert und basiert vollständig auf dem SHAP-Framework. Der Trainer erstellt einen SHAP-Explainer im transformierten Merkmalsraum nach Anwendung des ColumnTransformer, wobei die Merkmalsnamen aus dem trainierten ColumnTransformer übernommen werden.
+
+\subsubsection{SHAP Workflow}
+
+\begin{itemize}
+    \item Ein Referenzdatensatz wird als Stichprobe aus den Trainingsdaten erzeugt.
+    \item Ein Erklärungsdatensatz wird als Stichprobe aus den Testdaten erzeugt.
+    \item Der shap.Explainer wird entweder für \code{predict\_proba} (für Klassifikation) oder für \code{predict} (für Regression) konfiguriert.
+    \item In \code{summary\_calculator.py} wird eine statistische Zusammenfassung erstellt, die Folgendes enthält:
+    \begin{itemize}
+        \item Globale Mean Absolute SHAP-Werte pro Merkmal zur Identifikation der Top-$k$-wichtigsten Merkmale (Standardwert $k=30$).
+        \item Aggregation auf Elternebene zur Gruppierung von durch OneHotEncoding erzeugten Merkmalen.
+        \item Quantil-Zusammenfassungen von SHAP-Werten und Merkmalswerten (dieses Feature wurde verworfen und nicht weiterverwendet).
+    \end{itemize}
+
+\end{itemize}
+
+\subsubsection{Merkmalsnamen und Gruppierung}
+In \code{get\_feature\_names} werden die Merkmalsnamen aus der Vorverarbeitungspipeline rekonstruiert:
+\begin{itemize}
+    \item One-Hot-encodierte kategoriale Merkmale werden als \code{\glqq col=value\grqq}-Einträge dargestellt.
+    \item Numerische und boolesche Merkmale werden mit ihren ursprünglichen Namen dargestellt.
+    \item Eine parallele Liste feature\_parents erhält die Gruppierung nach der ursprünglichen Spalte.
+\end{itemize}
+
+% ########################################################
+
+\subsection{Vorhersage Pipeline Architketur}
+
+Die Vorhersage wird durch \code{predictor.predict} ausgeführt:
+
+\begin{enumerate}
+    \item Die Eingabedaten werden aus einer CSV-Datei oder einem In-Memory-DataFrame geladen.
+    \item Das ausgewählte Modell wird geladen:
+    \begin{itemize}
+        \item Wenn \code{model\_id=\glqq production\grqq}, wird das aktuelle Produktionsmodell des gegebenen ML-Problems geladen. Um diese Option zu verwenden, muss bereits ein Modell für dieses ML-Problem mit dem Status “Production” gesetzt sein.
+        \item Andernfalls wird das Modell mit der gegebenen ID geladen.
+    \end{itemize}
+    \item Die Modellmetadaten und das gespeicherte Zielschema werden für die Datenvalidierung geladen.
+    \item Die Zielspalte wird aus den Eingabedaten verworfen, wenn sie vorhanden ist.
+    \item Das Schema der Eingabedaten wird validiert:
+    \begin{itemize}
+        \item Spalten mit leerem oder dupliziertem Namen werden verworfen.
+        \item Alle Merkmale aus dem \code{feature\_order} des Schemas sind erforderlich.
+        \item Zusätzliche Spalten werden geloggt und anschliessend ignoriert, indem eine Neuordnung gemäss dem gespeicherten \code{feature\_order} erfolgt.
+    \end{itemize}
+    \item Die Vorhersage erfolgt mithilfe der geladenen Pipeline.
+    \item Für Klassifikation werden die Vorhersagen durch \code{label\_classes} zurücktransformiert, sofern diese in den Metadaten gespeichert sind.
+    \item Die Ergebnisse werden in einer Vorhersagezusammenfassung mit Eingabe- und Ausgabedaten gespeichert.
+\end{enumerate}
+
+Die Vorhersageausgabe enthält die verwendeten Eingabedaten, die vorhergesagten Labels (für Klassifikation) sowie eine Kopie der Modellmetadaten zur Nachvollziehbarkeit und Kontrolle.
+
+\subsection{Einschränkungen und mögliche Erweiterungen}
+
+\subsubsection{Skalierbarkeitseinschränkungen}
+\begin{itemize}
+    \item Training und Explainability werden im Hauptspeicher (in-memory) und auf der CPU ausgeführt und skalieren daher nur eingeschränkt für sehr grosse Datensätze. 
+    \item SHAP-Berechnungen können auch bei Verwendung von Stichproben rechenintensiv sein, insbesondere bei grossen Merkmalsräumen.
+\end{itemize}
+
+\subsubsection{ifecycle Verwaltung}
+\begin{itemize}
+    \item Modell- und Vorhersageversionen werden über Metadaten und Datenbankeinträge verwaltet, jedoch existiert keine automatisierte Retention- oder Retirement-Strategie zur Bereinigung veralteter Modelle oder Vorhersagen, was langfristig zu unnötigem Speicherverbrauch führen kann.
+    \item Es ist keine automatische Überwachung der Modelle und ihrer Leistung in der Produktionsumgebung implementiert. Veränderungen in den Vorhersageeingabedaten oder Leistungsabfälle der Modelle könnten daher unentdeckt bleiben.
+\end{itemize}
+
+\subsubsection{Erweiterungen}
+\begin{itemize}
+    \item Einführung eines kontinuierlichen Modell-Monitorings zur Überwachung von Datenverteilungen, Vorhersageverhalten und Leistungsmetriken in der Produktionsumgebung.
+    \item Erweiterung der Presets und “Auto”-Presets um systematische Hyperparameteroptimierung, z.B. durch GridSearchCV, RandomizedSearchCV oder Optuna.
+    \item Einführung von speicher- und rechenoptimierten Trainingsverfahren, z.B. durch Batch-Verarbeitung oder GPU-Unterstützung zur Verbesserung der Skalierbarkeit.
+\end{itemize}
+
