@@ -89,3 +89,48 @@ Wenn eine Cross-Validation gefordert wird (\code{evaluation\_strategy = “cv”
     \item Für Regression wird die $R^2$-Metrik mithilfe des K-Fold-Verfahrens berechnet.
 \end{itemize}
 Falls das \glqq auto\grqq-Preset ausgewählt wurde, wird im Rahmen der Modellauswahl bereits eine Cross-Validation-Metrik über die verschiedenen Modelle hinweg berechnet, um das \glqq beste\grqq Modell zu bestimmen. In diesem Fall verwendet der Trainer diese intern-berechnete Cross-Validation-Zusammenfassung, anstatt die Cross-Validation erneut auszuführen.
+
+\subsection{Modell-Presets und Modellauswahl}
+
+\subsubsection{Preset-basiertes Design}
+
+Die Presets enthalten verschiedene Algorithmusoptionen und Vorverarbeitungslogik unter einer konsistenten Struktur, um zu gewährleisten, dass sie in standardisierter Weise angewendet werden können. Sie unterstützen verschiedene \code{training\_modes} (\glqq fast\grqq, \glqq \grqq, \glqq \grqq), die die Hyperparameter der Modelle anpassen, wie z.B. die Anzahl der Estimatoren oder die Regularisierungsparameter usw.
+
+\subsubsection{Implementierte Modellfamilien}
+\begin{itemize}
+    \item \code{Linear / Logistic Modelle}
+    \begin{itemize}
+        \item Klassifikation: \code{LogisticRegression}
+        \item Regression: \code{LinearRegression}, \code{Ridge}, \code{Ridge} in Kombination mit \code{PolynomialFeatures}
+    \end{itemize}
+    Begründung: Schnelle Baseline-Modelle mit hoher Interpretierbarkeit und robuster Leistung bei linear separierbaren Daten.
+    \item \code{Entscheidungsbaum-basierte Modelle}
+    \begin{itemize}
+        \item Klassifikation: \code{RandomForestClassifier}, \code{ExtraTreesClassifier}
+        \item Regression: \code{RandomForestRegressor}
+    \end{itemize}
+    Begründung: Nichtlineare Modellierung, robust gegenüber Merkmalskalierung sowie hohe Leistungsfähigkeit bei Datensätzen mit gemischten  Merkmaltypen.
+    \item \code{Gradient-Boosting Modelle}
+    \begin{itemize}
+        \item Klassifikation: \code{HistGradientBoostingClassifier}
+        \item Regression: \code{HistGradientBoostingRegressor}
+    \end{itemize}
+    Begründung: Hohe Leistungsfähigkeit bei tabularischen Daten bei gleichzeitig vertretbaren Trainingskosten. Diese Modelle erfordern dichte Eingabematrizen. Daher wird die Ausgabe des OneHotEncodings in diesen Presets explizit als \glqq dense\grqq konfiguriert.
+    \item \code{XGBoost Modelle}
+    \begin{itemize}
+        \item Klassifikation: \code{XGBClassifier}
+        \item Regression: \code{XGBRegressor}
+    \end{itemize}
+    Begründung: Sehr hohe Leistungsfähigkeit bei tabularischen Daten durch starke Regularisierung und gradientbasiertes Tree-Boosting.
+    \item \code{\glqq Auto\grqq-Preset}
+    \begin{itemize}
+        \item Klassifikation: \code{AutoClassifier}
+        \item Regression: \code{AutoRegressor}
+    \end{itemize}
+    Begründung: Sie evaluieren mehrere Kandidatenmodelle aus einigen der zuvor genannten Algorithmen mithilfe von Cross-Validation-Metriken und wählen den Estimator mit der höchsten Leistung aus.
+\end{itemize}
+
+\subsubsection{Klassifikationspresets gegenüber Regressionspresets}
+
+Klassifikationspresets verwenden probabilistische Ausgaben sowie die Macro-F1-Metrik, um Klassenungleichgewichte angemessen zu berücksichtigen.
+Regressionspresets verwenden die $R^2$-Metrik und bieten optional zusätzliche \code{PolynomialFeatures}, um leichte Nonlinearitäten zu modellieren, während die Interpretierbarkeit weitgehend erhalten bleibt.
