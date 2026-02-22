@@ -1,8 +1,7 @@
--- seed.sql (UUID-compatible seed + RESET at end)
+-- seed.sql (for final schema: dataset_versions has name + filename, no uploads table)
+-- Purpose: quick self-test of schema + foreign keys.
+-- Note: this script TRUNCATES all tables at the end, leaving the DB empty.
 
--- =========================
--- 0) Start clean
--- =========================
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE predictions;
@@ -15,9 +14,6 @@ TRUNCATE TABLE users;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- =========================
--- 1) Seed minimal demo graph
--- =========================
 SET @user_id    = '11111111-1111-1111-1111-111111111111';
 SET @dataset_id  = '22222222-2222-2222-2222-222222222222';
 SET @version_id  = '33333333-3333-3333-3333-333333333333';
@@ -32,23 +28,25 @@ VALUES (@user_id, 'demo_user', 'demo_user@example.com');
 INSERT INTO datasets (id, name, owner_id)
 VALUES (@dataset_id, 'sales_store_1', @user_id);
 
-INSERT INTO dataset_versions (id, dataset_id, uri, schema_json, profile_json, row_count)
+INSERT INTO dataset_versions (id, name, dataset_id, filename, uri, schema_json, profile_json, row_count)
 VALUES (
   @version_id,
+  'seed_version_1',
   @dataset_id,
+  'sales_2025_01.csv',
   '/data/sales_2025_01.csv',
   JSON_OBJECT('date','DATE','sales','INT'),
   JSON_OBJECT('note','seed profile'),
   1000
 );
 
--- NOTE: validation_strategy is removed from ml_problems now
 INSERT INTO ml_problems (
-  id, dataset_version_id, dataset_version_uri, task, target,
+  id, dataset_version_id, name, dataset_version_uri, task, target,
   feature_strategy_json, schema_snapshot, semantic_types, current_model_id
 ) VALUES (
   @problem_id,
   @version_id,
+  'seed_problem_1',
   '/data/sales_2025_01.csv',
   'timeseries',
   'sales',
@@ -58,14 +56,13 @@ INSERT INTO ml_problems (
   NULL
 );
 
--- NOTE: evaluation_strategy moved to models
 INSERT INTO models (
   id, problem_id, name, algorithm, train_mode, evaluation_strategy, status,
   metrics_json, uri, metadata_json, explanation_json, created_by
 ) VALUES (
   @model_id,
   @problem_id,
-  'seed_model',
+  'seed_model_1',
   'prophet',
   'auto',
   'train_test_split',
@@ -93,20 +90,20 @@ INSERT INTO jobs (
 );
 
 INSERT INTO predictions (
-  id, model_id, input_uri, inputs_json, outputs_json, outputs_uri, requested_by
+  id, model_id, name, input_uri, inputs_json, outputs_json, outputs_uri, status, requested_by
 ) VALUES (
   @pred_id,
   @model_id,
+  'seed_prediction_1',
   '/data/predict_input.json',
   JSON_OBJECT('date', '2025-01-31'),
   JSON_OBJECT('sales_hat', 123),
   '/data/predict_output.json',
+  'completed',
   @user_id
 );
 
--- =========================
--- 2) RESET (delete what was written)
--- =========================
+-- Reset: leave DB empty
 SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE predictions;
