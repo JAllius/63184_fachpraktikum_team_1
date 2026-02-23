@@ -1,10 +1,3 @@
-\section{User Experience}
-\label{sec:ux}
-
-\subsection{FastAPI}
-\label{subsec:ux:fastapi}
-\lipsum
-
 \section{WebUI}
 \label{sec:webui}
 Das Frontend implementiert eine Dashboard-basierte Single-Page-Application (\glqq SPA\grqq) zur Verwaltung von Datasets, Dataset-Versionen, ML-Problemen, Modellen und Vorhersagen. Es wurde für Anwender entwickelt, die Analysen und ML-Workflows ausführen möchten, ohne direkt mit den Backend-Services interagieren zu müssen.
@@ -27,13 +20,63 @@ Das Dashboard ist durch asynchrone ML-Workflows eingeschränkt. Trainings- und V
 
 Die Auswahl dieser Werkzeuge unterstützt die Maintainability, Accesibility, Interaktivität, Konsistenz und Fehlerbehandlung, die dieses Dashboard benötigt, um eine stabile Benutzererfahrung zu gewährleisten.
 
+\subsection{FastAPI}
+\label{subsec:ux:fastapi}
+Das Frontend kommuniziert mit einer FastAPI, welche auf den API-Nodes hinterlegt ist. Dabei wurde FastAPI als Framework genutzt, da es gut in Python integrierbar ist und somit gut mit Celery / Redis kombinierbar ist. Außerdem bietet FastAPI standardmäßig eine interaktive \glqq Swagger UI\grqq-Dokumentation. Diese lässt sich unter \code{/docs} auf der API-Node abrufen.
+
+Diese interaktive Dokumentation war besonders in den frühen Phasen der Projektentwicklung (ohne Frontend) hilfreich, da hier leicht die Funktionalität des Backends geprüft werden kann.
+
 \subsection{Webanwendungsarchitektur}
 
 \subsubsection{Routing und Seitenstruktur}
+Das Routing ist in \code{frontend/src/routes/index.tsx} definiert und wird mithilfe von \code{createBrowserRouter} implementiert. Die Routing-Struktur ist in zwei Bereiche gegliedert: einen hierarchischen Hauptbereich sowie aggregierte Übersichtsseiten zur vereinfachten Navigation. Der Hauptbereich enthält die zentrale Anwendungslogik und bildet die hierarchische Domänestruktur der Datenbank ab.
+
+Hauptbereich:
+\begin{itemize}
+    \item \code{/} → Login-Seite (derzeit nur als Platzhalter implementiert und inaktiv, da im Backend keine Authentifizierungslogik für Benutzer implementiert ist)
+    \item \code{/dashboard} → Übersicht
+    \item \code{/dashboard/datasets} → Liste aller Datensätze
+    \item \code{/dashboard/datasets/:datasetId} → Liste der Versionen eines Datensatzes
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId} → Liste der ML-Probleme einer Datensatz-Version
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId} → Liste der Modelle eines ML-Problems
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId/:modelId} → Liste der Vorhersagen eines Modells
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId/:modelId/\\:predictionId} → Details einer Vorhersage
+\end{itemize}
+Zusätzlich existieren aggregierte Seiten zur vollständigeren Übersicht über die Datenbank sowie zur vereinfachten Navigation.
+
+Aggregierte Übersichtsseiten:
+\begin{itemize}
+    \item \code{/dashboard/dataset-versions} → Liste aller Datensatz-Versionen
+    \item \code{/dashboard/ml-problems} → Liste aller ML-Probleme
+    \item \code{/dashboard/models} → Liste aller Modelle
+    \item \code{/dashboard/predictions} → Liste aller Vorhersagen
+    \item \code{/dashboard/jobs} → Liste aller Celery-Jobs. Diese Seite wurde nicht weiterentwickelt und ist daher nicht über die Sidebar erreichbar. Der Status asynchroner Aufgaben wird stattdessen in die Modell- und Vorhersagelisten integriert, um den aktuellen Zustand von Hintergrundprozessen sichtbar zu machen.
+    \item Nach Auswahl eines Eintrags in diesen Tabellen wird der Benutzer zur entsprechenden Detailseite im Hauptbereich weitergeleitet.
+\end{itemize}
+
+Diese Struktur ermöglicht ein konsistentes Navigationsmodell für den Benutzer. Jede verschachtelte Seite enthält detailliertere Informationen zu einem einzelnen Eintrag, während die aggregierten Listenansichten eine globale Sicht auf die Datenbank zur Verwaltung bieten.
 
 \subsubsection{Layout und Navigation}
+Das Dashboard-Layout verwendet eine persistente Sidebar mit kollabierbarem Verhalten sowie einen konsistenten Hauptinhaltsbereich. Die Sidebar wird mithilfe einer \code{shadcn}-Komponente erstellt und unterstützt folgende Funktionen:
+\begin{itemize}
+    \item Collapse/Expand-Toggle
+    \item Benutzerbereich (derzeit nur als Platzhalter implementiert und inaktiv, da im Backend keine Benutzerverwaltungslogik implementiert ist)
+    \item Theme-Toggle (Hell/Dunkel)
+    \item Hervorhebung der aktiven Route
+\end{itemize}
+Zusätzlich wird auf den Hauptbereichsseiten eine Breadcrumb-Navigation mithilfe von \code{shadcn}-Breadcrumbs integriert, um einen klaren und nachvollziehbaren Navigationskontext zu bieten.
 
 \subsubsection{Ordnerstruktur}
+Die Codebasis folgt einer klaren inhaltlichen Trennung der Ordner:
+\begin{itemize}
+    \item \code{pages/}: Seiten auf Routing-Ebene mit Datenabruf und Anwendungslogik
+    \item \code{lib/actions/}: API-Funktionen pro Domänenentität
+    \item \code{components/}: domänenspezifische UI-Elemente (Tabellen, Formulare, Detailansichten (Tabs))
+    \item \code{components/ui/}: wiederverwendbare UI-Elemente und \code{shadcn}-Komponenten
+\end{itemize}
+
+Diese Struktur bietet Wiederverwendbarkeit und erlaubt eine klare Fokussierung der Seiten auf die Anwendungslogik statt auf UI-Details.
+
 
 \subsection{Zustandsverwaltung und Datenfluss}
 
