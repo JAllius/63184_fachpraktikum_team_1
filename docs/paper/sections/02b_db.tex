@@ -1,0 +1,99 @@
+\section{Datenbank}
+\label{sec:db}
+\code{PAaaS} folgt einer Kette. Eine Nutzerin oder ein Nutzer legt ein Dataset an. Ein Upload wird als Dataset-Version gespeichert. Darauf wird ein Machine-Learning-Problem definiert. Aus dem Training entstehen Modelle, und aus Prediction-Runs entstehen Ausgaben.
+Solange das Projekt klein ist, bleibt diese Kette übersichtlich. Sobald mehrere Datasets, Modelle und Jobs parallel existieren, wird die Nachvollziehbarkeit wichtiger als die einzel-
+nen Schritte. Dann geht es um Fragen wie: Welche Dataset-Version hat ein Modell trainiert. Welches Modell hat eine Vorhersage erzeugt. Wer hat einen Job angestoßen. Die Datenbank hält diese Beziehungen explizit fest. Jedes Objekt wird einmal gespeichert und über stabile Identifier mit dem vorherigen Schritt verbunden. Abbildung \ref{fig:db1} zeigt die fachliche Lineage. Abbildung \ref{fig:db2} zeigt, wie diese Lineage als Tabellen und Beziehungen umgesetzt ist.
+
+\subsection{Grundlagen und Vorgehen}
+Dieser Abschnitt führt die Begriffe ein, die später im Text vorkommen, und beschreibt das Vorgehen im Projekt.
+Eine Datenbank speichert Daten so, dass sie nach dem Ende eines Programms weiterhin verfügbar sind. Eine relationale Datenbank organisiert Daten in Tabellen. Tabellen haben Zeilen und typisierte Spalten. Die Menge aus Tabellen, Spalten und Regeln nennt
+man Schema. MySQL ist ein relationales Datenbankmanagementsystem. Es speichert und fragt Daten mit SQL ab und kann Regeln wie Schlüsselbeziehungen direkt im Schema erzwingen \cite{MySQL80Reference}.
+
+Nicht-relationale Datenbanken speichern Daten in anderen Strukturen, zum Beispiel als Dokumente, Key-Value-Paare oder Graphen. In \code{PAaaS} sind die Kernobjekte und ihre Beziehungen stabil. Datasets, Versionen, Probleme, Modelle, Jobs und Predictions haben
+eine klare Struktur. Dafür passt ein relationales Schema gut. 
+
+Ein Primärschlüssel identifiziert eine Zeile eindeutig. Ein Fremdschlüssel speichert den Primärschlüsselwert einer anderen Tabelle und drückt damit eine Beziehung aus. FremdschlüsselschützendieIntegrität, weilsieVerweiseaufnichtexistierendeZeilenverhindern \cite{MySQL80Reference}. Im Schema werden UUIDs als Identifier verwendet. Eine UUID ist ein standardisiertes 128-Bit-Format, das für unabhängige Generierung gedacht ist \cite{leachUniversallyUniqueIDentifier2005}. Im Projekt werden UUIDs als \code{CHAR(36)} gespeichert. Das macht sie beim Debugging lesbar, auch in Logs und in SQL-Abfragen.
+
+Ein Teil der Informationen in \code{PAaaS} hat keine feste Struktur. Dataset-Profile hängen von den Spalten eines Uploads ab. Modellmetriken hängen vom Algorithmus und der Aufgabe ab. JSON ist ein standardisiertes Format für strukturierte Daten mit Objekten
+und Arrays \cite{brayJavaScriptObjectNotation2017}. MySQL bietet dafür einen nativen JSON-Datentyp. Damit lassen sich solche Metadaten speichern, ohne ständig neue optionale Spalten anzulegen \cite{135JSONData}.
+
+\code{PAaaS} speichert außerdem Verweise auf große Artefakte, etwa CSV-Dateien, Modell-Binaries und Prediction-Outputs. Deren Speicherorte werden als URI abgelegt. Eine URI ist ein standardisierter Bezeichner für Ressourcen mit klarer Syntax \cite{berners-leeUniformResourceIdentifier2005}. So bleibt die Datenbank auf strukturierte Daten und Metadaten fokussiert, während Dateien in der Storage-Schicht liegen.
+
+Im Projekt wurde ein Lineage-First-Ansatz gewählt. Jeder Schritt im Workflow wird als eigene Tabellenzeile gespeichert. Jedes spätere Objekt speichert den Identifier des Schrittes, von dem es abhängt. Damit wird Nachvollziehbarkeit zu einer Query-Aufgabe.
+FüreinzelneUpdatesspieltzusätzlichKonsistenzübermehrereZeileneineRolle. Transaktionen bündeln mehrere SQL-Statements zu einer Einheit. Isolation Levels beschreiben, wie parallele Transaktionen miteinander interagieren \cite{1772InnoDBTransaction}.
+
+\subsection{Schema und Implementierung}
+Dieser Abschnitt verbindet den Workflow mit dem konkreten Schema und dem Python-Zugriff.
+
+Abbildung \ref{fig:db1} zeigt die fachliche Kette. Das Schema bildet diese Kette mit Fremdschlüsseln nach. Eine Dataset-Version zeigt auf ihr Dataset. Ein Problem zeigt auf eine Dataset-Version. Ein Modell zeigt auf ein Problem. Jobs und Predictions zeigen auf das jeweilige Modell. Jobs speichern zusätzlich, wer die Aktion angefordert hat.
+
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=\linewidth]{./figures/db1.png}
+    \caption{Konzeptionelle Lineage von user-owned Datasets bis zu Predictions.}
+    \label{fig:db1}
+\end{figure}
+
+Abbildung \ref{fig:db2} folgt derselben Reihenfolge wie der Workflow. Dadurch wird auch klar, warum Joins für Detailansichten naheliegend sind. Wenn die UI zu einem Modell zusätzlich den Dataset-Namen anzeigen soll, gibt es dafür einen sauberen Join-Pfad.
+
+\begin{figure*}[htp]
+    \centering
+    \includegraphics[width=\textwidth]{./figures/db2.png}
+    \caption{Entity-Relationship-Diagramm des \code{PAaaS}-Datenbankschemas.}
+    \label{fig:db2}
+\end{figure*}
+
+Der Python-Zugriff ist in db.py umgesetzt und wird von der API genutzt. Das Modul folgt dem Connection- und Cursor-Muster, wie es in der Python DB-API 2.0 beschrieben ist \cite{PEP249Python} Die meisten Funktionen folgen einem einfachen Rhythmus. Create-Funktionen schreiben eine Zeile und geben die UUID zurück. Get-Funktionen lesen eine Zeile über den Primärschlüssel. Update-Funktionen ändern nur die übergebenen Felder. Für Listenansichten sind Filter und Pagination eingebaut, damit die API nicht ganze Tabellen in den Speicher lädt.
+
+Eine Operation ist kritischer als normale CRUD-Aufrufe. Pro ML-Problem soll es genau ein Production-Modell geben. Ein Wechsel betrifft mehrere Zeilen und läuft daher als Transaktion. Dabei wird die ML-Problem-Zeile gesperrt, ein vorheriges Production-
+ModellbeiBedarfarchiviert,das neue Modell als Production markiert und der Production-Pointer aktualisiert. Abbildung 3 zeigt die Schritte. Transaktionen und Isolation-Regeln liefern die nötige Konsistenz bei parallelen Requests \cite{1772InnoDBTransaction}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[height=\linewidth*2/3]{./figures/db3.png}
+    \caption{Production-Model-Switch als konsistente Datenbankoperation.}
+    \label{fig:db3}
+\end{figure}
+
+\subsection{Evaluation}
+Die Evaluation fokussiert auf funktionale Korrektheit. Der wichtigste Nachweis ist ein lokaler Smoke Test, der einen vollständigen Happy Path ausführt. Er legt eine Nutzerin oder einen Nutzer an, erzeugt ein Dataset, eine Dataset-Version, ein ML-Problem, ein
+Modell, einen Trainingsjob und eine Prediction. Danach werden Datensätze wieder gelesen und es wird geprüft, ob die Identifier passen und die Fremdschlüsselbeziehungen gültig sind. Damit ist gezeigt, dass das Schema die beabsichtigte Insert-Reihenfolge unterstützt und die Helper-Funktionen konsistent arbeiten.
+
+Zwei SQL-Abfragen verdeutlichen das Traceability-Ziel. Abbildung \ref{lst:db1} listet Modelle zu einem
+ML-Problem. Abbildung \ref{lst:db2} rekonstruiert die Lineage hinter einer Prediction über Joins ent-
+lang der Workflow-Tabellen.
+
+\begin{figure*}
+    \centering
+    \begin{verbatim}
+SELECT id, name, algorithm, status, created_at
+FROM models
+WHERE problem_id = %s
+ORDER BY created_at DESC;
+    \end{verbatim}
+    \caption{SQL: \code{models} für ein bestimmtes Problem ausgeben.}
+    \label{lst:db1}
+\end{figure*}
+
+\begin{figure*}
+    \centering
+    \begin{verbatim}
+SELECT
+p.id AS prediction_id,
+m.id AS model_id,
+mp.id AS problem_id,
+dv.id AS dataset_version_id,
+d.id AS dataset_id,
+d.name AS dataset_name
+FROM predictions p
+JOIN models m ON m.id = p.model_id
+JOIN ml_problems mp ON mp.id = m.problem_id
+JOIN dataset_versions dv ON dv.id = mp.dataset_version_id
+JOIN datasets d ON d.id = dv.dataset_id
+WHERE p.id = %s;
+    \end{verbatim}
+    \caption{SQL: Ein \code{prediction} zu dem zugehörigen \code{dataset} zurückverfolgen.}
+    \label{lst:db2}
+\end{figure*}
+
+Diese Evaluation ist bewusst praxisnah. Sie zeigt, dass die Datenbank den Projekt-Workflow Ende zu Ende abbildet. Sie misst keine Performance unter Last und deckt keine umfangreichen Parallelitäts- oder Stress-Szenarien ab.

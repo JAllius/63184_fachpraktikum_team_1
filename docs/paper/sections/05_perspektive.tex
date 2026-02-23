@@ -1,6 +1,24 @@
 \section{Perspektive}
 \label{sec:perspektive}
-\lipsum
+Dieser Abschnitt beschreibt Erweiterungen, die aus dem aktuellen Design naheliegend folgen. Das sind Punkte, die im Projektumfang sinnvoll gewesen wären, aber zeitlich nicht mehr umgesetzt wurden.
+
+\subsection{CSV-Daten direkt in der Datenbank speichern}
+\label{subsec:csv}
+Im aktuellen Setup bleiben Uploads als Dateien erhalten. Die Datenbank speichert dazu URIs und Metadaten. Eine Alternative ist, die Inhalte eines Datasets zusätzlich in relationale Tabellen zu laden.
+
+Der größte Vorteil ist die Abfragbarkeit. Daten lassen sich direkt mit SQL filtern und aggregieren. Das hilft bei Dataset-Exploration, Validierungsregeln oder schnellen Preview-Abfragen. Auf häufig genutzten Spalten lassen sich Indizes anlegen, was typische Filter deutlich beschleunigt. Für das Importieren größerer Datenmengen bietet MySQL außerdem Bulk-Load-Funktionen wie LOAD DATA \cite{MySQL80Reference}.
+
+Ein zweiter Vorteil sind stärkere Integritätsprüfungen. Spaltentypen, NOT NULL-Constraints und einfache Checks reduzieren Unklarheiten, bevor die Daten in die ML-Pipeline gehen.Gleichzeitig steigt der Aufwand für Ingestion, Backups und Schema-Management, vor allem wenn Datasets sehr groß oder sehr unterschiedlich strukturiert sind.
+
+\subsection{Authentication und Authorization}
+\code{PAaaS} speichert Nutzer und Ownership. Wenn die Plattform von mehreren Nutzern geteilt wird, wird Zugriffskontrolle wichtiger. Drei gängige Ansätze sind dafür relevant:
+\begin{itemize}
+    \item Basic Authentication: Der Client sendet Benutzername und Passwort bei jedem Request im HTTP-Header. Das Verfahren ist einfach und weit verbreitet. Passwörter werden dabei zum zentralen Sicherheitsfaktor und sollten nur zusammen mit Transportverschlüsselung eingesetzt werden \cite{reschkeBasicHTTPAuthentication2015b}.
+    \item Token-basierte Authentifizierung mit JWT: Nach dem Login wird ein signiertes Token ausgegeben. Der Client sendet das Token bei Requests, und der Server prüft die Signatur. JWT ist standardisiert und wird häufig für stateless APIs genutzt \cite{jonesJSONWebToken2015}.
+    \item OAuth 2.0 Authorization Flows: OAuth 2.0 wird genutzt, wenn Authentifizierung und Autorisierung an einen Identity Provider ausgelagert werden. Es definiert Flows zur Ausgabe von Access Tokens und zur Verwaltung delegierter Zugriffe. Das ist hilfreich, wenn externe Login-Anbieter genutzt werden oder mehrere Services eine gemeinsame Auth-Schicht teilen \cite{hardtOAuth20Authorization2012}.
+\end{itemize}
+
+Neben der Authentifizierung braucht es Autorisierung, also die Frage, was ein Nutzer darf. Für \code{PAaaS} beginnt das bei Dataset-Rechten und einfachen Rollen, etwa read-only versus write. Das ließe sich durch Rollen-Zuordnungen und Access Rules ergänzen, die auf \code{users} und \code{datasets} referenzieren.
  
 \subsection{MLCore}
 In MLCore sind besonders folgende Punkte als mögliche Erweiterungen und Ausbaumöglichkeiten zu betrachten:
@@ -18,6 +36,3 @@ Auch im Bereich des Frontends / der WebUI sind Verbesserungsmöglichkeiten vorha
     \item Explainability-Diagramme: Wie bereits im MLCore-Explainability-Kapitel erwähnt, waren zusätzliche Visualisierungen (z.B. Quantil-Zusammenfassungen) vorgesehen. Diese wurden aufgrund zeitlicher Einschränkungen nicht umgesetzt, und sind eine mögliche Erweiterung zur vertieften Analyse.
 \end{itemize}
 
-\subsection{Skalierbarkeit CSV-Upload}
-\label{subsec:csv}
-\lipsum

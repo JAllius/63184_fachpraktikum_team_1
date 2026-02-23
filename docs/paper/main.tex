@@ -31,15 +31,15 @@
 \usepackage{pdfpages}
 \usepackage{listings}
 
-% \usepackage{lipsum}
-\newcommand{\lipsum}{TODO}
+\usepackage{lipsum}
+% \newcommand{\lipsum}{TODO}
 
 \usepackage{etoolbox}
 \makeatletter
 \patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
 \makeatother
 
-\addbibresource{mlcore.bib} % BibLaTeX bibliography file
+\addbibresource{zotero.bib} % BibLaTeX bibliography file
 
 \runninghead{Predictive Analysis as a Service} % A shortened article title to appear in the running head, leave this command empty for no running head
 
@@ -91,6 +91,7 @@
 \clearpage
 \input{sections/01_uebersicht}
 \input{sections/02_struktur}
+\input{sections/02b_db}
 \input{sections/03_mlcore}
 \input{sections/04_ux}
 \input{sections/05_perspektive}
@@ -102,7 +103,7 @@
 \clearpage
 % \scriptsize
 \section*{Anmerkung zur Nutzung von KI-Tools}
-In diesem Bericht wurden KI-Tools (\glqq ChatGPT\grqq) zur Fehlerkorrektur und sprachlichen Ausgestaltung verwendet. Der Projekt-Code verwendet in Teilen Code-Snippets, bei denen eine KI-Verwendung nicht ausgeschlossen werden kann (zum Beispiel durch in Suchmaschine eingebundene Tools wie \glqq Google Search\grqq, \glqq Microsoft Copilot\grqq, \glqq duck.ai\grqq)
+In diesem Bericht wurden KI-Tools (\glqq ChatGPT\grqq) zur Fehlerkorrektur und sprachlichen Ausgestaltung verwendet. \glqq GPT-5.2 Thinking\grqq wurde zur Unterstützung bei Formulierungen, Struktur und Grammatik eingesetzt. Der Projekt-Code verwendet in Teilen Code-Snippets, bei denen eine KI-Verwendung nicht ausgeschlossen werden kann (zum Beispiel durch in Suchmaschine eingebundene Tools wie \glqq Google Search\grqq, \glqq Microsoft Copilot\grqq, \glqq duck.ai\grqq)
 \listoffigures
 % \listoftables
 % \AtNextBibliography{\scriptsize}
