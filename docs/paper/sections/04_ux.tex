@@ -5,6 +5,83 @@
 \label{subsec:ux:fastapi}
 \lipsum
 
-\subsection{WebUI}
-\label{subsec:ux:webui}
-\lipsum
+\section{WebUI}
+\label{sec:webui}
+Das Frontend implementiert eine Dashboard-basierte Single-Page-Application (\glqq SPA\grqq) zur Verwaltung von Datasets, Dataset-Versionen, ML-Problemen, Modellen und Vorhersagen. Es wurde für Anwender entwickelt, die Analysen und ML-Workflows ausführen möchten, ohne direkt mit den Backend-Services interagieren zu müssen.
+
+Ein SPA-Dashboard ist in diesem Kontext geeignet, da es häufige Wechsel zwischen Listen- und Detailansichten unterstützt, Zustände durch URL-Query-Parameter beibehalten kann und interaktive Aktualisierungen ohne vollständige Seitenneuladung ermöglicht. Dadurch bleibt der Anwendungskontext auch bei Aktualisierungen erhalten.
+
+Das Dashboard ist durch asynchrone ML-Workflows eingeschränkt. Trainings- und Vorhersageprozesse sind langlaufende Hintergrundaufgaben, und aus diesem Grund können die Listenansichten nicht immer direkt aktualisiert werden, da die zuvor genannten Backend-Prozesse nicht sofort abgeschlossen werden. Um dieses Problem zu vermeiden und eine aktuelle Darstellung sicherzustellen, werden nicht-blockierende Formulare, visuelle Rückmeldungen (\glqq toasts\grqq) sowie Event-Driven-Aktualisierungsmechanismen eingesetzt. Dies beeinflusst die Zustandsverwaltung und Aktualisierungslogik im Frontend, da Änderungen erst nach Abschluss der Hintergrundprozesse im Frontend durch Event-Streams synchronisiert werden.
+
+\subsection{TechStack}
+\begin{itemize}
+    \item \code{React} und \code{Typescript}: React bietet ein komponentenbasiertes Modell für komplexe Dashboards mit wiederverwendbaren Komponenten, was für dieses Projekt geeignet ist, da es viele ähnliche Seiten und Komponenten gibt.
+    
+    TypeScript erzwingt eine starke Typisierung für alle Komponenten und Funktionen, was zu einer konsistenten und fehlerreduzierten Codebasis führt.
+    \item \code{Vite}: Vite wird verwendet, da es schnelle Builds in der Entwicklungsumgebung und optimierte Builds in der Produktionsumgebung bietet.
+    \item \code{React Router}: Die Routing-Schicht bindet die hierarchische Seitenstruktur (dataset → dataset version → ml problem → model → prediction) mit einer verschachtelten Pfadstruktur, was tiefe Verlinkungen und eine leichtere Navigation ermöglicht.
+    \item \code{Tailwind CSS} und \code{shadcn} (RadixUI-basierte Komponenten): Tailwind bietet ein konsistentes Styling zwischen allen Seiten und Komponenten des Dashboards. shadcn-Komponenten bieten vordefinierte UI-Elemente mit intefrierter Funktionalität, die zusammen mit Tailwind eine konsistente Darstellung des Dashboards gewährleisten.
+    \item \code{Recharts}: Recharts wird ausschliesslich für die Darstellung der Explainability verwendet und bietet interaktive und flüssige Diagramme.
+    \item \code{Zod} und \code{React Hook Form}: Zod ermöglicht die Erstellung von Validierungsschemata für alle Formulare des Dashboards. React Hook Form bietet kontrollierte Formulare mit minimierten Re-Renders und klarer Fehlerbehandlung.
+\end{itemize}
+
+Die Auswahl dieser Werkzeuge unterstützt die Maintainability, Accesibility, Interaktivität, Konsistenz und Fehlerbehandlung, die dieses Dashboard benötigt, um eine stabile Benutzererfahrung zu gewährleisten.
+
+\subsection{Webanwendungsarchitektur}
+
+\subsubsection{Routing und Seitenstruktur}
+
+\subsubsection{Layout und Navigation}
+
+\subsubsection{Ordnerstruktur}
+
+\subsection{Zustandsverwaltung und Datenfluss}
+
+\subsubsection{Serverseitiger Zustand}
+Das Dashboard verwendet einen serverseitigen Zustand für Entitätslisten und Detailansichten. Seiten rufen Daten über Aktionsfunktionen ab, die den Datenabruf und die Fehlerbehandlung standardisieren. Der Zustand wird lokal in jeder Seitenkomponente mithilfe der React-Hooks \glqq useState\grqq und \glqq useEffect\grqq verwaltet. Zusätzlich wird mithilfe von \glqq useCallback\grqq eine stabile Wiederabruflogik gewährleistet.
+
+\subsubsection{Zustandsverwaltung über URL-Query-Parameter für Filter und Pagination}
+Filterung, Sortierung und Pagination werden über URL-Query-Parameter mithilfe des React-Router-Hooks \glqq useSearchParams\grqq verwaltet. Dies ermöglicht:
+\begin{itemize}
+    \item teilbare, reproduzierbare URLs
+    \item zustandlose paginierte Listenkomponenten
+\end{itemize}
+Pagination und Auswahl der Seitengrösse passen die Query-Parameter an und lösen einen erneuten Datenabruf aus. Dieses Muster vermeidet eine globale Zustandsverwaltung sowie den vollständigen Abruf aller Daten, da der Listenzustand direkt aus den URL-Parametern und den Backend-Antworten rekonstruiert werden kann.
+
+\subsubsection{Umgang mit grossen tabellarischen Daten}
+Tabellen werden mit Pagination und Filterung statt clientseitiger Virtualisierung dargestellt. Es werden sinnvolle Seitengrössen (Standardwert 20, konfigurierbar auf 10 oder 50) verwendet, die mit der serverseitigen Pagination kombiniert werden, um den Speicherverbrauch auf Client-Seite zu reduzieren. Dieses Muster verbessert die Skalierbarkeit bei grossen Datenmengen.
+
+\subsection{ML- und CRUD-Funktionen}
+\subsubsection{Training Workflow}
+Das Training wird durch die Train-Komponente initialisiert, die ein Sheet (Seitenpanel) mit einem validierten Formular öffnet. Das Formular unterstützt folgende Felder:
+\begin{itemize}
+    \item Problem-ID (sofern diese nicht bereits aus den URL-Parametern übernommen wird)
+    \item Modellname
+    \item Auswahl des Train-Modus (fast, balanced, accurate)
+    \item Auswahl des Algorithmus-Presets
+    \item Evaluierungsstrategie (cv, holdout)
+    \item Explainability-Toggle
+\end{itemize}
+Eine erfolgreiche Übermittlung löst eine Rückmeldung (\glqq toast\grqq) aus und schliesst das Formular. Anschliessend wird die Modellliste aktualisiert, um das neu erzeugte Modell anzuzeigen.
+
+\subsubsection{Vorhersage Workflow}
+Die Vorhersage verwendet eine ähnliche Sheet-Komponente. Sie unterstützt drei Eingabemodi für die Daten:
+\begin{itemize}
+    \item Hochladen einer neuen CSV-Datei
+    \item Verwendung einer existierenden CSV-Datei (derzeit inaktiv)
+    \item Eingabe im JSON-Format
+\end{itemize}
+Das Formular wird mithilfe von Zod validiert, um sicherzustellen, dass eine Eingabequelle angegeben ist und eine Modell- oder Problem-ID vorhanden ist. Eine erfolgreiche Übermittlung löst ebenfalls eine Rückmeldung aus und aktualisiert die entsprechenden Datenansichten.
+
+\subsubsection{Jobstatus und Rückmeldung}
+Das UI verwendet Toast-Rückmeldungen, um Ereignisse der Trainings- und Vorhersageprozesse darzustellen. Seiten abonnieren Job-Events und zeigen Rückmeldungen wie \glqq Training finished successfully\grqq oder \glqq Prediction failed\grqq, um unmittelbares Feedback für den Benutzer zu geben, ohne eine manuelle Aktualisierung erforderlich ist.
+
+\subsubsection{CRUD-Funktionen}
+Die übrigen CRUD-Funktionen folgen einem ähnlichen Muster wie die Trainings- und Vorhersageformulare. Die Erstellung und Aktualisierung von Daten erfolgt ebenfalls über Sheet-Komponenten.
+
+Besondere Bedeutung kommt den Löschfunktionen zu, die eine schriftliche Bestätigung durch den Benutzer erfordern, bevor der Vorgang ausgeführt wird.
+
+\subsubsection{Fehlerbehandlung}
+Die API-Aktionen geben typisierte Erfolgs- oder Fehlerantworten zurück. Formulare interpretieren Validierungsfehler und zeigen diese mithilfe von \code{FieldError} direkt bei den entsprechenden Eingabefeldern an. Netzwerk- und Backend-Fehler werden über Toast-Rückmeldungen mit verständlichen Meldungen dargestellt.
+
+
