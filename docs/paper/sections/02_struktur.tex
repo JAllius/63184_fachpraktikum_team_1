@@ -51,9 +51,8 @@ Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf an
 Ebenso kann Docker genutzt werden, um mehrere Container zu deployen, zu vernetzen und diese von außen erreichbar gestalten. Dazu wird \glqq Docker compose\grqq\space genutzt. Hierbei wird die Struktur eines \glqq Compose-Stacks\grqq\space beschrieben. Hierbei werden die einzelnen Images, die Konfigurationen dieser sowie Netzwerke und Volumes beschrieben. 
 
 Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Compose-Stack verknüpft werden können, findet sich in Abbildung \ref{fig:compose}. 
+Der \code{frontend}-Service (die Frontend-Node) baut ein Docker-Image basierend auf der \code{DockerfileFrontend} und ist über Port 3000 erreichbar. Er benötigt den \code{api}-Service (API-Node) zum Start. Analog dazu funktioniert die API-Node mit Umgebungsvariablen zur Konfiguration der Datenbank und des Redis-Servers. Diese hängt von dem \code{redis\_server} ab und ist über Port 42000 erreichbar. Die Worker-Node wird hier mehrfach repliziert erstellt, um die Skalierbarkeit mit Celery / Redis zu zeigen. Neben den restlichen Services werden noch mehrere Volumes definiert, um die Daten persistent zu speichern.
 
-% TODO: EINZELNE TEILE ERKLÄREN
-\textcolor{red}{\lipsum[4]}
 
 
 \section{Workflow}
