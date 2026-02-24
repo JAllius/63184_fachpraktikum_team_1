@@ -41,12 +41,12 @@ Docker ist ein verbreitetes Tool zu Containerisierung von Anwendungen und Micros
 Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf anderen Host-Systemen verwendet werden. Dazu können die Images beispielsweise in einem Repository (öffentlich) zur Verfügung gestellt werden oder als \glqq tar-Ball\grqq\space exportiert werden \cite{DockerHubContainer}\cite{DockerImage0100}. Dabei muss der Entwickler des Image wenige Vorkehrungen treffen um das Image auf einer Vielzahl an Hosts verwendbar zu machen: die Docker-Engine übernimmt einen Großteil des Aufwands.
 
 
-\begin{figure*}
+\begin{figure}
     \centering
     \lstinputlisting[basicstyle=\tiny]{./figures/docker-compose.yml}
     \caption{Beispiel: docker-compose.yml}
     \label{fig:compose}
-\end{figure*}
+\end{figure}
 
 Ebenso kann Docker genutzt werden, um mehrere Container zu deployen, zu vernetzen und diese von außen erreichbar gestalten. Dazu wird \glqq Docker compose\grqq\space genutzt. Hierbei wird die Struktur eines \glqq Compose-Stacks\grqq\space beschrieben. Hierbei werden die einzelnen Images, die Konfigurationen dieser sowie Netzwerke und Volumes beschrieben. 
 
