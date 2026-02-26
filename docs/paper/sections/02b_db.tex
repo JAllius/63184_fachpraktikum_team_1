@@ -12,7 +12,7 @@ man Schema. MySQL ist ein relationales Datenbankmanagementsystem. Es speichert u
 Nicht-relationale Datenbanken speichern Daten in anderen Strukturen, zum Beispiel als Dokumente, Key-Value-Paare oder Graphen. In \code{PAaaS} sind die Kernobjekte und ihre Beziehungen stabil. Datasets, Versionen, Probleme, Modelle, Jobs und Predictions haben
 eine klare Struktur. Dafür passt ein relationales Schema gut. 
 
-Ein Primärschlüssel identifiziert eine Zeile eindeutig. Ein Fremdschlüssel speichert den Primärschlüsselwert einer anderen Tabelle und drückt damit eine Beziehung aus. FremdschlüsselschützendieIntegrität, weilsieVerweiseaufnichtexistierendeZeilenverhindern \cite{MySQL80Reference}. Im Schema werden UUIDs als Identifier verwendet. Eine UUID ist ein standardisiertes 128-Bit-Format, das für unabhängige Generierung gedacht ist \cite{leachUniversallyUniqueIDentifier2005}. Im Projekt werden UUIDs als \code{CHAR(36)} gespeichert. Das macht sie beim Debugging lesbar, auch in Logs und in SQL-Abfragen.
+Ein Primärschlüssel identifiziert eine Zeile eindeutig. Ein Fremdschlüssel speichert den Primärschlüsselwert einer anderen Tabelle und drückt damit eine Beziehung aus. Fremdschlüssel schützen die Integrität, weil sie Verweise auf nicht existierende Zeilen verhindern \cite{MySQL80Reference}. Im Schema werden UUIDs als Identifier verwendet. Eine UUID ist ein standardisiertes 128-Bit-Format, das für unabhängige Generierung gedacht ist \cite{leachUniversallyUniqueIDentifier2005}. Im Projekt werden UUIDs als \code{CHAR(36)} gespeichert. Das macht sie beim Debugging lesbar, auch in Logs und in SQL-Abfragen.
 
 Ein Teil der Informationen in \code{PAaaS} hat keine feste Struktur. Dataset-Profile hängen von den Spalten eines Uploads ab. Modellmetriken hängen vom Algorithmus und der Aufgabe ab. JSON ist ein standardisiertes Format für strukturierte Daten mit Objekten
 und Arrays \cite{brayJavaScriptObjectNotation2017}. MySQL bietet dafür einen nativen JSON-Datentyp. Damit lassen sich solche Metadaten speichern, ohne ständig neue optionale Spalten anzulegen \cite{135JSONData}.
@@ -20,7 +20,7 @@ und Arrays \cite{brayJavaScriptObjectNotation2017}. MySQL bietet dafür einen na
 \code{PAaaS} speichert außerdem Verweise auf große Artefakte, etwa CSV-Dateien, Modell-Binaries und Prediction-Outputs. Deren Speicherorte werden als URI abgelegt. Eine URI ist ein standardisierter Bezeichner für Ressourcen mit klarer Syntax \cite{berners-leeUniformResourceIdentifier2005}. So bleibt die Datenbank auf strukturierte Daten und Metadaten fokussiert, während Dateien in der Storage-Schicht liegen.
 
 Im Projekt wurde ein Lineage-First-Ansatz gewählt. Jeder Schritt im Workflow wird als eigene Tabellenzeile gespeichert. Jedes spätere Objekt speichert den Identifier des Schrittes, von dem es abhängt. Damit wird Nachvollziehbarkeit zu einer Query-Aufgabe.
-FüreinzelneUpdatesspieltzusätzlichKonsistenzübermehrereZeileneineRolle. Transaktionen bündeln mehrere SQL-Statements zu einer Einheit. Isolation Levels beschreiben, wie parallele Transaktionen miteinander interagieren \cite{1772InnoDBTransaction}.
+Für einzelne Updates spielt zusätzlich Konsistenz über mehrere Zeilen eine Rolle. Transaktionen bündeln mehrere SQL-Statements zu einer Einheit. Isolation Levels beschreiben, wie parallele Transaktionen miteinander interagieren \cite{1772InnoDBTransaction}.
 
 \subsection{Schema und Implementierung}
 Dieser Abschnitt verbindet den Workflow mit dem konkreten Schema und dem Python-Zugriff.
@@ -39,7 +39,7 @@ Abbildung \ref{fig:db2} folgt derselben Reihenfolge wie der Workflow. Dadurch wi
 Der Python-Zugriff ist in db.py umgesetzt und wird von der API genutzt. Das Modul folgt dem Connection- und Cursor-Muster, wie es in der Python DB-API 2.0 beschrieben ist \cite{PEP249Python} Die meisten Funktionen folgen einem einfachen Rhythmus. Create-Funktionen schreiben eine Zeile und geben die UUID zurück. Get-Funktionen lesen eine Zeile über den Primärschlüssel. Update-Funktionen ändern nur die übergebenen Felder. Für Listenansichten sind Filter und Pagination eingebaut, damit die API nicht ganze Tabellen in den Speicher lädt.
 
 Eine Operation ist kritischer als normale CRUD-Aufrufe. Pro ML-Problem soll es genau ein Production-Modell geben. Ein Wechsel betrifft mehrere Zeilen und läuft daher als Transaktion. Dabei wird die ML-Problem-Zeile gesperrt, ein vorheriges Production-
-ModellbeiBedarfarchiviert,das neue Modell als Production markiert und der Production-Pointer aktualisiert. Abbildung \ref{fig:db3} zeigt die Schritte. Transaktionen und Isolation-Regeln liefern die nötige Konsistenz bei parallelen Requests \cite{1772InnoDBTransaction}.
+Modell bei Bedarf archiviert, das neue Modell als Production markiert und der Production-Pointer aktualisiert. Abbildung \ref{fig:db3} zeigt die Schritte. Transaktionen und Isolation-Regeln liefern die nötige Konsistenz bei parallelen Requests \cite{1772InnoDBTransaction}.
 
 \begin{figure}[!h]
     \centering
