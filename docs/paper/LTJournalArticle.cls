@@ -227,3 +227,5 @@
 \newcommand{\refsubsec}[1]{Untersektion \ref{#1}}
 
 \newcommand{\code}[1]{\texttt{#1}}
+
+\usepackage{rotating}

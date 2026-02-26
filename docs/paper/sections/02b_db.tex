@@ -27,7 +27,7 @@ Dieser Abschnitt verbindet den Workflow mit dem konkreten Schema und dem Python-
 
 Abbildung \ref{fig:db1} zeigt die fachliche Kette. Das Schema bildet diese Kette mit Fremdschlüsseln nach. Eine Dataset-Version zeigt auf ihr Dataset. Ein Problem zeigt auf eine Dataset-Version. Ein Modell zeigt auf ein Problem. Jobs und Predictions zeigen auf das jeweilige Modell. Jobs speichern zusätzlich, wer die Aktion angefordert hat.
 
-\begin{figure}[htp]
+\begin{figure}[!h]
     \centering
     \includegraphics[width=\linewidth]{./figures/db1.png}
     \caption{Konzeptionelle Lineage von user-owned Datasets bis zu Predictions.}
@@ -36,24 +36,26 @@ Abbildung \ref{fig:db1} zeigt die fachliche Kette. Das Schema bildet diese Kette
 
 Abbildung \ref{fig:db2} folgt derselben Reihenfolge wie der Workflow. Dadurch wird auch klar, warum Joins für Detailansichten naheliegend sind. Wenn die UI zu einem Modell zusätzlich den Dataset-Namen anzeigen soll, gibt es dafür einen sauberen Join-Pfad.
 
-\begin{figure*}[htp]
-    \centering
-    \includegraphics[width=\textwidth]{./figures/db2.png}
-    \caption{Entity-Relationship-Diagramm des \code{PAaaS}-Datenbankschemas.}
-    \label{fig:db2}
-\end{figure*}
-
 Der Python-Zugriff ist in db.py umgesetzt und wird von der API genutzt. Das Modul folgt dem Connection- und Cursor-Muster, wie es in der Python DB-API 2.0 beschrieben ist \cite{PEP249Python} Die meisten Funktionen folgen einem einfachen Rhythmus. Create-Funktionen schreiben eine Zeile und geben die UUID zurück. Get-Funktionen lesen eine Zeile über den Primärschlüssel. Update-Funktionen ändern nur die übergebenen Felder. Für Listenansichten sind Filter und Pagination eingebaut, damit die API nicht ganze Tabellen in den Speicher lädt.
 
 Eine Operation ist kritischer als normale CRUD-Aufrufe. Pro ML-Problem soll es genau ein Production-Modell geben. Ein Wechsel betrifft mehrere Zeilen und läuft daher als Transaktion. Dabei wird die ML-Problem-Zeile gesperrt, ein vorheriges Production-
-ModellbeiBedarfarchiviert,das neue Modell als Production markiert und der Production-Pointer aktualisiert. Abbildung 3 zeigt die Schritte. Transaktionen und Isolation-Regeln liefern die nötige Konsistenz bei parallelen Requests \cite{1772InnoDBTransaction}.
+ModellbeiBedarfarchiviert,das neue Modell als Production markiert und der Production-Pointer aktualisiert. Abbildung \ref{fig:db3} zeigt die Schritte. Transaktionen und Isolation-Regeln liefern die nötige Konsistenz bei parallelen Requests \cite{1772InnoDBTransaction}.
 
-\begin{figure}[h]
+\begin{figure}[!h]
     \centering
     \includegraphics[height=\linewidth*2/3]{./figures/db3.png}
     \caption{Production-Model-Switch als konsistente Datenbankoperation.}
     \label{fig:db3}
 \end{figure}
+
+\begin{sidewaysfigure*}[]
+    \centering
+    \includegraphics[width=\textwidth]{./figures/db2_hd.png}
+    \caption{Entity-Relationship-Diagramm des \code{PAaaS}-Datenbankschemas.}
+    \label{fig:db2}
+\end{sidewaysfigure*}
+
+\clearpage
 
 \subsection{Evaluation}
 Die Evaluation fokussiert auf funktionale Korrektheit. Der wichtigste Nachweis ist ein lokaler Smoke Test, der einen vollständigen Happy Path ausführt. Er legt eine Nutzerin oder einen Nutzer an, erzeugt ein Dataset, eine Dataset-Version, ein ML-Problem, ein
@@ -63,7 +65,7 @@ Zwei SQL-Abfragen verdeutlichen das Traceability-Ziel. Abbildung \ref{lst:db1} l
 ML-Problem. Abbildung \ref{lst:db2} rekonstruiert die Lineage hinter einer Prediction über Joins ent-
 lang der Workflow-Tabellen.
 
-\begin{figure*}
+\begin{figure*}[!h]
     \centering
     \begin{verbatim}
 SELECT id, name, algorithm, status, created_at
@@ -75,7 +77,7 @@ ORDER BY created_at DESC;
     \label{lst:db1}
 \end{figure*}
 
-\begin{figure*}
+\begin{figure*}[!h]
     \centering
     \begin{verbatim}
 SELECT

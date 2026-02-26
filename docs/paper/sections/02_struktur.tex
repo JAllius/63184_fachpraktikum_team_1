@@ -2,6 +2,13 @@
 \label{sec:struktur}
 Bei dem Design von \code{PAaaS} wurde ein großer Fokus auf Modularisierung und Skalierbarkeit gelegt. Ebenso wurden primär weit verbreitete Tools eingesetzt, um die Weiterentwicklung und Wartung des Projektes zu vereinfachen. Folglich sind die einzelnen Komponenten über bestimmte Schnittstellen miteinander verbunden. Innerhalb dieser ist eine Modifizierung oder ein Austausch der Komponenten unabhängig der anderen Komponenten umzusetzen. Dabei wurde Docker als Containerisierungslösung eingesetzt, da Docker eine sehr weit verbreitete Lösung darstellt \cite{sollfrankEvaluatingDockerLightweight2021}.
 
+\begin{figure*}[!h]
+    \centering
+    \includegraphics[width=\textwidth]{../structure_release.png}
+    \caption{Containerisierte Projekt-Struktur}
+    \label{fig:structure}
+\end{figure*}
+
 \subsection{Komponenten}
 \label{subsec:komponenten}
 Die einzelnen Komponenten des Projekts werden als containerisierte Microservices ausgerollt. Dabei werden die folgenden Komponenten verwendet:
@@ -27,12 +34,7 @@ MySQL wurde aufgrund der weiten Verbreitung des Tools verwendet. So war MySQL 20
 
 Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgrund bestehender Erfahrungen im Team sowie der leichten Implementierung in Python gewählt. Flower wurde folglich als Monitoring-Tool für Redis gewählt. Celery lässt sich als Python-Modul einbinden. Dabei können Funktionen (in MLCore) als Task markiert werden. An anderer Stelle wird dann ein Aufruf implementiert. So löst hier ein Aufruf eines FastAPI-Endpunkts nach einer einfachen Datenvalidierung einen bestimmten Task mit entsprechenden Parametern auf. Da sich sowohl die API Node als auch die Worker Node bereits bei dem Redis-Server als Celery-Knoten gemeldet haben, wird der Task-Aufruf an den Redis-Server gesendet. Von dort wird der Aufruf an eine Worker Node weitergeleitet. Durch die getaggte Funktion stellt sich die Worker Node nämlich als valide Instanz für den entsprechenden Task-Aufruf bereit.
 
-\begin{figure*}
-    \centering
-    \includegraphics[width=\textwidth]{../structure_release.png}
-    \caption{Containerisierte Projekt-Struktur}
-    \label{fig:structure}
-\end{figure*}
+
 
 \subsection{Containerisierung}
 \label{subsec:container}
@@ -41,7 +43,7 @@ Docker ist ein verbreitetes Tool zu Containerisierung von Anwendungen und Micros
 Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf anderen Host-Systemen verwendet werden. Dazu können die Images beispielsweise in einem Repository (öffentlich) zur Verfügung gestellt werden oder als \glqq tar-Ball\grqq\space exportiert werden \cite{DockerHubContainer}\cite{DockerImage0100}. Dabei muss der Entwickler des Image wenige Vorkehrungen treffen um das Image auf einer Vielzahl an Hosts verwendbar zu machen: die Docker-Engine übernimmt einen Großteil des Aufwands.
 
 
-\begin{figure}
+\begin{figure}[!h]
     \centering
     \lstinputlisting[basicstyle=\tiny]{./figures/docker-compose.yml}
     \caption{Beispiel: docker-compose.yml}
