@@ -48,24 +48,22 @@ Modell bei Bedarf archiviert, das neue Modell als Production markiert und der Pr
     \label{fig:db3}
 \end{figure}
 
-\begin{sidewaysfigure*}[]
+% \begin{sidewaysfigure*}[]
+%     \centering
+%     \includegraphics[width=\textwidth]{./figures/db2_hd.png}
+%     \caption{Entity-Relationship-Diagramm des \code{PAaaS}-Datenbankschemas.}
+%     \label{fig:db2}
+% \end{sidewaysfigure*}
+
+\begin{figure*}[]
     \centering
     \includegraphics[width=\textwidth]{./figures/db2_hd.png}
     \caption{Entity-Relationship-Diagramm des \code{PAaaS}-Datenbankschemas.}
     \label{fig:db2}
-\end{sidewaysfigure*}
+\end{figure*}
 
-\clearpage
 
-\subsection{Evaluation}
-Die Evaluation fokussiert auf funktionale Korrektheit. Der wichtigste Nachweis ist ein lokaler Smoke Test, der einen vollständigen Happy Path ausführt. Er legt eine Nutzerin oder einen Nutzer an, erzeugt ein Dataset, eine Dataset-Version, ein ML-Problem, ein
-Modell, einen Trainingsjob und eine Prediction. Danach werden Datensätze wieder gelesen und es wird geprüft, ob die Identifier passen und die Fremdschlüsselbeziehungen gültig sind. Damit ist gezeigt, dass das Schema die beabsichtigte Insert-Reihenfolge unterstützt und die Helper-Funktionen konsistent arbeiten.
-
-Zwei SQL-Abfragen verdeutlichen das Traceability-Ziel. Abbildung \ref{lst:db1} listet Modelle zu einem
-ML-Problem. Abbildung \ref{lst:db2} rekonstruiert die Lineage hinter einer Prediction über Joins ent-
-lang der Workflow-Tabellen.
-
-\begin{figure*}[!h]
+\begin{figure*}[]
     \centering
     \begin{verbatim}
 SELECT id, name, algorithm, status, created_at
@@ -77,7 +75,7 @@ ORDER BY created_at DESC;
     \label{lst:db1}
 \end{figure*}
 
-\begin{figure*}[!h]
+\begin{figure*}[]
     \centering
     \begin{verbatim}
 SELECT
@@ -97,5 +95,13 @@ WHERE p.id = %s;
     \caption{SQL: Ein \code{prediction} zu dem zugehörigen \code{dataset} zurückverfolgen.}
     \label{lst:db2}
 \end{figure*}
+
+\subsection{Evaluation}
+Die Evaluation fokussiert auf funktionale Korrektheit. Der wichtigste Nachweis ist ein lokaler Smoke Test, der einen vollständigen Happy Path ausführt. Er legt eine Nutzerin oder einen Nutzer an, erzeugt ein Dataset, eine Dataset-Version, ein ML-Problem, ein
+Modell, einen Trainingsjob und eine Prediction. Danach werden Datensätze wieder gelesen und es wird geprüft, ob die Identifier passen und die Fremdschlüsselbeziehungen gültig sind. Damit ist gezeigt, dass das Schema die beabsichtigte Insert-Reihenfolge unterstützt und die Helper-Funktionen konsistent arbeiten.
+
+Zwei SQL-Abfragen verdeutlichen das Traceability-Ziel. Abbildung \ref{lst:db1} listet Modelle zu einem
+ML-Problem. Abbildung \ref{lst:db2} rekonstruiert die Lineage hinter einer Prediction über Joins ent-
+lang der Workflow-Tabellen.
 
 Diese Evaluation ist bewusst praxisnah. Sie zeigt, dass die Datenbank den Projekt-Workflow Ende zu Ende abbildet. Sie misst keine Performance unter Last und deckt keine umfangreichen Parallelitäts- oder Stress-Szenarien ab.
