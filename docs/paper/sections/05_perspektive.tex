@@ -1,5 +1,8 @@
 \section{Evaluation}
 \label{sec:eval}
+Unter Betrachtung der Zielsetzung aus \refsubsec{subsec:Motivation} stellt sich heraus, dass ein Großteil der Ziele durch \code{PAaaS} erfüllt wird. So wurde eine RESTful API geschaffen, über die sich verschiedene Methoden der prädiktiven Analyseverfahren bedienen lassen. Diese ist dazu noch über eine Swagger-Dokumentation beschrieben und lässt sich so leicht bedienen. Die Containerisierung mit Docker setzt das Ziel der Modularisierung um. Außerdem erlaubt Docker in Kombination mit dem Celery / Redis Setup die erforderliche Skalierung von \code{PAaas}. Zudem beinhaltet \code{PAaaS} ein verständliches und vergleichsweise leicht zu bedienendes Frontend in Form einer React-basierten Web-UI.
+
+Allerdings ist die vorliegende Version von \code{PAaaS} nicht wie gefordert in bestehende Informationssysteme integriert. Es liegt keine Anbindung an zum Beispiel ein ERP-System oder ein CRM vor. Eine solche Integration kann zwar aufgrund der offenen Struktur sowie der Swagger-Dokumentation zur RESTful API nachträglich umgesetzt werden. Jedoch wäre eine beispielshafte Integration mit einem entsprechenden Informationssysteme wünschenswert, um ein Gesamtkonzept zur Verwendung von \code{PAaaS} darzustellen.
 
 \section{Perspektive \& Diskussion}
 \label{sec:perspektive}
@@ -38,4 +41,3 @@ Auch im Bereich des Frontends / der WebUI sind Verbesserungsmöglichkeiten vorha
     \item Auswahl existierender CSV-Dateien: Die Formulare zur Erstellung von Datensatz-Versionen sowie zur Vorhersage enthalten einen Modus zur Verwendung einer existierenden CSV-Datei. Dieser ist aktuell deaktiviert, da noch keine vollständige Unterstützung für gespeicherte CSV-Dateien implementiert ist.
     \item Explainability-Diagramme: Wie bereits im MLCore-Explainability-Kapitel erwähnt, waren zusätzliche Visualisierungen (z.B. Quantil-Zusammenfassungen) vorgesehen. Diese wurden aufgrund zeitlicher Einschränkungen nicht umgesetzt, und sind eine mögliche Erweiterung zur vertieften Analyse.
 \end{itemize}
-
