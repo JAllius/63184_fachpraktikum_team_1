@@ -1,6 +1,20 @@
 \section{Übersicht}
 \label{sec:uebersicht}
-Zunächst wird kurz die Idee von \code{PAaaS} und der Aufbau betrachtet. Dabei wird auf die einzelnen Komponenten und deren Zusammenspiel in Form von Containerisierung eingegangen. Auch wird der Workflow während der Projekt-Entwicklung dargestellt. Anschließend wird detailliert auf den Aufbau der Datenbank und die Strukturierung der Daten eingegangen. Danach folgt eine detaillierte Darstellung von MLCore, also dem Modell-Training und der eigentlichen \glqq Predictive Analysis\grqq. Abschließend wird auf einige Erweiterungen und Ausbaumöglichkeiten eingegangen. Diese stellen interessante Optionen für eine Weiterentwicklung dar, welche jedoch im Zeitrahmen des Projektes nicht mehr umgesetzt werden konnten. 
+Aktuelle Methoden für prädiktive Analyseverfahren (\glqq Predictive Analytics\grqq) sind mitunter schwierig zu bedienen oder stehen lediglich als Bibliothek zur Verfügung und sind so nicht ohne weiteres in verschiedene Systeme einbindbar. Eine einheitliche Schnittstelle oder (grafische) Bedienoberfläche für solche Verfahren existiert derzeit nicht.
+
+
+\subsection{Motivation \& Zielsetzung}
+\label{subsec:Motivation}
+Das Ziel hinter \code{PAaaS} ist die Schaffung eines Nutzerinterfaces sowie einer geeigneten RESTful API für verschiedene Methoden der prädiktiven Analyse. Dabei sollte das Tool leicht bedienbar, modular und skalierbar sein. 
+
+Zuerst wurde das Backend sowie die API spezifiziert, mit einem Frontend was anschließend auf dieser API aufbaut. Ebenso wichtig war bei der Entwicklung ein Fokus auf allgemein gebräuchliche Tools, um die spätere Weiterentwicklung, Wartung und das Deployment zu vereinfachen.
+
+\subsection{Aufbau der Arbeit}
+Im Folgenden wird in \refsec{sec:struktur}-\ref{sec:webui} die Methodik, Organisation und Projektumsetzung erläutert: zunächst wird kurz die Idee von \code{PAaaS} und der Aufbau betrachtet (siehe \refsec{sec:struktur}). Dabei wird auf die einzelnen Komponenten und deren Zusammenspiel in Form von Containerisierung eingegangen. Auch wird in \refsec{sec:workflow} der Workflow während der Projekt-Entwicklung dargestellt. Anschließend wird detailliert auf den Aufbau der Datenbank und die Strukturierung der Daten eingegangen (siehe \refsec{sec:db}). Danach folgt eine detaillierte Darstellung von MLCore, also dem Modell-Training und der eigentlichen \glqq Predictive Analysis\grqq in \refsec{sec:mlcore}. Außerdem wird die Funktionsweise der RESTful API und der Web-UI dargestellt (siehe \refsec{sec:webui}) 
+
+Anschließend folgt in \refsec{sec:eval} eine Evaluation der Projektergebnisse gegenüber der in \refsubsec{subsec:Motivation} genannten Motivation und Zielsetzung.
+
+Abschließend wird in \refsec{sec:perspektive} auf einige Erweiterungen und Ausbaumöglichkeiten eingegangen. Diese stellen interessante Optionen für eine Weiterentwicklung dar, welche jedoch im Zeitrahmen des Projektes nicht mehr umgesetzt werden konnten. 
 
 % \subsection{Anmerkung der Autoren}
 % \label{subsec:anmerkung}
@@ -8,6 +22,3 @@ Zunächst wird kurz die Idee von \code{PAaaS} und der Aufbau betrachtet. Dabei w
 
 % Die Komponenten Frontend sowie MLCore wurden durch Nikolaos Psycharis implementiert. Das Projektdesign, die Datenbank sowie Anbindung dieser an FastAPI und MLCore wurden durch Hamza Gueni umgesetzt. Die Containerisierung/Skalierung und Endpoints wurden durch Joshua Allius umgesetzt.
 
-\subsection{Idee}
-\label{subsec:idee}
-Das Ziel hinter \code{PAaaS} ist die Schaffung eines Nutzerinterfaces für verschiedene Methoden der Predictive Analysis. Dabei sollte das Tool leicht bedienbar, modular und skalierbar sein. Zuerst wurde das Backend sowie die API spezifiziert, mit einem Frontend was anschließend auf dieser API aufbaut. Ebenso wichtig war bei der Entwicklung ein Fokus auf allgemein gebräuchliche Tools, um die spätere Weiterentwicklung, Wartung und das Deployment zu vereinfachen.
