@@ -1,0 +1,67 @@
+\section{Struktur}
+\label{sec:struktur}
+Bei dem Design von \code{PAaaS} wurde ein großer Fokus auf Modularisierung und Skalierbarkeit gelegt. Ebenso wurden primär weit verbreitete Tools eingesetzt, um die Weiterentwicklung und Wartung des Projektes zu vereinfachen. Folglich sind die einzelnen Komponenten über bestimmte Schnittstellen miteinander verbunden. Innerhalb dieser ist eine Modifizierung oder ein Austausch der Komponenten unabhängig der anderen Komponenten umzusetzen. Dabei wurde Docker als Containerisierungslösung eingesetzt, da Docker eine sehr weit verbreitete Lösung darstellt \cite{sollfrankEvaluatingDockerLightweight2021}.
+
+\begin{figure*}[!h]
+    \centering
+    \includegraphics[width=\textwidth]{../structure_release.png}
+    \caption{Containerisierte Projekt-Struktur}
+    \label{fig:structure}
+\end{figure*}
+
+\subsection{Komponenten}
+\label{subsec:komponenten}
+Die einzelnen Komponenten des Projekts werden als containerisierte Microservices ausgerollt. Dabei werden die folgenden Komponenten verwendet:
+
+\begin{enumerate}
+    \item Frontend Node: eine React-basierte Weboberfläche zur vereinfachten Nutzung durch den Anwender
+    \item API Node: eine FastAPI-basierte API, über welche sämtliche Funktionen des Projektes angestoßen werden können
+    \item Worker Node: ein Python-Container, in dem die MLCore-bezogenen Tasks ausgeführt werden
+    \item MySQL: eine SQL-basierte Datenbank
+    \item Redis: Messaging Host für Zuweisung von Celery Tasks von / an verschiedene API / Worker Nodes
+    \item Flower: eine Weboberfläche zum Redis-Monitoring
+\end{enumerate}
+
+Besonders sind dabei die Frontend, API und Worker Nodes zu betrachten. Die verbleibenden Komponenten sind unmodifizierte 3rd-party Softwares.
+
+Die Frontend Node stellt eine in Docker gewrappte React-Applikation dar. React stellt ist dabei ein weit verbreitetes JavaScript-Framework zur Erstellung von interaktiven Weboberflächen. Auf das Frontend wird in der \refsec{sec:webui} näher eingegangen.
+
+API Nodes stellen dabei eine in Docker gewrappte FastAPI dar. FastAPI ist ein Python-Framework zur Erstellung von REST-APIs. Die API wird entweder über das Frontend oder direkt durch einen versierten Nutzer angesteuert und löst entsprechende Celery-Tasks aus. Die FastAPI-Schnittstelle wird in der \refsubsec{subsec:ux:fastapi} beschrieben.
+
+Worker Nodes basieren auf einem Python-Dockerimage und bieten die Kernfunktionen von MLCore an, also die tatsächliche Datenverarbeitung. Diese Funktionen werden über Celery Tasks ausgeführt. In der \refsec{sec:mlcore} wird vertiefend auf MLCore eingegangen.
+
+MySQL wurde aufgrund der weiten Verbreitung des Tools verwendet. So war MySQL 2023 die zweit-meistverwendeste Datenbank nach Oracle \cite{DBEnginesRanking}. Oracle wurde allerdings aufgrund der Lizenzbedingungen für dieses Projekt nicht in Betracht gezogen. Zudem wurde speziell eine SQL-basierte Datenbank verwendet, um die Vorteile einer effizienten Speicherung für strukturierte Metadaten zu nutzen. Dabei ist zu beachten, dass in der aktuellen Version Nutzer-Uploads nur eingeschränkt in der Datenbank gespeichert werden (siehe Sektion \ref{sec:perspektive}). Für eine direkte Speicherung z.B. von .csv-Uploads wären auch dokumentbasierte Datenbanken wie beispielsweise MongoDB in Betracht zu ziehen gewesen \cite{DocumentStoresDBEngines}.
+
+Redis und Celery sind verbreitete Tools für Messaging. Diese Tools wurden aufgrund bestehender Erfahrungen im Team sowie der leichten Implementierung in Python gewählt. Flower wurde folglich als Monitoring-Tool für Redis gewählt. Celery lässt sich als Python-Modul einbinden. Dabei können Funktionen (in MLCore) als Task markiert werden. An anderer Stelle wird dann ein Aufruf implementiert. So löst hier ein Aufruf eines FastAPI-Endpunkts nach einer einfachen Datenvalidierung einen bestimmten Task mit entsprechenden Parametern auf. Da sich sowohl die API Node als auch die Worker Node bereits bei dem Redis-Server als Celery-Knoten gemeldet haben, wird der Task-Aufruf an den Redis-Server gesendet. Von dort wird der Aufruf an eine Worker Node weitergeleitet. Durch die getaggte Funktion stellt sich die Worker Node nämlich als valide Instanz für den entsprechenden Task-Aufruf bereit.
+
+
+
+\subsection{Containerisierung}
+\label{subsec:container}
+Docker ist ein verbreitetes Tool zu Containerisierung von Anwendungen und Microservices. Auf einem Host wird die sogenannte Docker-Engine installiert. Über diese können isolierte Instanzen von Images als Container erstellt werden. Die Images selber werden durch eine \glqq Dockerfile\grqq\space beschrieben \cite{reisDevelopingDockerDockerCompose2022}. Dabei wird meist ein bereits vorhandenes Image um die gewünschte Funktionalität erweitert, z.B. indem der Projektcode in dem Image eingebunden wird. Dieses Vorgehen nennt sich \glqq Image Layering\grqq\cite{UnderstandingImageLayers0530}.
+
+Ein so beschriebenes Image wird anschließend gebaut und kann dann leicht auf anderen Host-Systemen verwendet werden. Dazu können die Images beispielsweise in einem Repository (öffentlich) zur Verfügung gestellt werden oder als \glqq tar-Ball\grqq\space exportiert werden \cite{DockerHubContainer}\cite{DockerImage0100}. Dabei muss der Entwickler des Image wenige Vorkehrungen treffen um das Image auf einer Vielzahl an Hosts verwendbar zu machen: die Docker-Engine übernimmt einen Großteil des Aufwands.
+
+
+\begin{figure}[!h]
+    \centering
+    \lstinputlisting[basicstyle=\tiny]{./figures/docker-compose.yml}
+    \caption{Beispiel: docker-compose.yml}
+    \label{fig:compose}
+\end{figure}
+
+Ebenso kann Docker genutzt werden, um mehrere Container zu deployen, zu vernetzen und diese von außen erreichbar gestalten. Dazu wird \glqq Docker compose\grqq\space genutzt. Hierbei wird die Struktur eines \glqq Compose-Stacks\grqq\space beschrieben. Hierbei werden die einzelnen Images, die Konfigurationen dieser sowie Netzwerke und Volumes beschrieben. 
+
+Ein Beispiel, wie die einzelnen Komponenten/Container des Projektes in einem Compose-Stack verknüpft werden können, findet sich in Abbildung \ref{fig:compose}. 
+Der \code{frontend}-Service (die Frontend-Node) baut ein Docker-Image basierend auf der \code{DockerfileFrontend} und ist über Port 3000 erreichbar. Er benötigt den \code{api}-Service (API-Node) zum Start. Analog dazu funktioniert die API-Node mit Umgebungsvariablen zur Konfiguration der Datenbank und des Redis-Servers. Diese hängt von dem \code{redis\_server} ab und ist über Port 42000 erreichbar. Die Worker-Node wird hier mehrfach repliziert erstellt, um die Skalierbarkeit mit Celery / Redis zu zeigen. Neben den restlichen Services werden noch mehrere Volumes definiert, um die Daten persistent zu speichern.
+
+
+
+\section{CI/CD und Version Controlling}
+\label{sec:workflow}
+% TODO: problem: nicht alle features durch privates github ohne dev acc. Keine protected branches etc
+Im Rahmen der Entwicklung wurde GitHub für Source Code Management verwendet. Dabei wurden einzelne Feature Branches erstellt, an denen eines oder mehrere Mitglieder des Projektes entwickeln konnten. Anschließend wurde im Rahmen des Pull Requests (PRs) ein Review durch die restlichen Mitglieder durchgeführt.
+
+Ebenso wurde GitHub Actions verwendet, um die PRs um eine Continuous Integration (CI) Pipeline zu ergänzen. Dabei wurden der Python Code durch Pytest abgedeckt. Für das TypeScript basierte Frontend sowie die Docker Container wurde in einem zweiten CI-Job geprüft, ob der Buildprozess für das Frontend sowie die Docker Images erfolgreich beendet. Zum aktuellen Zeitpunkt wurde kein Continuous Deployment umgesetzt. Damit wurden die erstellten Images also weder veröffentlich noch auf einer staging Umgebung deployed.
+
+Nur wenn beide Pipeline-Jobs, also pytest und der Build-Prozess, erfolgreich abgeschlossen sowie wenn ein Review durchgeführt wurde, wurde der PR umgesetzt. Dieser typische git-Workflow hat dabei die unabhängige Arbeit der Teammitglieder stark vereinfacht.

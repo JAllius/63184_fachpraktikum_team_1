@@ -3,5 +3,21 @@
         "editor.defaultFormatter": "ms-python.autopep8"
     },
     "editor.formatOnSave": true,
-    "editor.formatOnPaste": true
+    "editor.formatOnPaste": true,
+    "files.exclude": {
+        "**/*.aux": true,
+        "**/*.bbl": true,
+        "**/*.bcf": true,
+        "**/*.blg": true,
+        "**/*.lof": true,
+        "**/*.fdb_latexmk": true,
+        "**/*.fls": true,
+        "**/*.out": true,
+        "**/*.run.xml": true,
+        "**/*.synctex.gz": true
+    },
+    "latex-utilities.countWord.args": [
+        "-inc",
+        "-sum"
+    ]
 }
