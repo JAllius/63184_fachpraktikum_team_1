@@ -21,6 +21,9 @@ Goal: make the DB setup and verification reproducible for new team members.
 - `test_smoke.py`  
   Local smoke test that verifies schema + CRUD + joins + pagination + deletes + production switch.
 
+- `init_test_db.py` + `test_db.txt`  
+  Optional local tooling to create/seed a separate test database (`team1_db_test`) for end-to-end experiments; not required for the normal setup or the smoke test.
+
 ## Prerequisites
 
 - Docker + Docker Compose
