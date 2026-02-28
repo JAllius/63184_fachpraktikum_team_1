@@ -13,30 +13,34 @@ from pymysql.cursors import DictCursor
 # MODEL PATH CONFIG
 # -------------------------------------------------------------------
 
+# Model files live outside the DB; we only store the URI/path in tables.
 MODEL_DIR = os.getenv("MODEL_BASE_PATH", "/models")
 
 # -------------------------------------------------------------------
 # DB CONFIG
 # -------------------------------------------------------------------
 
+# DB settings come from env vars so the same code works in Docker + local dev.
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
 DB_NAME = os.getenv("DB_NAME", "team1_db")
 DB_USER = os.getenv("DB_USER", "team1_user")
 DB_PASS = os.getenv("DB_PASS", "team1_pass")
 
+# DictCursor returns rows as dicts (nice for FastAPI responses).
 DB_CFG = {
     "host": DB_HOST,
     "port": DB_PORT,
     "user": DB_USER,
     "password": DB_PASS,
     "database": DB_NAME,
-    "autocommit": True,
+    "autocommit": True,  # simple default for most CRUD helpers
     "cursorclass": DictCursor,
 }
 
 
 def _json_dump(data: Optional[dict]) -> Optional[str]:
+    # Store JSON as text/JSON column input. None stays None (so we can skip updates).
     if data is None:
         return None
     return json.dumps(data)
@@ -47,11 +51,14 @@ def _json_dump(data: Optional[dict]) -> Optional[str]:
 # -------------------------------------------------------------------
 
 def get_conn():
+    # Central place for creating a connection (keeps config consistent).
     return pymysql.connect(**DB_CFG)
 
 
 @contextlib.contextmanager
 def cursor():
+    # Keep DB usage safe + consistent: open connection, run query, close connection.
+    # This avoids leaked connections across requests.
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -60,7 +67,14 @@ def cursor():
         conn.close()
 
 
-def _build_update_sql(table: str, id_col: str, id_val: str, fields: Dict[str, Any]) -> Tuple[Optional[str], Optional[List[Any]]]:
+def _build_update_sql(
+    table: str,
+    id_col: str,
+    id_val: str,
+    fields: Dict[str, Any],
+) -> Tuple[Optional[str], Optional[List[Any]]]:
+    # Build UPDATE statements dynamically and skip fields that are None.
+    # This supports "partial updates" without overwriting values accidentally.
     set_parts = []
     params: List[Any] = []
     for col, val in fields.items():
@@ -82,6 +96,8 @@ def _build_update_sql(table: str, id_col: str, id_val: str, fields: Dict[str, An
 # -------------------------------------------------------------------
 
 def create_user(username: str, email: Optional[str] = None) -> str:
+    # UUIDs allow generating ids in the app without a DB roundtrip.
+    # Stored as CHAR(36) strings in MySQL (easy to debug in logs and DB rows).
     user_id = str(uuid.uuid4())
     sql = "INSERT INTO users (id, username, email) VALUES (%s, %s, %s)"
     with cursor() as cur:
@@ -113,12 +129,14 @@ def db_get_dataset(dataset_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (dataset_id,))
         return cur.fetchone()
-    
 
+
+# Whitelist sort fields to avoid unsafe ORDER BY injection via query params.
 ALLOWED_DATASET_SORT_FIELDS = {
     "name": "name",
     "created_at": "created_at",
 }
+
 
 def get_datasets(
     page: int,
@@ -129,47 +147,48 @@ def get_datasets(
     id: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
-    '''
+    """
     Return (items, total) for datasets with pagination, sorting and optional search.
-    '''
-    ### SORTING ###
+    """
+    # SORTING (whitelisted)
     sort_column = ALLOWED_DATASET_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
+    # WHERE clauses + params are built in a safe parameterized way (%s placeholders).
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"
+        where_clauses.append("name LIKE %s")
+        params.append(like)
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"
         where_clauses.append("name LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL CALCULATION ###
+    # Separate COUNT(*) so the API can return total results for pagination UI.
     count_sql = f"SELECT COUNT(*) AS total FROM datasets {where_sql}"
     with cursor() as cur:
         cur.execute(count_sql, params)
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
-    offset = (page-1)*size
+    # LIMIT/OFFSET paging (simple and good enough for project scope).
+    offset = (page - 1) * size
     datasets_sql = f"SELECT * FROM datasets {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(datasets_sql, params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        # Add LIMIT/OFFSET at the end without mutating the base params list.
+        cur.execute(datasets_sql, params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -197,6 +216,7 @@ def create_dataset_version(
     profile_json: Optional[dict] = None,
     row_count: Optional[int] = None,
 ) -> str:
+    # A dataset version represents one concrete upload/version of a dataset.
     version_id = str(uuid.uuid4())
     sql = """
         INSERT INTO dataset_versions
@@ -227,6 +247,7 @@ def db_get_dataset_version(version_id: str) -> Optional[dict]:
         return cur.fetchone()
 
 
+# Whitelist sort fields to keep ORDER BY safe.
 ALLOWED_DATASET_VERSION_SORT_FIELDS = {
     "name": "name",
     "created_at": "created_at",
@@ -243,47 +264,44 @@ def get_dataset_versions(
     id: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
-    '''
+    """
     Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
-    '''
-    ### SORTING ###
+    """
     sort_column = ALLOWED_DATASET_VERSION_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"
+        where_clauses.append("name LIKE %s")
+        params.append(like)
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"
         where_clauses.append("name LIKE %s")
         params.append(like)
-    
+
+    # Here we append conditions after "dataset_id = %s" (so it starts with AND ...).
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
 
-    ### TOTAL CALCULATION ###
     count_sql = f"SELECT COUNT(*) AS total FROM dataset_versions WHERE dataset_id = %s {where_sql}"
     with cursor() as cur:
         cur.execute(count_sql, [dataset_id] + params)
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
-    offset = (page-1)*size
+    offset = (page - 1) * size
     dataset_versions_sql = f"SELECT * FROM dataset_versions WHERE dataset_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(dataset_versions_sql, [dataset_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(dataset_versions_sql, [dataset_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -333,6 +351,7 @@ def create_ml_problem(
     semantic_types: Optional[dict] = None,
     current_model_id: Optional[str] = None,
 ) -> str:
+    # An ML problem is the “training context” for a dataset version (task + target + config).
     problem_id = str(uuid.uuid4())
     sql = """
         INSERT INTO ml_problems
@@ -364,7 +383,7 @@ def get_ml_problem(problem_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (problem_id,))
         return cur.fetchone()
-    
+
 
 ALLOWED_ML_PROBLEM_SORT_FIELDS = {
     "name": "name",
@@ -386,61 +405,53 @@ def get_ml_problems(
     target: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
-    '''
-    Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
-    '''
-    ### SORTING ###
+    """
+    Return (items, total) for ml_problems for a given dataset_version_id with pagination, sorting and optional search.
+    """
     sort_column = ALLOWED_ML_PROBLEM_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append(
-            "("
-            "name LIKE %s OR task LIKE %s OR target LIKE %s"
-            ")"
-        ) # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.extend([like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"
+        where_clauses.append("(" "name LIKE %s OR task LIKE %s OR target LIKE %s" ")")
+        params.extend([like, like, like])
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"
         where_clauses.append("name LIKE %s")
         params.append(like)
 
     if task:
-        like = f"%{task}%" # Search target for anything that contains target
+        like = f"%{task}%"
         where_clauses.append("task LIKE %s")
         params.append(like)
 
     if target:
-        like = f"%{target}%" # Search target for anything that contains target
+        like = f"%{target}%"
         where_clauses.append("target LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
 
-    ### TOTAL CALCULATION ###
     count_sql = f"SELECT COUNT(*) AS total FROM ml_problems WHERE dataset_version_id = %s {where_sql}"
     with cursor() as cur:
         cur.execute(count_sql, [dataset_version_id] + params)
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
-    offset = (page-1)*size
+    offset = (page - 1) * size
     ml_problems_sql = f"SELECT * FROM ml_problems WHERE dataset_version_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(ml_problems_sql, [dataset_version_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(ml_problems_sql, [dataset_version_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
@@ -484,8 +495,9 @@ def update_ml_problem(
 # -------------------------------------------------------------------
 
 def build_model_uri(problem_id: str, model_id: str) -> str:
-    # storage-agnostic default
+    # Default location derived from IDs (keeps storage layout predictable).
     return f"{MODEL_DIR}/{problem_id}/{model_id}/model.joblib"
+
 
 def create_model(
     problem_id: str,
@@ -495,14 +507,14 @@ def create_model(
     train_mode: Optional[str] = None,
     evaluation_strategy: Optional[str] = None,
     metrics_json: Optional[dict] = None,
-    uri: Optional[str] = None,         
+    uri: Optional[str] = None,
     metadata_json: Optional[dict] = None,
     explanation_json: Optional[dict] = None,
     created_by: Optional[str] = None,
 ) -> Tuple[str, str]:
     model_id = str(uuid.uuid4())
 
-    # Default URI derived from IDs
+    # If no URI is provided, build one so the backend can store the file consistently.
     if uri is None:
         uri = build_model_uri(problem_id, model_id)
 
@@ -561,32 +573,30 @@ def get_models(
     evaluation_strategy: Optional[str] = None,
     status: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
-    '''
-    Return (items, total) for dataset_versions for a given dataset_id with pagination, sorting and optional search.
-    '''
-    ### SORTING ###
+    """
+    Return (items, total) for models for a given problem_id with pagination, sorting and optional search.
+    """
     sort_column = ALLOWED_MODEL_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
+        like = f"%{q}%"
         where_clauses.append(
             "("
             "name LIKE %s OR algorithm LIKE %s OR train_mode LIKE %s OR evaluation_strategy LIKE %s OR status LIKE %s"
             ")"
-            ) # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.extend([like, like, like, like, like]) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        )
+        params.extend([like, like, like, like, like])
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"
         where_clauses.append("name LIKE %s")
         params.append(like)
 
@@ -599,7 +609,7 @@ def get_models(
         like = f"%{train_mode}%"
         where_clauses.append("train_mode LIKE %s")
         params.append(like)
-    
+
     if evaluation_strategy:
         like = f"%{evaluation_strategy}%"
         where_clauses.append("evaluation_strategy LIKE %s")
@@ -609,45 +619,49 @@ def get_models(
         like = f"%{status}%"
         where_clauses.append("status LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
 
-    ### TOTAL CALCULATION ###
+    # COUNT(*) for pagination totals.
     count_sql = f"SELECT COUNT(*) AS total FROM models WHERE problem_id = %s {where_sql}"
     with cursor() as cur:
         cur.execute(count_sql, [problem_id] + params)
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
-    offset = (page-1)*size
+    offset = (page - 1) * size
     models_sql = f"SELECT * FROM models WHERE problem_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(models_sql, [problem_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(models_sql, [problem_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
 
 
 def update_model(
-        model_id: str,
-        name: Optional[str] = None,
-        status: Optional[str] = None,
-        metrics_json: Optional[str] = None,
-        uri: Optional[str] = None,
-        metadata_json: Optional[str] = None,
-        explanation_json: Optional[str] = None,
-        ) -> bool:
-    sql, params = _build_update_sql("models", "id", model_id, {
-        "name": name,
-        "status": status,
-        "metrics_json": metrics_json,
-        "uri": uri,
-        "metadata_json": metadata_json,
-        "explanation_json": explanation_json,
-        })
+    model_id: str,
+    name: Optional[str] = None,
+    status: Optional[str] = None,
+    metrics_json: Optional[str] = None,
+    uri: Optional[str] = None,
+    metadata_json: Optional[str] = None,
+    explanation_json: Optional[str] = None,
+) -> bool:
+    sql, params = _build_update_sql(
+        "models",
+        "id",
+        model_id,
+        {
+            "name": name,
+            "status": status,
+            "metrics_json": metrics_json,
+            "uri": uri,
+            "metadata_json": metadata_json,
+            "explanation_json": explanation_json,
+        },
+    )
     if not sql:
         return False
     with cursor() as cur:
@@ -667,6 +681,7 @@ def create_job(
     task_id: Optional[str] = None,
     requested_by: Optional[str] = None,
 ) -> str:
+    # Jobs track long-running tasks (train/predict/profile) so the UI can show progress.
     job_id = str(uuid.uuid4())
     sql = """
         INSERT INTO jobs
@@ -674,10 +689,7 @@ def create_job(
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     with cursor() as cur:
-        cur.execute(
-            sql,
-            (job_id, job_type, problem_id, model_id, status, task_id, requested_by),
-        )
+        cur.execute(sql, (job_id, job_type, problem_id, model_id, status, task_id, requested_by))
     return job_id
 
 
@@ -688,6 +700,7 @@ def update_job_status(job_id: str, status: str, error: Optional[str] = None) -> 
     - if status in ('completed', 'failed') -> set finished_at
     - error (if given) is stored
     """
+    # Keep logic simple: status drives which timestamps get filled.
     if status == "running":
         sql = "UPDATE jobs SET status=%s, started_at=NOW(), error=%s WHERE id=%s"
         params = (status, error, job_id)
@@ -723,6 +736,7 @@ def create_prediction(
     status: Optional[str] = None,
     requested_by: Optional[str] = None,
 ) -> str:
+    # Predictions store the link to the model + where inputs/outputs are saved.
     prediction_id = str(uuid.uuid4())
     sql = """
         INSERT INTO predictions
@@ -752,7 +766,7 @@ def get_prediction(prediction_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (prediction_id,))
         return cur.fetchone()
-    
+
 
 ALLOWED_PREDICTION_SORT_FIELDS = {
     "name": "name",
@@ -770,85 +784,87 @@ def get_predictions(
     id: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
-    '''
-    Return (items, total) for predictions for a given dataset_id with pagination, sorting and optional search.
-    '''
-    ### SORTING ###
+    """
+    Return (items, total) for predictions for a given model_id with pagination, sorting and optional search.
+    """
     sort_column = ALLOWED_PREDICTION_SORT_FIELDS.get(sort, "created_at")
-    dir_sql = "ASC" if dir=="asc" else "DESC"
+    dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES - FORMING THE SEARCH QUERIES ###
     where_clauses = []
     params = []
 
     if q:
-        like = f"%{q}%" # Search anything that contains q
-        where_clauses.append("name LIKE %s") # If there are more later change name LIKE %s -> (name LIKE %s OR owner_name LIKE %s OR ...)
-        params.append(like) # If there are more later swap with .extend and like -> [like, like] -> [like, like, ...]
+        like = f"%{q}%"
+        where_clauses.append("name LIKE %s")
+        params.append(like)
 
     if id:
         where_clauses.append("id = %s")
         params.append(id)
 
     if name:
-        like = f"%{name}%" # Search name for anything that contains name
+        like = f"%{name}%"
         where_clauses.append("name LIKE %s")
         params.append(like)
-    
+
     where_sql = ""
     if where_clauses:
         where_sql = " AND " + " AND ".join(where_clauses)
 
-    ### TOTAL CALCULATION ###
     count_sql = f"SELECT COUNT(*) AS total FROM predictions WHERE model_id = %s {where_sql}"
     with cursor() as cur:
         cur.execute(count_sql, [model_id] + params)
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
-    offset = (page-1)*size
-    dataset_versions_sql = f"SELECT * FROM predictions WHERE model_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
+    offset = (page - 1) * size
+    predictions_sql = f"SELECT * FROM predictions WHERE model_id = %s {where_sql} ORDER BY {sort_column} {dir_sql} LIMIT %s OFFSET %s"
     with cursor() as cur:
-        cur.execute(dataset_versions_sql, [model_id] + params + [size, offset]) # [size, offset] are not extended in params, so that params is not mutated and only includes the WHERE clauses params
+        cur.execute(predictions_sql, [model_id] + params + [size, offset])
         items = cur.fetchall()
 
     return items, total
 
 
 def update_prediction(
-        prediction_id: str,
-        name: Optional[str] = None,
-        model_id: Optional[str] = None,
-        input_uri: Optional[str] = None,
-        inputs_json: Optional[str] = None,
-        outputs_json: Optional[str] = None,
-        outputs_uri: Optional[str] = None,
-        status: Optional[str] = None,
-        requested_by: Optional[str] = None,
-        ) -> bool:
-    sql, params = _build_update_sql("predictions", "id", prediction_id, {
-        "name": name,
-        "model_id": model_id,
-        "input_uri": input_uri,
-        "inputs_json": inputs_json,
-        "outputs_json": outputs_json,
-        "outputs_uri": outputs_uri,
-        "status": status,
-        "requested_by": requested_by,
-        })
+    prediction_id: str,
+    name: Optional[str] = None,
+    model_id: Optional[str] = None,
+    input_uri: Optional[str] = None,
+    inputs_json: Optional[str] = None,
+    outputs_json: Optional[str] = None,
+    outputs_uri: Optional[str] = None,
+    status: Optional[str] = None,
+    requested_by: Optional[str] = None,
+) -> bool:
+    sql, params = _build_update_sql(
+        "predictions",
+        "id",
+        prediction_id,
+        {
+            "name": name,
+            "model_id": model_id,
+            "input_uri": input_uri,
+            "inputs_json": inputs_json,
+            "outputs_json": outputs_json,
+            "outputs_uri": outputs_uri,
+            "status": status,
+            "requested_by": requested_by,
+        },
+    )
     if not sql:
         return False
     with cursor() as cur:
         cur.execute(sql, params)
         return cur.rowcount > 0
-    
+
 
 # -------------------------------------------------------------------
 # DASHBOARD STATS
 # -------------------------------------------------------------------
 
 def get_dashboard_stats() -> Optional[dict]:
+    # Simple counts used for a quick dashboard view (no heavy joins).
     sql = """
     SELECT
       (SELECT COUNT(*) FROM users)            AS users,
@@ -867,6 +883,9 @@ def get_dashboard_stats() -> Optional[dict]:
 # -------------------------------------------------------------------
 # DELETE HELPERS
 # -------------------------------------------------------------------
+
+# We delete in reverse dependency order to satisfy foreign keys.
+# We do not rely on ON DELETE CASCADE here, to keep behavior explicit.
 
 def delete_prediction(prediction_id: str) -> bool:
     sql = "DELETE FROM predictions WHERE id=%s"
@@ -890,6 +909,7 @@ def delete_model(model_id: str) -> bool:
       - clears ml_problems.current_model_id if it matches
       - model row
     """
+    # Manual cascade keeps deletes explicit and predictable for the project scope.
     with cursor() as cur:
         cur.execute("DELETE FROM predictions WHERE model_id=%s", (model_id,))
         cur.execute("DELETE FROM jobs WHERE model_id=%s", (model_id,))
@@ -958,6 +978,8 @@ def delete_dataset(dataset_id: str) -> bool:
 # JOIN HELPERS
 # -------------------------------------------------------------------
 
+# Join helpers return "detail views" in one DB query (avoids many round trips).
+
 def get_dataset_version_detail(version_id: str) -> Optional[dict]:
     """
     Returns dataset_versions + dataset name/owner_id.
@@ -1011,18 +1033,21 @@ def get_model_detail(model_id: str) -> Optional[dict]:
     with cursor() as cur:
         cur.execute(sql, (model_id,))
         return cur.fetchone()
-    
-    
+
+
 # -------------------------------------------------------------------
 # JOIN FUNCTIONS
 # -------------------------------------------------------------------
 
+# Joined list functions are used for UI list pages that need names from related tables.
+# Sort fields are whitelisted because ORDER BY cannot be parameterized.
 
 ALLOWED_DATASET_VERSION_JOIN_SORT_FIELDS = {
     "dataset_name": "d.name",
     "name": "dv.name",
     "created_at": "dv.created_at",
 }
+
 
 def get_dataset_versions_all_joined(
     page: int,
@@ -1037,11 +1062,9 @@ def get_dataset_versions_all_joined(
     Return (items, total) for ALL dataset_versions,
     joined with datasets for names only.
     """
-    ### SORTING ###
     sort_column = ALLOWED_DATASET_VERSION_JOIN_SORT_FIELDS.get(sort, "dv.created_at")
     dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES ###
     where_clauses = []
     params = []
 
@@ -1064,7 +1087,6 @@ def get_dataset_versions_all_joined(
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL ###
     count_sql = f"""
         SELECT COUNT(*) AS total
         FROM dataset_versions dv
@@ -1076,7 +1098,6 @@ def get_dataset_versions_all_joined(
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
     offset = (page - 1) * size
     items_sql = f"""
         SELECT
@@ -1105,6 +1126,7 @@ ALLOWED_ML_PROBLEM_JOINED_SORT_FIELDS = {
     "created_at": "mp.created_at",
 }
 
+
 def get_ml_problems_all_joined(
     page: int,
     size: int,
@@ -1123,11 +1145,9 @@ def get_ml_problems_all_joined(
       - dv.name AS dataset_version_name
       - d.name  AS dataset_name
     """
-    ### SORTING ###
     sort_column = ALLOWED_ML_PROBLEM_JOINED_SORT_FIELDS.get(sort, "mp.created_at")
     dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES ###
     where_clauses = []
     params = []
 
@@ -1174,7 +1194,6 @@ def get_ml_problems_all_joined(
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL ###
     count_sql = f"""
         SELECT COUNT(*) AS total
         FROM ml_problems mp
@@ -1187,7 +1206,6 @@ def get_ml_problems_all_joined(
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
     offset = (page - 1) * size
     items_sql = f"""
         SELECT
@@ -1222,6 +1240,7 @@ ALLOWED_MODEL_JOINED_SORT_FIELDS = {
     "dataset_name": "d.name",
 }
 
+
 def get_models_all_joined(
     page: int,
     size: int,
@@ -1244,11 +1263,9 @@ def get_models_all_joined(
       - dv.name AS dataset_version_name
       - d.name  AS dataset_name
     """
-    ### SORTING ###
     sort_column = ALLOWED_MODEL_JOINED_SORT_FIELDS.get(sort, "m.created_at")
     dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES ###
     where_clauses = []
     params = []
 
@@ -1311,7 +1328,6 @@ def get_models_all_joined(
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL ###
     count_sql = f"""
         SELECT COUNT(*) AS total
         FROM models m
@@ -1325,7 +1341,6 @@ def get_models_all_joined(
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
     offset = (page - 1) * size
     items_sql = f"""
         SELECT
@@ -1361,6 +1376,7 @@ ALLOWED_PREDICTION_JOINED_SORT_FIELDS = {
     "dataset_name": "d.name",
 }
 
+
 def get_predictions_all_joined(
     page: int,
     size: int,
@@ -1382,11 +1398,9 @@ def get_predictions_all_joined(
       - dv.name AS dataset_version_name
       - d.name  AS dataset_name
     """
-    ### SORTING ###
     sort_column = ALLOWED_PREDICTION_JOINED_SORT_FIELDS.get(sort, "p.created_at")
     dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES ###
     where_clauses = []
     params = []
 
@@ -1438,7 +1452,6 @@ def get_predictions_all_joined(
     if where_clauses:
         where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL ###
     count_sql = f"""
         SELECT COUNT(*) AS total
         FROM predictions p
@@ -1453,7 +1466,6 @@ def get_predictions_all_joined(
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### RETURN ###
     offset = (page - 1) * size
     items_sql = f"""
         SELECT
@@ -1489,6 +1501,7 @@ ALLOWED_ML_PREDICTION_JOINED_SORT_FIELDS = {
     "model_name": "m.name",
 }
 
+
 def get_ml_predictions_all_joined(
     problem_id: str,
     page: int,
@@ -1505,23 +1518,15 @@ def get_ml_predictions_all_joined(
     joined for names only:
       - m.name AS model_name
     """
-
-    ### SORTING ###
     sort_column = ALLOWED_ML_PREDICTION_JOINED_SORT_FIELDS.get(sort, "p.created_at")
     dir_sql = "ASC" if dir == "asc" else "DESC"
 
-    ### WHERE CLAUSES ###
     where_clauses = ["m.problem_id = %s"]
     params = [problem_id]
 
     if q:
         like = f"%{q}%"
-        where_clauses.append(
-            "("
-            "p.name LIKE %s OR "
-            "m.name LIKE %s"
-            ")"
-        )
+        where_clauses.append("(" "p.name LIKE %s OR " "m.name LIKE %s" ")")
         params.extend([like, like])
 
     if name:
@@ -1538,7 +1543,6 @@ def get_ml_predictions_all_joined(
 
     where_sql = "WHERE " + " AND ".join(where_clauses)
 
-    ### TOTAL ###
     count_sql = f"""
         SELECT COUNT(*) AS total
         FROM predictions p
@@ -1550,7 +1554,6 @@ def get_ml_predictions_all_joined(
         row = cur.fetchone()
         total = row["total"] if row else 0
 
-    ### ITEMS ###
     offset = (page - 1) * size
     items_sql = f"""
         SELECT
@@ -1576,6 +1579,7 @@ def get_ml_predictions_all_joined(
 
 @contextlib.contextmanager
 def prod_cursor():
+    # We need an explicit transaction here (autocommit off) to avoid partial production switches.
     conn = get_conn()
     conn.autocommit = False
     try:
@@ -1583,34 +1587,35 @@ def prod_cursor():
             yield cur
             conn.commit()
     except Exception:
+        # If anything fails, roll back so the DB stays consistent.
         conn.rollback()
-        raise 
+        raise
     finally:
         conn.close()
 
+
 def set_model_to_production(problem_id: str, model_id: str) -> bool:
-    sql_lock = "SELECT current_model_id FROM ml_problems WHERE id = %s FOR UPDATE" # FOR UPDATE -> Locks selected row so no other transaction can modify it
+    # Row lock prevents two concurrent requests from switching production at the same time.
+    sql_lock = "SELECT current_model_id FROM ml_problems WHERE id = %s FOR UPDATE"
     sql_update_models = "UPDATE models SET status = %s WHERE id = %s AND problem_id = %s"
     sql_update_ml_problems = "UPDATE ml_problems SET current_model_id = %s WHERE id = %s"
-    with prod_cursor() as cur: 
+    with prod_cursor() as cur:
         cur.execute(sql_lock, (problem_id,))
 
         row = cur.fetchone()
-        # If row/ml_problem doesn't exist return False
+        # No ml_problem row -> nothing to update.
         if not row:
             return False
-        
+
         prev_model_id = row["current_model_id"]
         if prev_model_id and prev_model_id != model_id:
             cur.execute(sql_update_models, ("archived", prev_model_id, problem_id))
-        
+
         cur.execute(sql_update_models, ("production", model_id, problem_id))
-        # Validation check that model belongs to this ml_problem and that it exists
+        # Safety check: model must exist AND belong to this problem.
         if cur.rowcount == 0:
             raise ValueError(f"Model with id: {model_id} was not found for the ml_problem with id: {problem_id}")
-        
+
         cur.execute(sql_update_ml_problems, (model_id, problem_id))
 
         return True
-
-
