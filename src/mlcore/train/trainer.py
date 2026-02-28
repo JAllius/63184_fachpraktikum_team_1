@@ -51,7 +51,13 @@ def train(
     # multi_class = profile.get("columns", {}).get(
     #     target, {}).get("cardinality", 0) > 2
 
-    X, y = preprocess_dataframe(df, target, profile)
+    feature_strategy_json = problem.get("feature_strategy_json", False)
+    if feature_strategy_json:
+        feature_strategy = json.loads(feature_strategy_json)
+    else:
+        feature_strategy = "auto"
+
+    X, y = preprocess_dataframe(df, target, profile, feature_strategy)
     semantic_types = get_semantic_types(X, profile)
     task = problem.get("task")
 

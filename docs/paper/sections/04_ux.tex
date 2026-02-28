@@ -1,0 +1,166 @@
+\section{WebUI}
+\label{sec:webui}
+Das Frontend implementiert eine Dashboard-basierte Single-Page-Application (\glqq SPA\grqq) zur Verwaltung von Datasets, Dataset-Versionen, ML-Problemen, Modellen und Vorhersagen. Es wurde für Anwender entwickelt, die Analysen und ML-Workflows ausführen möchten, ohne direkt mit den Backend-Services interagieren zu müssen.
+
+Ein SPA-Dashboard ist in diesem Kontext geeignet, da es häufige Wechsel zwischen Listen- und Detailansichten unterstützt, Zustände durch URL-Query-Parameter beibehalten kann und interaktive Aktualisierungen ohne vollständige Seitenneuladung ermöglicht. Dadurch bleibt der Anwendungskontext auch bei Aktualisierungen erhalten.
+
+Das Dashboard ist durch asynchrone ML-Workflows eingeschränkt. Trainings- und Vorhersageprozesse sind langlaufende Hintergrundaufgaben, und aus diesem Grund können die Listenansichten nicht immer direkt aktualisiert werden, da die zuvor genannten Backend-Prozesse nicht sofort abgeschlossen werden. Um dieses Problem zu vermeiden und eine aktuelle Darstellung sicherzustellen, werden nicht-blockierende Formulare, visuelle Rückmeldungen (\glqq toasts\grqq) sowie Event-Driven-Aktualisierungsmechanismen eingesetzt. Dies beeinflusst die Zustandsverwaltung und Aktualisierungslogik im Frontend, da Änderungen erst nach Abschluss der Hintergrundprozesse im Frontend durch Event-Streams synchronisiert werden.
+
+\subsection{TechStack}
+\begin{itemize}
+    \item \code{React} und \code{Typescript}: React bietet ein komponentenbasiertes Modell für komplexe Dashboards mit wiederverwendbaren Komponenten, was für dieses Projekt geeignet ist, da es viele ähnliche Seiten und Komponenten gibt.
+    
+    TypeScript erzwingt eine starke Typisierung für alle Komponenten und Funktionen, was zu einer konsistenten und fehlerreduzierten Codebasis führt.
+    \item \code{Vite}: Vite wird verwendet, da es schnelle Builds in der Entwicklungsumgebung und optimierte Builds in der Produktionsumgebung bietet.
+    \item \code{React Router}: Die Routing-Schicht bindet die hierarchische Seitenstruktur (dataset → dataset version → ml problem → model → prediction) mit einer verschachtelten Pfadstruktur, was tiefe Verlinkungen und eine leichtere Navigation ermöglicht.
+    \item \code{Tailwind CSS} und \code{shadcn} (RadixUI-basierte Komponenten): Tailwind bietet ein konsistentes Styling zwischen allen Seiten und Komponenten des Dashboards. \code{shadcn}-Komponenten bieten vordefinierte UI-Elemente mit intefrierter Funktionalität, die zusammen mit Tailwind eine konsistente Darstellung des Dashboards gewährleisten.
+    \item \code{Recharts}: Recharts wird ausschliesslich für die Darstellung der Explainability verwendet und bietet interaktive und flüssige Diagramme.
+    \item \code{Zod} und \code{React Hook Form}: Zod ermöglicht die Erstellung von Validierungsschemata für alle Formulare des Dashboards. React Hook Form bietet kontrollierte Formulare mit minimierten Re-Renders und klarer Fehlerbehandlung.
+\end{itemize}
+
+Die Auswahl dieser Werkzeuge unterstützt die Maintainability, Accesibility, Interaktivität, Konsistenz und Fehlerbehandlung, die dieses Dashboard benötigt, um eine stabile Benutzererfahrung zu gewährleisten.
+
+\subsection{FastAPI}
+\label{subsec:ux:fastapi}
+Das Frontend kommuniziert mit einer FastAPI, welche auf den API-Nodes hinterlegt ist. Dabei wurde FastAPI als Framework genutzt, da es gut in Python integrierbar ist und somit gut mit Celery / Redis kombinierbar ist. Außerdem bietet FastAPI standardmäßig eine interaktive \glqq Swagger UI\grqq-Dokumentation. Diese lässt sich unter \code{/docs} auf der API-Node abrufen.
+
+Diese interaktive Dokumentation war besonders in den frühen Phasen der Projektentwicklung (ohne Frontend) hilfreich, da hier leicht die Funktionalität des Backends geprüft werden kann.
+
+\subsection{Webanwendungsarchitektur}
+
+\subsubsection{Routing und Seitenstruktur}
+Das Routing ist in \code{frontend/src/routes/index.tsx} definiert und wird mithilfe von \code{createBrowserRouter} implementiert. Die Routing-Struktur ist in zwei Bereiche gegliedert: einen hierarchischen Hauptbereich sowie aggregierte Übersichtsseiten zur vereinfachten Navigation. Der Hauptbereich enthält die zentrale Anwendungslogik und bildet die hierarchische Domänestruktur der Datenbank ab.
+
+Hauptbereich:
+\begin{itemize}
+    \item \code{/} → Login-Seite (derzeit nur als Platzhalter implementiert und inaktiv, da im Backend keine Authentifizierungslogik für Benutzer implementiert ist)
+    \item \code{/dashboard} → Übersicht
+    \item \code{/dashboard/datasets} → Liste aller Datensätze
+    \item \code{/dashboard/datasets/:datasetId} → Liste der Versionen eines Datensatzes
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId} → Liste der ML-Probleme einer Datensatz-Version
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId} → Liste der Modelle eines ML-Problems
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId/:modelId} → Liste der Vorhersagen eines Modells
+    \item \code{/dashboard/datasets/:datasetId/\\:datasetVersionId/:problemId/:modelId/\\:predictionId} → Details einer Vorhersage
+\end{itemize}
+Zusätzlich existieren aggregierte Seiten zur vollständigeren Übersicht über die Datenbank sowie zur vereinfachten Navigation.
+
+Aggregierte Übersichtsseiten:
+\begin{itemize}
+    \item \code{/dashboard/dataset-versions} → Liste aller Datensatz-Versionen
+    \item \code{/dashboard/ml-problems} → Liste aller ML-Probleme
+    \item \code{/dashboard/models} → Liste aller Modelle
+    \item \code{/dashboard/predictions} → Liste aller Vorhersagen
+    \item \code{/dashboard/jobs} → Liste aller Celery-Jobs. Diese Seite wurde nicht weiterentwickelt und ist daher nicht über die Sidebar erreichbar. Der Status asynchroner Aufgaben wird stattdessen in die Modell- und Vorhersagelisten integriert, um den aktuellen Zustand von Hintergrundprozessen sichtbar zu machen.
+    \item Nach Auswahl eines Eintrags in diesen Tabellen wird der Benutzer zur entsprechenden Detailseite im Hauptbereich weitergeleitet.
+\end{itemize}
+
+Diese Struktur ermöglicht ein konsistentes Navigationsmodell für den Benutzer. Jede verschachtelte Seite enthält detailliertere Informationen zu einem einzelnen Eintrag, während die aggregierten Listenansichten eine globale Sicht auf die Datenbank zur Verwaltung bieten.
+
+\subsubsection{Layout und Navigation}
+Das Dashboard-Layout verwendet eine persistente Sidebar mit kollabierbarem Verhalten sowie einen konsistenten Hauptinhaltsbereich. Die Sidebar wird mithilfe einer \code{shadcn}-Komponente erstellt und unterstützt folgende Funktionen:
+\begin{itemize}
+    \item Collapse/Expand-Toggle
+    \item Benutzerbereich (derzeit nur als Platzhalter implementiert und inaktiv, da im Backend keine Benutzerverwaltungslogik implementiert ist)
+    \item Theme-Toggle (Hell/Dunkel)
+    \item Hervorhebung der aktiven Route
+\end{itemize}
+Zusätzlich wird auf den Hauptbereichsseiten eine Breadcrumb-Navigation mithilfe von \code{shadcn}-Breadcrumbs integriert, um einen klaren und nachvollziehbaren Navigationskontext zu bieten.
+
+\subsubsection{Ordnerstruktur}
+Die Codebasis folgt einer klaren inhaltlichen Trennung der Ordner:
+\begin{itemize}
+    \item \code{pages/}: Seiten auf Routing-Ebene mit Datenabruf und Anwendungslogik
+    \item \code{lib/actions/}: API-Funktionen pro Domänenentität
+    \item \code{components/}: domänenspezifische UI-Elemente (Tabellen, Formulare, Detailansichten (Tabs))
+    \item \code{components/ui/}: wiederverwendbare UI-Elemente und \code{shadcn}-Komponenten
+\end{itemize}
+
+Diese Struktur bietet Wiederverwendbarkeit und erlaubt eine klare Fokussierung der Seiten auf die Anwendungslogik statt auf UI-Details.
+
+
+\subsection{Zustandsverwaltung und Datenfluss}
+
+\subsubsection{Serverseitiger Zustand}
+Das Dashboard verwendet einen serverseitigen Zustand für Entitätslisten und Detailansichten. Seiten rufen Daten über Aktionsfunktionen ab, die den Datenabruf und die Fehlerbehandlung standardisieren. Der Zustand wird lokal in jeder Seitenkomponente mithilfe der React-Hooks \code{useState} und \code{useEffect} verwaltet. Zusätzlich wird mithilfe von \code{useCallback} eine stabile Wiederabruflogik gewährleistet.
+
+\subsubsection{Zustandsverwaltung über URL-Query-Parameter für Filter und Pagination}
+Filterung, Sortierung und Pagination werden über URL-Query-Parameter mithilfe des React-Router-Hooks \code{useSearchParams} verwaltet. Dies ermöglicht:
+\begin{itemize}
+    \item teilbare, reproduzierbare URLs
+    \item zustandlose paginierte Listenkomponenten
+\end{itemize}
+Pagination und Auswahl der Seitengrösse passen die Query-Parameter an und lösen einen erneuten Datenabruf aus. Dieses Muster vermeidet eine globale Zustandsverwaltung sowie den vollständigen Abruf aller Daten, da der Listenzustand direkt aus den URL-Parametern und den Backend-Antworten rekonstruiert werden kann.
+
+\subsubsection{Umgang mit grossen tabellarischen Daten}
+Tabellen werden mit Pagination und Filterung statt clientseitiger Virtualisierung dargestellt. Es werden sinnvolle Seitengrössen (Standardwert 20, konfigurierbar auf 10 oder 50) verwendet, die mit der serverseitigen Pagination kombiniert werden, um den Speicherverbrauch auf Client-Seite zu reduzieren. Dieses Muster verbessert die Skalierbarkeit bei grossen Datenmengen.
+
+\subsection{ML- und CRUD-Funktionen}
+\subsubsection{Training Workflow}
+Das Training wird durch die Train-Komponente initialisiert, die ein Sheet (Seitenpanel) mit einem validierten Formular öffnet. Das Formular unterstützt folgende Felder:
+\begin{itemize}
+    \item Problem-ID (sofern diese nicht bereits aus den URL-Parametern übernommen wird)
+    \item Modellname
+    \item Auswahl des Train-Modus (fast, balanced, accurate)
+    \item Auswahl des Algorithmus-Presets
+    \item Evaluierungsstrategie (cv, holdout)
+    \item Explainability-Toggle
+\end{itemize}
+Eine erfolgreiche Übermittlung löst eine Rückmeldung (\glqq toast\grqq) aus und schliesst das Formular. Anschliessend wird die Modellliste aktualisiert, um das neu erzeugte Modell anzuzeigen.
+
+\subsubsection{Vorhersage Workflow}
+Die Vorhersage verwendet eine ähnliche Sheet-Komponente. Sie unterstützt drei Eingabemodi für die Daten:
+\begin{itemize}
+    \item Hochladen einer neuen CSV-Datei
+    \item Verwendung einer existierenden CSV-Datei (derzeit inaktiv)
+    \item Eingabe im JSON-Format
+\end{itemize}
+Das Formular wird mithilfe von Zod validiert, um sicherzustellen, dass eine Eingabequelle angegeben ist und eine Modell- oder Problem-ID vorhanden ist. Eine erfolgreiche Übermittlung löst ebenfalls eine Rückmeldung aus und aktualisiert die entsprechenden Datenansichten.
+
+\subsubsection{Jobstatus und Rückmeldung}
+Das UI verwendet Toast-Rückmeldungen, um Ereignisse der Trainings- und Vorhersageprozesse darzustellen. Seiten abonnieren Job-Events und zeigen Rückmeldungen wie \glqq Training finished successfully\grqq\space oder \glqq Prediction failed\grqq, um unmittelbares Feedback für den Benutzer zu geben, ohne eine manuelle Aktualisierung erforderlich ist.
+
+\subsubsection{CRUD-Funktionen}
+Die übrigen CRUD-Funktionen folgen einem ähnlichen Muster wie die Trainings- und Vorhersageformulare. Die Erstellung und Aktualisierung von Daten erfolgt ebenfalls über Sheet-Komponenten.
+
+Besondere Bedeutung kommt den Löschfunktionen zu, die eine schriftliche Bestätigung durch den Benutzer erfordern, bevor der Vorgang ausgeführt wird.
+
+\subsubsection{Fehlerbehandlung}
+Die API-Aktionen geben typisierte Erfolgs- oder Fehlerantworten zurück. Formulare interpretieren Validierungsfehler und zeigen diese mithilfe von \code{FieldError} direkt bei den entsprechenden Eingabefeldern an. Netzwerk- und Backend-Fehler werden über Toast-Rückmeldungen mit verständlichen Meldungen dargestellt.
+
+\subsection{Explainability Visualisierung}
+Explainability wird auf der Modell-Detailseite dargestellt. Das Frontend erwartet eine strukturierte Explainabilty-Zusammenfassung aus dem Backend, die folgende Informationen enthält:
+\begin{itemize}
+    \item Merkmalswichtigkeiten (globale Mean Absolute SHAP-Werte)
+    \item Aggregation auf Elternebene (Gruppierung nach ursprünglichen Spalten)
+    \item Zusammenfassungen pro Klasse für Klassifikationsaufgaben
+
+\end{itemize}
+Zwei Visualisierungskomponenten behandeln die jeweiligen ML-Aufgabentypen:
+\begin{itemize}
+    \item Regression: Ein Balkendiagramm mit einem Toggle zur Umschaltung zwischen gruppierter Ansicht (Aggregation auf Elternebene) und ungruppierter Ansicht (einzelne Merkmale).
+    \item Klassifikation: Eine tab-basierte Klassenauswahl sowie derselbe Toggle zur Umschaltung zwischen gruppierter und ungruppierter Ansicht pro Klasse.
+\end{itemize}
+Die Diagramme werden mithilfe von Recharts dargestellt. Dabei werden Tailwind-Variablen verwendet, um ein themenkonsistentes Styling zu gewährleisten.
+Dieses Muster wird aus folgenden Gründen gewählt:
+\begin{itemize}
+    \item Gruppierte Ansichten reduzieren visuelles Rauschen bei kategorialen Merkmalen mit hoher Kardinalität.
+    \item Klassenbasierte Tabs vermeiden visuelles Rauschen bei Multi-Klassen-Aufgaben.
+\end{itemize}
+
+\subsection{Echtzeit-Aktualisierung}
+Das Frontend verwendet Server-Sent Events (\glqq SSE\grqq) mithilfe von EventSource, um Job-Aktualisierungen vom Endpoint \code{/events/stream} zu empfangen.
+
+Seiten, die Modelle oder Vorhersagen darstellen, abonnieren die Events \code{job.completed} und \code{job.failed}. Diese werden nach Job-Typ und relevanten Identifikatoren gefiltert, bevor eine Datenaktualisierung ausgelöst wird.
+
+Die Event-Handlers werden innerhalb von \code{useEffect} registriert und bei Komponenten-Unmouut wieder entfernt, um Memory-Leaks zu vermeiden.
+
+\subsection{Design und visuelle Konsistenz}
+Das UI wird grundsätzlich mithilfe einer konsistenten Komponentenbasis aus \code{shadcn} erstellt. Tailwind-Utility-Klassen implementieren Layout, Abstände und Typografie mit einem einheitlichen und vorhersehbaren Verhalten.
+
+Das Design von Sidebar, Breadcrumb-Navigation, Navigationsstruktur und Überschriften folgt einem wiederkehrenden Stil. Filter- und Aktionsschaltflächen und Eingabefelder sind auf den Listenseiten konsistent positioniert.
+
+Zusätzlich bieten Leerzustandsseiten verständliche Rückmeldungen für den Benutzer, inkl. klarer Handlungsaufforderungen (sofern möglich).
+Das Seitenlayout ist durchgehend einheitlich aufgebaut: eine Hauptliste bildet den Hauptinhalt der Seite, während Tabs zugehörige Unterbereiche oder zusätzliche Details strukturieren.
+
+Der \code{ThemeProvider} aus \code{shadcn} ermöglicht einen Hell-/Dunkelmodus und speichert die Auswahl im lokalen Speicher. Das Theme steuert sowohl Tailwind-Variablen als auch Diagrammfarben, um ein konsistenes Aussehen des gesamten UI und der Visualisierungen sicherzustellen.
+
